@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -21,7 +22,7 @@ except ImportError:
 import virtualenv
 
 # TODO: Move these to yola.deploy
-from lib import Artifacts
+from lib.artifacts import Artifacts
 
 from .base import DeployHook
 
@@ -46,7 +47,7 @@ def ve_version(req_hash):
 
 def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
     artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
-    if artifacts.versions().versions():
+    if artifacts.versions().latest():
         log.debug('Downloading existing virtualenv %s for %s', version, app)
         artifacts.download(target)
         return True
@@ -147,23 +148,28 @@ def relocateable_ve():
 
 
 class PythonApp(DeployHook):
-    def __init__(self, app, root, version, metadata):
-        super(PythonApp, self).__init__(app, root, version, metadata)
-        if 'virtualenv' not in metadata:
-            raise Exception("Artifact doesn't have a defined virtualenv")
-
     def prepare(self):
+        app_dir = os.path.join(self.root, 'versions', self.version)
+        requirements = os.path.join(app_dir, 'requirements.txt')
+        if os.path.exists(requirements):
+            self.deploy_ve()
+        super(PythonApp, self).prepare()
+
+    def deploy_ve(self):
         log = logging.getLogger(__name__)
         app_dir = os.path.join(self.root, 'versions', self.version)
-        ve_hash = ve_version(sha224sum(os.path.join('requirements.txt')))
+        ve_hash = ve_version(sha224sum(
+                os.path.join(app_dir, 'requirements.txt')))
         ve_working = os.path.join(self.root, 'virtualenvs', 'unpack')
         ve_dir = os.path.join(self.root, 'virtualenvs', ve_hash)
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
 
         log.debug('Deploying virtualenv %s', ve_hash)
 
-        download_ve(self.app, self.version, self.env, tarball)
+        download_ve(self.app, ve_hash, self.env, tarball)
         unpack_ve(tarball, ve_working)
+        if os.path.exists(ve_dir):
+            shutil.rmtree(ve_dir)
         os.rename(os.path.join(ve_working, 'virtualenv'), ve_dir)
-        os.symlink(os.path.join('..', 'virtualenv', ve_hash),
-                   os.path.join(app_dir, virtualenv))
+        os.symlink(os.path.join('..', '..', 'virtualenvs', ve_hash),
+                   os.path.join(app_dir, 'virtualenv'))
