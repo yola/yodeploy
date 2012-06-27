@@ -21,9 +21,7 @@ except ImportError:
 
 import virtualenv
 
-# TODO: Move these to yola.deploy
-from lib.artifacts import Artifacts
-
+from ..artifacts import Artifacts
 from .base import DeployHook
 
 # TODO: Get this from configuration
@@ -47,7 +45,8 @@ def ve_version(req_hash):
 
 def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
     artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
-    if artifacts.versions().latest():
+    artifacts.update_versions()
+    if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
         artifacts.download(target)
         return True
@@ -59,6 +58,7 @@ def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
 def upload_ve(app, version, env=None):
     log.debug('Uploading virtualenv %s for %s to %s', version, app, env)
     artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
+    artifacts.update_versions()
     artifacts.upload('virtualenv.tar.gz')
 
 
@@ -166,6 +166,8 @@ class PythonApp(DeployHook):
 
         log.debug('Deploying virtualenv %s', ve_hash)
 
+        if not os.path.exists(ve_working):
+            os.makedirs(ve_working)
         download_ve(self.app, ve_hash, self.env, tarball)
         unpack_ve(tarball, ve_working)
         if os.path.exists(ve_dir):
