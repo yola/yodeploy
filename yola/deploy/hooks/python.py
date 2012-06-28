@@ -56,6 +56,7 @@ def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
 
 
 def upload_ve(app, version, env=None):
+    # TODO: Don't require a chdir
     log.debug('Uploading virtualenv %s for %s to %s', version, app, env)
     artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
     artifacts.update_versions()
@@ -63,6 +64,7 @@ def upload_ve(app, version, env=None):
 
 
 def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
+    # TODO: Don't require a chdir
     log.debug('Unpacking virtualenv.tar.gz')
     t = tarfile.open(tarball, 'r')
     t.extractall(directory)
@@ -70,6 +72,7 @@ def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
 
 
 def create_ve():
+    # TODO: Don't require a chdir
     log.info('Building virtualenv')
     # Monkey patch a logger into virtualenv, usually created in main()
     # Newer virtualenvs won't need this
@@ -95,6 +98,7 @@ def create_ve():
 
 
 def relocateable_ve():
+    # TODO: Don't require a chdir
     log.debug('Making virtualenv relocatable')
     virtualenv.make_environment_relocatable('virtualenv')
 
