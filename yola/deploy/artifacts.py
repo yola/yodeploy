@@ -1,4 +1,5 @@
 import collections
+import copy
 import datetime
 import json
 import logging
@@ -46,8 +47,10 @@ class ArtifactVersions(object):
         parentdir = os.path.dirname(self.path)
         if not os.path.exists(parentdir):
             os.makedirs(parentdir)
+        state = copy.copy(self._state)
+        state['versions'] = [version._asdict() for version in self.versions]
         with open(self.path, 'w') as f:
-            json.dump(self._state, f, indent=2)
+            json.dump(state, f, indent=2)
 
     @property
     def versions(self):
