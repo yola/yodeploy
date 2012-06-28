@@ -40,7 +40,7 @@ class ArtifactVersions(object):
         with open(self.path, 'r') as f:
             self._state = AttrDict(json.load(f))
         self._state['versions'] = [
-                Version(*version)
+                Version(**version)
                 for version in self._state.get('versions', [])]
 
     def save(self):
