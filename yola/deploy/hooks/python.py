@@ -21,7 +21,7 @@ except ImportError:
 
 import virtualenv
 
-from ..artifacts import Artifacts
+from yola.deploy.artifacts import Artifacts
 from .base import DeployHook
 
 # TODO: Get this from configuration
