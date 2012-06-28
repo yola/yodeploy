@@ -92,13 +92,13 @@ class ArtifactVersions(object):
             to_version = self.latest.version_id
 
         start_idx = end_idx = None
-        for i, v in enumerate(self.versions()):
-            if v['version_id'] == from_version:
+        for i, v in enumerate(self.versions):
+            if v.version_id == from_version:
                 start_idx = i
-            if v['version_id'] == to_version:
+            if v.version_id == to_version:
                 end_idx = i
 
-        if start_idx and end_idx:
+        if start_idx is not None and end_idx is not None:
             return (end_idx - start_idx)
         else:
             return None
