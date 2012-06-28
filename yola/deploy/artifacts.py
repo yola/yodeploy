@@ -184,7 +184,6 @@ class LocalArtifacts(ArtifactsBase):
 
 
 # TODO: Log progress.
-# TODO: Caching?
 class S3Artifacts(ArtifactsBase):
     def __init__(self, app, filename=None, env=None):
         super(S3Artifacts, self).__init__(app, filename, env)
