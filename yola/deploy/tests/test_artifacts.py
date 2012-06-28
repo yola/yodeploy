@@ -64,12 +64,12 @@ class TestArtifactiVersions(unittest.TestCase):
         with open(self._test_fn, 'w') as f:
             f.write(TEST_JSON)
 
-    def testLoad(self):
+    def test_load(self):
         self._write_test_json()
         av = ArtifactVersions(self._test_fn)
         self.assertEqual(len(av.versions), 2)
 
-    def testSave(self):
+    def test_save(self):
         av = ArtifactVersions(self._test_fn)
         for version in TEST_VERSIONS['versions']:
             av.add_version(version['version_id'], version['date_uploaded'],
@@ -77,3 +77,24 @@ class TestArtifactiVersions(unittest.TestCase):
         av.save()
         with open(self._test_fn, 'r') as f:
             self.assertEqual(json.load(f), TEST_VERSIONS)
+
+    def test_get_version(self):
+        self._write_test_json()
+        av = ArtifactVersions(self._test_fn)
+        self.assertEqual(av.get_version('1234567890abcdef1234567890abcdef')
+                         .metadata['commit_msg'],
+                         'Hello World')
+
+    def test_latest(self):
+        self._write_test_json()
+        av = ArtifactVersions(self._test_fn)
+        self.assertEqual(av.latest, av.versions[-1])
+
+    def test_distance(self):
+        self._write_test_json()
+        av = ArtifactVersions(self._test_fn)
+        self.assertEqual(av.distance('1234567890abcdef1234567890abcdef'),
+                         1)
+        self.assertEqual(av.distance('1234567890abcdef1234567890abcdef',
+                                     av.latest.version_id),
+                         1)
