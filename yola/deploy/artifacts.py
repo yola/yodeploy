@@ -9,9 +9,6 @@ import uuid
 
 import boto
 
-# TODO: Exorcise
-from config.deploy import deploy_settings
-
 log = logging.getLogger(__name__)
 Version = collections.namedtuple('Version', ['version_id', 'date_uploaded',
                                              'metadata'])
@@ -109,33 +106,36 @@ class ArtifactsBase(object):
     Basic Abstract class for Different Artifacts handler to implement
     '''
 
-    def __init__(self, app, filename=None, env=None):
+    def __init__(self, app, env, state_dir, filename=None):
         self.app = app
         self.filename = filename or (app + '.tar.gz')
         self.env = env
 
         if env:
             self._versions = ArtifactVersions(path=os.path.join(
-                deploy_settings.paths.state, 'artifacts', self.app,
-                self.env, self.filename + '.versions'))
+                state_dir, 'artifacts', self.app, self.env,
+                self.filename + '.versions'))
         else:
             self._versions = ArtifactVersions(path=os.path.join(
-                deploy_settings.paths.state, 'artifacts', self.app,
+                state_dir, 'artifacts', self.app,
                 self.filename + '.versions'))
 
 
 class LocalArtifacts(ArtifactsBase):
     '''Store artifacts on local machine'''
 
+    def __init__(self, app, env, state_dir, artifact_dir, filename=None):
+        super(LocalArtifacts, self).__init__(app, env, state_dir, filename)
+        self._artifact_dir = artifact_dir
+
     @property
     def _local_artifact(self):
         '''return the pathname to the file on local store'''
         if self.env:
-            return os.path.join(deploy_settings.paths.artifacts, self.app,
-                                self.env, self.filename)
-        else:
-            return os.path.join(deploy_settings.paths.artifacts, self.app,
+            return os.path.join(self._artifact_dir, self.app, self.env,
                                 self.filename)
+        else:
+            return os.path.join(self._artifact_dir, self.app, self.filename)
 
     @property
     def versions(self):
@@ -187,12 +187,11 @@ class LocalArtifacts(ArtifactsBase):
 
 # TODO: Log progress.
 class S3Artifacts(ArtifactsBase):
-    def __init__(self, app, filename=None, env=None):
-        super(S3Artifacts, self).__init__(app, filename, env)
-
-        s3 = boto.connect_s3(deploy_settings.artifacts.access_key,
-                             deploy_settings.artifacts.secret_key)
-        self._bucket = s3.get_bucket(deploy_settings.artifacts.bucket)
+    def __init__(self, app, env, state_dir, bucket, access_key, secret_key,
+                 filename=None):
+        super(S3Artifacts, self).__init__(app, env, state_dir, filename)
+        s3 = boto.connect_s3(access_key, secret_key)
+        self._bucket = s3.get_bucket(bucket)
 
     @property
     def _s3_filename(self):
@@ -276,21 +275,3 @@ class S3Artifacts(ArtifactsBase):
         if version == None:
             version = k.version_id
         k.get_contents_to_filename(target, version_id=version)
-
-
-# a quick factory to return the right class transparently
-def artifacts_factory():
-    artifacts = None
-    if 'provider' in deploy_settings.artifacts:
-        if deploy_settings.artifacts.provider == 'local':
-            artifacts = LocalArtifacts
-        elif deploy_settings.artifacts.provider == 's3':
-            artifacts = S3Artifacts
-        else:
-            raise Exception('Unknown artifacts provider')
-    else:
-        # default - to account for pre-provider settings - assume s3
-        artifacts = S3Artifacts
-    return artifacts
-
-Artifacts = artifacts_factory()

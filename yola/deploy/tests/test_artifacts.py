@@ -4,20 +4,6 @@ import os
 import shutil
 import unittest
 
-# TODO: This must go
-class AttrDict(dict):
-    __getattr__ = dict.__getitem__
-import imp
-import sys
-sys.modules['config'] = imp.new_module('config')
-deploy = imp.new_module('config.deploy')
-deploy.deploy_settings = AttrDict({
-    'artifacts': AttrDict({
-        'provider': 'local',
-    })
-})
-sys.modules['config.deploy'] = deploy
-
 from yola.deploy.artifacts import ArtifactVersions
 
 TEST_JSON = """
