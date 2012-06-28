@@ -36,6 +36,7 @@ class ArtifactVersions(object):
 
     def load(self):
         if not os.path.exists(self.path):
+            self._state['versions'] = []
             return
         with open(self.path, 'r') as f:
             self._state = AttrDict(json.load(f))
