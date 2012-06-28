@@ -21,7 +21,6 @@ except ImportError:
 
 import virtualenv
 
-from yola.deploy.artifacts import Artifacts
 from .base import DeployHook
 
 # TODO: Get this from configuration
@@ -43,8 +42,8 @@ def ve_version(req_hash):
                          req_hash)
 
 
-def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
-    artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
+def download_ve(app, version, artifacts_factory, target='virtualenv.tar.gz'):
+    artifacts = artifacts_factory('virtualenv.tar.gz.%s' % version)
     artifacts.update_versions()
     if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
@@ -55,10 +54,10 @@ def download_ve(app, version, env=None, target='virtualenv.tar.gz'):
         return False
 
 
-def upload_ve(app, version, env=None):
+def upload_ve(app, version, artifacts_factory):
     # TODO: Don't require a chdir
-    log.debug('Uploading virtualenv %s for %s to %s', version, app, env)
-    artifacts = Artifacts(app, 'virtualenv.tar.gz.%s' % version, env)
+    log.debug('Uploading virtualenv %s for %s', version, app)
+    artifacts = artifacts_factory('virtualenv.tar.gz.%s' % version)
     artifacts.update_versions()
     artifacts.upload('virtualenv.tar.gz')
 
@@ -172,7 +171,7 @@ class PythonApp(DeployHook):
 
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        download_ve(self.app, ve_hash, self.env, tarball)
+        download_ve(self.app, ve_hash, self.artifacts_factory, tarball)
         unpack_ve(tarball, ve_working)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
