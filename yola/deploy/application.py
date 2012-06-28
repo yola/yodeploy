@@ -10,7 +10,11 @@ log = logging.getLogger(__name__)
 
 
 class Application(object):
-    'A deployable application'
+    '''A deployable application.
+
+    The deploy can be driven piece by piece, or by the deploy() function which
+    will do it all in the right order.
+    '''
 
     def __init__(self, app, environment, artifacts_factory, deploy_root,
                  artifacts=None):
