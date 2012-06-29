@@ -188,8 +188,15 @@ class LocalArtifacts(ArtifactsBase):
         directory = os.path.join(self._artifact_dir, self.app)
         if self.env:
             directory = os.path.join(directory, self.env)
-        return [filename for filename in os.listdir(directory)
-                if os.path.islink(os.path.join(directory, filename))]
+        listing = []
+        for filename in os.listdir(directory):
+            pathname = os.path.join(directory, filename)
+            if os.path.islink(pathname):
+                listing.append(filename)
+            if os.path.isdir(pathname):
+                listing.append('%s/' % filename)
+        listing.sort()
+        return listing
 
 
 # TODO: Log progress.
@@ -280,8 +287,8 @@ class S3Artifacts(ArtifactsBase):
         k.get_contents_to_filename(target, version_id=version)
 
     def list(self):
-        prefix = '/'
+        prefix = '%s/' % self.app
         if self.env:
-            prefix = '/%s/' % self.env
+            prefix += '%s/' % self.env
         return [k.name
                 for k in self._bucket.list(prefix=prefix, delimiter='/')]
