@@ -184,6 +184,13 @@ class LocalArtifacts(ArtifactsBase):
         if artifactpath != target:
             shutil.copy2(artifactpath, target)
 
+    def list(self):
+        directory = os.path.join(self._artifact_dir, self.app)
+        if self.env:
+            directory = os.path.join(directory, self.env)
+        return [filename for filename in os.listdir(directory)
+                if os.path.islink(os.path.join(directory, filename))]
+
 
 # TODO: Log progress.
 class S3Artifacts(ArtifactsBase):
@@ -275,3 +282,10 @@ class S3Artifacts(ArtifactsBase):
         if version == None:
             version = k.version_id
         k.get_contents_to_filename(target, version_id=version)
+
+    def list(self):
+        prefix = '/'
+        if self.env:
+            prefix = '/%s/' % self.env
+        return [k.name
+                for k in self._bucket.list(prefix=prefix, delimiter='/')]
