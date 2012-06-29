@@ -70,32 +70,37 @@ def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
         t.close()
 
 
-def create_ve():
-    # TODO: Don't require a chdir
+def create_ve(app_dir):
     log.info('Building virtualenv')
+    ve_dir = os.path.join(app_dir, 'virtualenv')
     # Monkey patch a logger into virtualenv, usually created in main()
     # Newer virtualenvs won't need this
     if not hasattr(virtualenv, 'logger'):
         virtualenv.logger = virtualenv.Logger([
             (virtualenv.Logger.level_for_integer(2), sys.stdout)])
 
-    virtualenv.create_environment('virtualenv', site_packages=False)
-    with open('requirements.txt', 'r') as f:
+    virtualenv.create_environment(ve_dir, site_packages=False)
+    with open(os.path.join(app_dir, 'requirements.txt'), 'r') as f:
         lines = (line.strip() for line in f)
         requirements = [line for line in lines if line and line[0] != '-']
 
     if requirements:
-        cmd = ['virtualenv/bin/easy_install', '--index-url', YOLAPI_URL]
+        cmd = [os.path.join(ve_dir, 'bin', 'python'),
+               os.path.join(ve_dir, 'bin', 'easy_install'),
+               '--index-url', YOLAPI_URL]
         cmd += requirements
         subprocess.check_call(cmd)
 
-    relocateable_ve()
+    relocateable_ve(ve_dir)
 
+    cwd = os.getcwd()
+    os.chdir(app_dir)
     t = tarfile.open('virtualenv.tar.gz', 'w:gz')
     try:
         t.add('virtualenv')
     finally:
         t.close()
+        os.chdir(cwd)
 
 
 def relocateable_ve(target):
