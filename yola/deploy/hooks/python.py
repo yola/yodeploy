@@ -98,15 +98,14 @@ def create_ve():
         t.close()
 
 
-def relocateable_ve():
-    # TODO: Don't require a chdir
+def relocateable_ve(target):
     log.debug('Making virtualenv relocatable')
-    virtualenv.make_environment_relocatable('virtualenv')
+    virtualenv.make_environment_relocatable(target)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
     activate = []
-    with open('virtualenv/bin/activate') as f:
+    with open(os.path.join(target, 'bin', 'activate')) as f:
         for line in f:
             line = line.strip()
             if line == 'deactivate () {':
@@ -148,7 +147,7 @@ def relocateable_ve():
                     'unset ACTIVATE_PATH_FALLBACK',
                 ]
             activate.append(line)
-    with open('virtualenv/bin/activate', 'w') as f:
+    with open(os.path.join(target, 'bin', 'activate'), 'w') as f:
         f.write('\n'.join(activate))
 
 
