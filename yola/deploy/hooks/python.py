@@ -43,7 +43,7 @@ def ve_version(req_hash):
 
 
 def download_ve(app, version, artifacts_factory, target='virtualenv.tar.gz'):
-    artifacts = artifacts_factory('virtualenv.tar.gz.%s' % version)
+    artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
     artifacts.update_versions()
     if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
@@ -57,7 +57,7 @@ def download_ve(app, version, artifacts_factory, target='virtualenv.tar.gz'):
 def upload_ve(app, version, artifacts_factory):
     # TODO: Don't require a chdir
     log.debug('Uploading virtualenv %s for %s', version, app)
-    artifacts = artifacts_factory('virtualenv.tar.gz.%s' % version)
+    artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
     artifacts.update_versions()
     artifacts.upload('virtualenv.tar.gz')
 
