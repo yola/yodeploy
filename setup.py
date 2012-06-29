@@ -2,6 +2,20 @@
 
 from setuptools import setup, find_packages
 
+
+def parse_requirements():
+    requirements = []
+    with open('requirements.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('#'):
+                continue
+            requirements.append(line)
+    return requirements
+
+
 setup(
     name='yola.deploy',
     description='Helpers for Deploy hooks',
@@ -11,4 +25,5 @@ setup(
     version="0.1",
     packages=find_packages(),
     test_suite='nose.collector',
+    install_requires=parse_requirements(),
 )
