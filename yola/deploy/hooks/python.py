@@ -54,16 +54,14 @@ def download_ve(app, version, artifacts_factory, target='virtualenv.tar.gz'):
         return False
 
 
-def upload_ve(app, version, artifacts_factory):
-    # TODO: Don't require a chdir
+def upload_ve(app, version, artifacts_factory, filename):
     log.debug('Uploading virtualenv %s for %s', version, app)
     artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
     artifacts.update_versions()
-    artifacts.upload('virtualenv.tar.gz')
+    artifacts.upload(filename)
 
 
 def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
-    # TODO: Don't require a chdir
     log.debug('Unpacking virtualenv.tar.gz')
     t = tarfile.open(tarball, 'r')
     try:
