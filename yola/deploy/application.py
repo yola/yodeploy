@@ -60,11 +60,13 @@ class Application(object):
         '''
         workdir = os.path.dirname(tarball)
         tar = tarfile.open(tarball, 'r')
-        roots = set(name.split('/', 1)[0] for name in tar.getnames())
-        if len(roots) > 1:
-            raise Exception("Tarball has more than one top-level directory")
-        tar.extractall(path=workdir)
-        tar.close()
+        try:
+            roots = set(name.split('/', 1)[0] for name in tar.getnames())
+            if len(roots) > 1:
+                raise Exception("Tarball has > 1 top-level directory")
+            tar.extractall(path=workdir)
+        finally:
+            tar.close()
 
         extracted_root = os.path.join(workdir, list(roots)[0])
         root = os.path.join(workdir, root)

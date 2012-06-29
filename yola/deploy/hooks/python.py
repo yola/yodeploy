@@ -66,8 +66,10 @@ def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
     # TODO: Don't require a chdir
     log.debug('Unpacking virtualenv.tar.gz')
     t = tarfile.open(tarball, 'r')
-    t.extractall(directory)
-    t.close()
+    try:
+        t.extractall(directory)
+    finally:
+        t.close()
 
 
 def create_ve():
@@ -92,8 +94,10 @@ def create_ve():
     relocateable_ve()
 
     t = tarfile.open('virtualenv.tar.gz', 'w:gz')
-    t.add('virtualenv')
-    t.close()
+    try:
+        t.add('virtualenv')
+    finally:
+        t.close()
 
 
 def relocateable_ve():
