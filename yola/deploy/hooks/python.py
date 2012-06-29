@@ -81,8 +81,16 @@ def create_ve(app_dir):
 
     virtualenv.create_environment(ve_dir, site_packages=False)
     with open(os.path.join(app_dir, 'requirements.txt'), 'r') as f:
-        lines = (line.strip() for line in f)
-        requirements = [line for line in lines if line and line[0] != '-']
+        requirements = []
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('-'):
+                continue
+            if line.startswith('#'):
+                continue
+            requirements.append(line)
 
     if requirements:
         cmd = [os.path.join(ve_dir, 'bin', 'python'),
