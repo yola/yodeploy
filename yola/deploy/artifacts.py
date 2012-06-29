@@ -120,6 +120,14 @@ class ArtifactsBase(object):
                 state_dir, 'artifacts', self.app,
                 self.filename + '.versions'))
 
+    @property
+    def versions(self):
+        '''Get versions available for an artifact'''
+        return self._versions
+
+    def update_versions(self):
+        pass
+
 
 class LocalArtifacts(ArtifactsBase):
     '''Store artifacts on local machine'''
@@ -136,14 +144,6 @@ class LocalArtifacts(ArtifactsBase):
                                 self.filename)
         else:
             return os.path.join(self._artifact_dir, self.app, self.filename)
-
-    @property
-    def versions(self):
-        '''Get versions available for an artifact'''
-        return self._versions
-
-    def update_versions(self):
-        pass
 
     def upload(self, target, meta=None):
         '''Upload a file to the artifacts directory'''
@@ -207,10 +207,6 @@ class S3Artifacts(ArtifactsBase):
             return os.path.join(self.app, self.env, self.filename)
         else:
             return os.path.join(self.app, self.filename)
-
-    @property
-    def versions(self):
-        return self._versions
 
     def update_versions(self):
         '''
