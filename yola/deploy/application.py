@@ -16,7 +16,7 @@ class Application(object):
     will do it all in the right order.
     '''
 
-    def __init__(self, app, environment, artifacts_factory, deploy_root,
+    def __init__(self, app, environment, artifacts_factory, deploy_settings,
                  artifacts=None):
         self.app = app
         self.environment = environment
@@ -24,7 +24,8 @@ class Application(object):
         if artifacts is None:
             artifacts = artifacts_factory()
         self.artifacts = artifacts
-        self.appdir = os.path.join(deploy_root, app)
+        self.settings = deploy_settings
+        self.appdir = os.path.join(deploy_settings.paths.root, app)
         self._lock = None
 
     @property
@@ -85,7 +86,7 @@ class Application(object):
                 m = imp.load_module(fake_mod, f, fn, description)
             hooks = getattr(m, 'hooks')(
                     self.app, self.environment, self.appdir, version,
-                    self.artifacts_factory)
+                    self.settings, self.artifacts_factory)
             getattr(hooks, hook)()
 
     def deploy(self, version):
