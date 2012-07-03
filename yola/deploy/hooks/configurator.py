@@ -14,6 +14,7 @@ class ConfiguratedApp(DeployHook):
         artifacts.update_versions()
         if not artifacts.versions.latest:
             raise Exception("No configs in artifacts repository")
+        app_dir = os.path.join(self.root, 'versions', self.version)
         conf_root = os.path.join(self.settings.paths.root, 'configs')
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
         conf_local = os.path.join(conf_root, 'local')
@@ -37,6 +38,6 @@ class ConfiguratedApp(DeployHook):
                                  [conf_local, configs],
                                  self.root)
         config = smush_config(sources)
-        write_config(config, self.root)
+        write_config(config, app_dir)
 
         super(ConfiguratedApp, self).prepare()
