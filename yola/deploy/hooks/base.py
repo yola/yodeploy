@@ -1,7 +1,8 @@
 class DeployHook(object):
-    def __init__(self, app, env, root, version, settings, artifacts_factory):
+    def __init__(self, app, target, root, version, settings,
+                 artifacts_factory):
         self.app = app
-        self.env = env
+        self.target = target
         self.root = root
         self.version = version
         self.settings = settings

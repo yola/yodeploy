@@ -106,14 +106,14 @@ class ArtifactsBase(object):
     Basic Abstract class for Different Artifacts handler to implement
     '''
 
-    def __init__(self, app, env, state_dir, filename=None):
+    def __init__(self, app, target, state_dir, filename=None):
         self.app = app
         self.filename = filename or (app + '.tar.gz')
-        self.env = env
+        self.target = target
 
-        if env:
+        if target:
             self._versions = ArtifactVersions(path=os.path.join(
-                state_dir, 'artifacts', self.app, self.env,
+                state_dir, 'artifacts', self.app, self.target,
                 self.filename + '.versions'))
         else:
             self._versions = ArtifactVersions(path=os.path.join(
@@ -132,15 +132,15 @@ class ArtifactsBase(object):
 class LocalArtifacts(ArtifactsBase):
     '''Store artifacts on local machine'''
 
-    def __init__(self, app, env, state_dir, artifact_dir, filename=None):
-        super(LocalArtifacts, self).__init__(app, env, state_dir, filename)
+    def __init__(self, app, target, state_dir, artifact_dir, filename=None):
+        super(LocalArtifacts, self).__init__(app, target, state_dir, filename)
         self._artifact_dir = artifact_dir
 
     @property
     def _local_artifact(self):
         '''return the pathname to the file on local store'''
-        if self.env:
-            return os.path.join(self._artifact_dir, self.app, self.env,
+        if self.target:
+            return os.path.join(self._artifact_dir, self.app, self.target,
                                 self.filename)
         else:
             return os.path.join(self._artifact_dir, self.app, self.filename)
@@ -186,8 +186,8 @@ class LocalArtifacts(ArtifactsBase):
 
     def list(self):
         directory = os.path.join(self._artifact_dir, self.app)
-        if self.env:
-            directory = os.path.join(directory, self.env)
+        if self.target:
+            directory = os.path.join(directory, self.target)
         listing = []
         for filename in os.listdir(directory):
             pathname = os.path.join(directory, filename)
@@ -201,17 +201,17 @@ class LocalArtifacts(ArtifactsBase):
 
 # TODO: Log progress.
 class S3Artifacts(ArtifactsBase):
-    def __init__(self, app, env, state_dir, bucket, access_key, secret_key,
+    def __init__(self, app, target, state_dir, bucket, access_key, secret_key,
                  filename=None):
-        super(S3Artifacts, self).__init__(app, env, state_dir, filename)
+        super(S3Artifacts, self).__init__(app, target, state_dir, filename)
         s3 = boto.connect_s3(access_key, secret_key)
         self._bucket = s3.get_bucket(bucket)
 
     @property
     def _s3_filename(self):
-        # set the s3 prefix(path) to be app/[env]/filename
-        if self.env:
-            return os.path.join(self.app, self.env, self.filename)
+        # set the s3 prefix(path) to be app/[target]/filename
+        if self.target:
+            return os.path.join(self.app, self.target, self.filename)
         else:
             return os.path.join(self.app, self.filename)
 
@@ -268,7 +268,7 @@ class S3Artifacts(ArtifactsBase):
 
     def download(self, dest=None, version=None):
         '''
-        Download artificact from s3://bucket/app/[env]/filename and save to
+        Download artificact from s3://bucket/app/[target]/filename and save to
         dest. If the target directory doesnt exist, it is created. The
         version downloaded is returned.
         '''
@@ -288,7 +288,7 @@ class S3Artifacts(ArtifactsBase):
 
     def list(self):
         prefix = '%s/' % self.app
-        if self.env:
-            prefix += '%s/' % self.env
+        if self.target:
+            prefix += '%s/' % self.target
         return [k.name
                 for k in self._bucket.list(prefix=prefix, delimiter='/')]
