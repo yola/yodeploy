@@ -14,12 +14,15 @@ class ConfiguratedApp(DeployHook):
         artifacts.update_versions()
         if not artifacts.versions.latest:
             raise Exception("No configs in artifacts repository")
-        conf_tarball = os.path.join(self.settings.paths.settings, 'configs.tar.gz')
+        conf_tarball = os.path.join(self.settings.paths.settings,
+                                    'configs.tar.gz')
         artifacts.download(conf_tarball)
         tar = tarfile.open(conf_tarball, 'r')
         tar.extractall(path=self.settings.paths.settings)
         tar.close()
-        sources = config_sources(self.app, self.settings.environment, self.settings.cluster, [self.settings.paths.settings], self.root)
+        sources = config_sources(self.app, self.settings.environment,
+                                 self.settings.cluster,
+                                 [self.settings.paths.settings], self.root)
         config = smush_config(sources)
         write_config(config, self.root)
         super(ConfiguratedApp, self).prepare()

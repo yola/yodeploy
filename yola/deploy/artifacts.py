@@ -282,7 +282,7 @@ class S3Artifacts(ArtifactsBase):
             return
 
         k = self._bucket.get_key(self._s3_filename, version_id=version)
-        if version == None:
+        if version is None:
             version = k.version_id
         k.get_contents_to_filename(dest, version_id=version)
 
