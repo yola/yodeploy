@@ -42,12 +42,12 @@ def ve_version(req_hash):
                          req_hash)
 
 
-def download_ve(app, version, artifacts_factory, target='virtualenv.tar.gz'):
+def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
     artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
     artifacts.update_versions()
     if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
-        artifacts.download(target)
+        artifacts.download(dest)
         return True
     else:
         log.debug('No existing virtualenv %s for %s', version, app)
@@ -114,14 +114,14 @@ def create_ve(app_dir):
         os.chdir(cwd)
 
 
-def relocateable_ve(target):
+def relocateable_ve(ve_dir):
     log.debug('Making virtualenv relocatable')
-    virtualenv.make_environment_relocatable(target)
+    virtualenv.make_environment_relocatable(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
     activate = []
-    with open(os.path.join(target, 'bin', 'activate')) as f:
+    with open(os.path.join(ve_dir, 'bin', 'activate')) as f:
         for line in f:
             line = line.strip()
             if line == 'deactivate () {':
@@ -163,7 +163,7 @@ def relocateable_ve(target):
                     'unset ACTIVATE_PATH_FALLBACK',
                 ]
             activate.append(line)
-    with open(os.path.join(target, 'bin', 'activate'), 'w') as f:
+    with open(os.path.join(ve_dir, 'bin', 'activate'), 'w') as f:
         f.write('\n'.join(activate))
 
 

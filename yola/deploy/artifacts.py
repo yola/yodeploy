@@ -145,18 +145,18 @@ class LocalArtifacts(ArtifactsBase):
         else:
             return os.path.join(self._artifact_dir, self.app, self.filename)
 
-    def upload(self, target, meta=None):
+    def upload(self, source, meta=None):
         '''Upload a file to the artifacts directory'''
-        log.info('Uploading %s to artifacts', target)
+        log.info('Uploading %s to artifacts', source)
         # generate a version_id for the local meta data
         version = str(uuid.uuid4()).replace('-', '')
         artifactpath = self._local_artifact + '.' + version
 
-        log.debug('Copying %s to %s', target, artifactpath)
+        log.debug('Copying %s to %s', source, artifactpath)
         parentdir = os.path.dirname(artifactpath)
         if not os.path.exists(parentdir):
             os.makedirs(parentdir)
-        shutil.copy(target, artifactpath)
+        shutil.copy(source, artifactpath)
 
         # Update ymlink to the latest version
         if os.path.exists(self._local_artifact):
@@ -166,11 +166,11 @@ class LocalArtifacts(ArtifactsBase):
         # Update the version file
         self._versions.add_version(version, datetime.datetime.now(), meta)
 
-    def download(self, target=None, version=None):
-        '''Download artificact to target'''
-        if not target:
-            target = self.filename
-        target = os.path.realpath(target)
+    def download(self, dest=None, version=None):
+        '''Download artificact to dest'''
+        if not dest:
+            dest = self.filename
+        dest = os.path.realpath(dest)
 
         artifactpath = self._local_artifact
         # no version specified? get the latest
@@ -181,8 +181,8 @@ class LocalArtifacts(ArtifactsBase):
                                         os.readlink(artifactpath))
         # we could set the local artifacts directory to be same as local store,
         # in which case no copying is needed
-        if artifactpath != target:
-            shutil.copy2(artifactpath, target)
+        if artifactpath != dest:
+            shutil.copy2(artifactpath, dest)
 
     def list(self):
         directory = os.path.join(self._artifact_dir, self.app)
@@ -258,33 +258,33 @@ class S3Artifacts(ArtifactsBase):
 
         return self._versions
 
-    def upload(self, target, meta=None):
+    def upload(self, source, meta=None):
         '''Upload a file to the artifacts server'''
         k = boto.s3.key.Key(self._bucket)
         k.key = self._s3_filename
         if meta:
             k.update_metadata(meta)
-        k.set_contents_from_filename(target, reduced_redundancy=True)
+        k.set_contents_from_filename(source, reduced_redundancy=True)
 
-    def download(self, target=None, version=None):
+    def download(self, dest=None, version=None):
         '''
         Download artificact from s3://bucket/app/[env]/filename and save to
-        target. If the target directory doesnt exist, it is created. The
+        dest. If the target directory doesnt exist, it is created. The
         version downloaded is returned.
         '''
-        if not target:
-            target = self.filename
-        target = os.path.realpath(target)
+        if not dest:
+            dest = self.filename
+        dest = os.path.realpath(dest)
 
         # check we haven't downloaded it already
-        if os.path.exists(target):
+        if os.path.exists(dest):
             log.debug('File already downloaded, skipping fetch')
             return
 
         k = self._bucket.get_key(self._s3_filename, version_id=version)
         if version == None:
             version = k.version_id
-        k.get_contents_to_filename(target, version_id=version)
+        k.get_contents_to_filename(dest, version_id=version)
 
     def list(self):
         prefix = '%s/' % self.app

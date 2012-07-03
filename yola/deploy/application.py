@@ -113,7 +113,7 @@ class Application(object):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, self.artifacts.filename)
         # TODO: Migrate to git hashes everywhere
-        self.artifacts.download(target=tarball, version=version)
+        self.artifacts.download(dest=tarball, version=version)
         self._extract(tarball, version)
         os.unlink(tarball)
         staging = os.path.join(self.appdir, 'versions', version)
