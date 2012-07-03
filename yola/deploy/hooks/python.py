@@ -54,11 +54,12 @@ def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
         return False
 
 
-def upload_ve(app, version, artifacts_factory, filename):
+def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
     log.debug('Uploading virtualenv %s for %s', version, app)
     artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
     artifacts.update_versions()
-    artifacts.upload(filename)
+    if overwrite or artifacts.versions.latest is None:
+        artifacts.upload(filename)
 
 
 def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
