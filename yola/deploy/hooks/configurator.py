@@ -1,7 +1,9 @@
 import logging
 import tarfile
 import os
-from yola.configurator.smush import config_sources, smush_config, write_config
+
+from yola.configurator.base import read_config, write_config
+from yola.configurator.smush import config_sources, smush_config
 
 from .base import DeployHook
 
@@ -9,7 +11,16 @@ log = logging.getLogger(__name__)
 
 
 class ConfiguratedApp(DeployHook):
+    def __init__(self, *args, **kwargs):
+        super(ConfiguratedApp, self).__init__(*args, **kwargs)
+        self.config = None
+
     def prepare(self):
+        self.write_config()
+        self.config = self.read_config()
+        super(ConfiguratedApp, self).prepare()
+
+    def write_config(self):
         artifacts = self.artifacts_factory('configs.tar.gz', app='configs')
         artifacts.update_versions()
         if not artifacts.versions.latest:
@@ -40,4 +51,6 @@ class ConfiguratedApp(DeployHook):
         config = smush_config(sources)
         write_config(config, app_dir)
 
-        super(ConfiguratedApp, self).prepare()
+    def read_config(self):
+        app_dir = os.path.join(self.root, 'versions', self.version)
+        return read_config(app_dir)
