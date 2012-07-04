@@ -2,7 +2,7 @@ import logging
 import os
 import subprocess
 
-from yola.deploy.utils import chown_r
+from yola.deploy.util import chown_r
 from .configurator import ConfiguratedApp
 from .python import PythonApp
 from .templating import TemplatedApp
