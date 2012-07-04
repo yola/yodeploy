@@ -70,4 +70,4 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         subprocess.check_call([
             os.path.join(app_dir, 'virtualenv', 'bin/python'),
             os.path.join(app_dir, 'manage.py'),
-            command] + args)
+            command] + list(args))
