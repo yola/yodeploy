@@ -16,9 +16,20 @@ class ConfiguratedApp(DeployHook):
         self.config = None
 
     def prepare(self):
+        super(ConfiguratedApp, self).prepare()
+        self.configurator_prepare()
+
+    def deployed(self):
+        super(ConfiguratedApp, self).deployed()
+        self.configurator_deployed()
+
+    def configurator_prepare(self):
+        log.debug('Running ConfiguratedApp prepare hook')
         self.write_config()
         self.config = self.read_config()
-        super(ConfiguratedApp, self).prepare()
+
+    def configurator_deployed(self):
+        self.config = self.read_config()
 
     def write_config(self):
         artifacts = self.artifacts_factory('configs.tar.gz', app='configs')
