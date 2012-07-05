@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 class TemplatedApp(DeployHook):
     def template_filename(self, template_name):
-        app_dir = os.path.join(self.root, 'versions', self.version)
-        return os.path.join(app_dir, 'deploy', 'templates', template_name)
+        return os.path.join(self.deploy_dir, 'deploy', 'templates',
+                            template_name)
 
     def template_exists(self, template_name):
         return os.path.exists(self.template_filename(template_name))

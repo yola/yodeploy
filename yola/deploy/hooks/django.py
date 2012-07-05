@@ -31,13 +31,12 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        app_dir = os.path.join(self.root, 'versions', self.version)
         if self.template_exists('apache2/vhost.conf.template'):
             self.template('apache2/vhost.conf.template',
                     os.path.join('/etc/apache2/sites-enabled', self.app))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
             self.template('apache2/wsgi-handler.wsgi.template',
-                          os.path.join(app_dir, self.app + '.wsgi'))
+                          os.path.join(self.deploy_dir, self.app + '.wsgi'))
 
         if self.migrate_on_deploy:
             self.migrate()
@@ -57,7 +56,6 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        app_dir = os.path.join(self.root, 'versions', self.version)
         data_dir = os.path.join(self.root, 'data')
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.db.engine.endswith('sqlite3')
@@ -72,7 +70,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.manage_py('migrate')
 
         if new_db:
-            seed_data = os.path.join(app_dir, 'seed_data.json')
+            seed_data = os.path.join(self.deploy_dir, 'seed_data.json')
             if os.path.exists(seed_data):
                 self.manage_py('loaddata', seed_data)
 
@@ -80,7 +78,6 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             chown_r(data_dir, 'www-data', 'www-data')
 
     def manage_py(self, command, *args):
-        app_dir = os.path.join(self.root, 'versions', self.version)
         cmd = ['virtualenv/bin/python', 'manage.py', command] + list(args)
         log.debug("Executing %r", cmd)
-        subprocess.check_call(cmd, cwd=app_dir)
+        subprocess.check_call(cmd, cwd=self.deploy_dir)
