@@ -17,8 +17,8 @@ class TemplatedApp(DeployHook):
 
     def template(self, template_name, destination):
         log.debug('Parsing template: %s -> %s', template_name, destination)
-        app_dir = os.path.join(self.app, 'versions', self.version)
-        fn = os.path.join(app_dir, 'deploy', 'templates')
+        app_dir = os.path.join(self.root, 'versions', self.version)
+        fn = os.path.join(app_dir, 'deploy', 'templates', template_name)
         tmpl = tempita.Template.from_filename(fn)
 
         output = tmpl.substitute(self.config)
