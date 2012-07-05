@@ -175,14 +175,13 @@ class PythonApp(DeployHook):
 
     def python_prepare(self):
         log.debug('Running PythonApp prepare hook')
-        requirements = os.path.join(self.deploy_dir, 'requirements.txt')
+        requirements = self.deploy_path('requirements.txt')
         if os.path.exists(requirements):
             self.deploy_ve()
 
     def deploy_ve(self):
         log = logging.getLogger(__name__)
-        ve_hash = ve_version(sha224sum(
-                os.path.join(self.deploy_dir, 'requirements.txt')))
+        ve_hash = ve_version(sha224sum(self.deploy_path('requirements.txt')))
         ve_working = os.path.join(self.root, 'virtualenvs', 'unpack')
         ve_dir = os.path.join(self.root, 'virtualenvs', ve_hash)
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
@@ -199,4 +198,4 @@ class PythonApp(DeployHook):
             shutil.rmtree(ve_dir)
         os.rename(os.path.join(ve_working, 'virtualenv'), ve_dir)
         os.symlink(os.path.join('..', '..', 'virtualenvs', ve_hash),
-                   os.path.join(self.deploy_dir, 'virtualenv'))
+                   self.deploy_path('virtualenv'))

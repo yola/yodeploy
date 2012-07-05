@@ -36,7 +36,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                     os.path.join('/etc/apache2/sites-enabled', self.app))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
             self.template('apache2/wsgi-handler.wsgi.template',
-                          os.path.join(self.deploy_dir, self.app + '.wsgi'))
+                          self.deploy_path(self.app + '.wsgi'))
 
         if self.migrate_on_deploy:
             self.migrate()
@@ -70,7 +70,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.manage_py('migrate')
 
         if new_db:
-            seed_data = os.path.join(self.deploy_dir, 'seed_data.json')
+            seed_data = self.deploy_path('seed_data.json')
             if os.path.exists(seed_data):
                 self.manage_py('loaddata', seed_data)
 

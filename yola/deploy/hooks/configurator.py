@@ -36,8 +36,7 @@ class ConfiguratedApp(DeployHook):
         artifacts.update_versions()
         if not artifacts.versions.latest:
             raise Exception("No configs in artifacts repository")
-        app_conf_dir = os.path.join(self.deploy_dir, 'deploy',
-                                    'configuration')
+        app_conf_dir = self.deploy_path('deploy', 'configuration')
         conf_root = os.path.join(self.settings.paths.root, 'configs')
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
         conf_local = os.path.join(conf_root, 'local')
