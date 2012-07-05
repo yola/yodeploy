@@ -21,6 +21,10 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         super(DjangoApp, self).prepare()
         self.django_prepare()
 
+    def deployed(self):
+        super(DjangoApp, self).deployed()
+        self.django_deployed()
+
     def django_prepare(self):
         log.debug('Running DjangoApp prepare hook')
         if self.config is None:
@@ -38,6 +42,9 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.migrate()
 
         self.manage_py('collectstatic', '--noinput')
+
+    def django_deployed(self):
+        subprocess.check_call(('service', 'apache2', 'reload'))
 
     def migrate(self):
         log.info('Running migrations on %s', self.app)
