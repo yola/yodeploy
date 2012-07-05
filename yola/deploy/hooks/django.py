@@ -12,10 +12,11 @@ log = logging.getLogger(__name__)
 
 
 class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
+    migrate_on_deploy = False
+    uses_south = False
+
     def __init__(self, *args, **kwargs):
         super(ConfiguratedApp, self).__init__(*args, **kwargs)
-        self.migrate_on_deploy = False
-        self.uses_south = False
 
     def prepare(self):
         super(DjangoApp, self).prepare()
