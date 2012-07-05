@@ -16,7 +16,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     uses_south = False
 
     def __init__(self, *args, **kwargs):
-        super(ConfiguratedApp, self).__init__(*args, **kwargs)
+        super(DjangoApp, self).__init__(*args, **kwargs)
 
     def prepare(self):
         super(DjangoApp, self).prepare()
