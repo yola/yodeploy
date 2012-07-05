@@ -22,7 +22,9 @@ class TemplatedApp(DeployHook):
         fn = self.template_filename(template_name)
         tmpl = tempita.Template.from_filename(fn)
 
-        output = tmpl.substitute(conf=self.config)
+        output = tmpl.substitute(conf=self.config,
+                                 aconf=self.config.get(self.app, {}),
+                                 gconf=self.config.get('global', {}))
         with open(destination, 'w') as f:
             f.write(output)
 
