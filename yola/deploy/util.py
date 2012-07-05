@@ -6,7 +6,7 @@ import pwd
 def chown_r(path, user, group):
     '''recursive chown'''
     uid = pwd.getpwnam(user).pw_uid
-    gid = grp.getgrpnam(group).gr_gid
+    gid = grp.getgrnam(group).gr_gid
 
     for root, dirs, files in os.walk(path):
         os.chown(root, uid, gid)
@@ -20,7 +20,7 @@ def touch(path, user=None, group=None, perm=None):
     open(path, 'a').close()
 
     uid = pwd.getpwnam(user).pw_uid if user else -1
-    gid = grp.getgrpnam(group).gr_gid if group else -1
+    gid = grp.getgrnam(group).gr_gid if group else -1
     os.chown(path, uid, gid)
 
     if perm:
