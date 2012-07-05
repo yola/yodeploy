@@ -59,7 +59,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         app_dir = os.path.join(self.root, 'versions', self.version)
         data_dir = os.path.join(self.root, 'data')
-        uses_sqlite = self.config.db.engine.endswith('sqlite3')
+        aconf = self.config.get(self.app)
+        uses_sqlite = aconf.db.engine.endswith('sqlite3')
         new_db = False
         if uses_sqlite:
             if not os.path.exists(data_dir):
