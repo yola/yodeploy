@@ -67,7 +67,6 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
     def manage_py(self, command, *args):
         app_dir = os.path.join(self.root, 'versions', self.version)
-        subprocess.check_call([
-            os.path.join(app_dir, 'virtualenv', 'bin/python'),
-            os.path.join(app_dir, 'manage.py'),
-            command] + list(args))
+        cmd = ['virtualenv/bin/python', 'manage.py', command] + list(args)
+        log.debug("Executing %r", cmd)
+        subprocess.check_call(cmd, cwd=app_dir)
