@@ -2,7 +2,7 @@ import logging
 import os
 import subprocess
 
-from yola.deploy.util import chown_r
+from yola.deploy.util import chown_r, touch
 from .configurator import ConfiguratedApp
 from .python import PythonApp
 from .templating import TemplatedApp
@@ -40,6 +40,11 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         if self.migrate_on_deploy:
             self.migrate()
+
+        logfile = self.config.get(self.app, {}).get('path', {}).get('log',
+                                                                    None)
+        if logfile:
+            touch(logfile, 'www-data', 'adm', 0640)
 
         self.manage_py('collectstatic', '--noinput')
 
