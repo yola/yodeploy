@@ -18,7 +18,6 @@ class AttrDict(dict):
     __getattr__ = dict.__getitem__
 
 
-# TODO: Probably some unused code in here still
 class ArtifactVersions(object):
     '''
     The artifact jsonfile keeps information per artifacts.
