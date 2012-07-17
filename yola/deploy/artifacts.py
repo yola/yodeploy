@@ -158,7 +158,7 @@ class LocalArtifacts(ArtifactsBase):
             os.makedirs(parentdir)
         shutil.copy(source, artifactpath)
 
-        # Update ymlink to the latest version
+        # Update symlink to the latest version
         if os.path.exists(self._local_artifact):
             os.remove(self._local_artifact)
         os.symlink(os.path.basename(artifactpath), self._local_artifact)
@@ -188,6 +188,8 @@ class LocalArtifacts(ArtifactsBase):
         directory = os.path.join(self._artifact_dir, self.app)
         if self.target:
             directory = os.path.join(directory, self.target)
+        if not os.path.isdir(directory):
+            return []
         listing = []
         for filename in os.listdir(directory):
             pathname = os.path.join(directory, filename)
