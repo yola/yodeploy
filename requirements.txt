@@ -1,1 +1,4 @@
+Tempita
 boto
+virtualenv
+yola.configurator
