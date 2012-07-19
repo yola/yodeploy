@@ -21,3 +21,9 @@ class TmpDirTestCase(unittest.TestCase):
 
     def mkdir(self, *fragments):
         os.makedirs(self.tmppath(*fragments))
+
+    def assertTMPPExists(self, *fragments, **kwargs):
+        msg = kwargs.get('msg', None)
+        if not os.path.exists(self.tmppath(*fragments)):
+            self.fail(self._formatMessage(msg,
+                "does not exist: %s" % (os.path.join(*fragments))))
