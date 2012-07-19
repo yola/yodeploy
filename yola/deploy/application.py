@@ -1,9 +1,10 @@
-import fcntl
 import imp
 import logging
 import os
 import shutil
 import tarfile
+
+from yola.deploy.util import LockFile, LockedException
 
 
 log = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class Application(object):
         self.artifacts = artifacts
         self.settings = deploy_settings
         self.appdir = os.path.join(deploy_settings.paths.root, app)
-        self._lock = None
+        self._lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
 
     @property
     def live_version(self):
@@ -42,18 +43,13 @@ class Application(object):
         '''Take a lock on the application'''
         if not os.path.isdir(self.appdir):
             os.makedirs(self.appdir)
-        self._lock = os.open(os.path.join(self.appdir, 'deploy.lock'),
-                             os.O_CREAT | os.O_WRONLY, 0600)
         try:
-            fcntl.lockf(self._lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError:
+            self._lock.acquire()
+        except LockedException:
             raise Exception("Application locked by another deploy")
 
     def unlock(self):
-        fcntl.lockf(self._lock, fcntl.LOCK_UN)
-        os.unlink(os.path.join(self.appdir, 'deploy.lock'))
-        os.close(self._lock)
-        self._lock = None
+        self._lock.release()
 
     def _extract(self, tarball, root):
         '''Extract a tarball into its parent directory, rename the extracted
