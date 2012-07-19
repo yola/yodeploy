@@ -10,10 +10,11 @@ from ..util import chown_r, touch, LockFile, LockedException, UnlockedException
 class TestUtils(TmpDirTestCase):
     def test_chown_r(self):
         self.mkdir('foo', 'bar')
+        open(self.tmppath('foo', 'baz'), 'w').close()
         # We probably aren't root...
         my_user = pwd.getpwuid(os.getuid())[0]
         my_group = grp.getgrgid(os.getgid())[0]
-        chown_r(self.tmppath('foo', 'bar'), my_user, my_group)
+        chown_r(self.tmppath('foo'), my_user, my_group)
 
     def test_touch(self):
         touch(self.tmppath('foo'))
