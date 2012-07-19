@@ -1,4 +1,5 @@
 Tempita
 boto
+unittest2
 virtualenv
 yola.configurator
