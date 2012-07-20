@@ -109,3 +109,85 @@ class ApplicationTest(TmpDirTestCase):
 
         self.assertTMPPExists('srv', 'test', 'live')
         self.assertEqual(self.app.live_version, 'bar')
+
+    def test_swing_symlink_stale_live_new(self):
+        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo'))
+        os.makedirs(self.tmppath('srv', 'test', 'versions', 'bar'))
+        os.symlink(os.path.join('versions', 'foo'),
+                   self.tmppath('srv', 'test', 'live.new'))
+
+        self.app.lock()
+        self.app.swing_symlink('bar')
+        self.app.unlock()
+
+        self.assertTMPPExists('srv', 'test', 'live')
+        self.assertNotTMPPExists('srv', 'test', 'live.new')
+        self.assertEqual(self.app.live_version, 'bar')
+
+    def test_prepare_hook(self):
+        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy'))
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'hooks.py'), 'w') as f:
+            f.write("""import os
+
+from yola.deploy.hooks.base import DeployHook
+
+
+class Hooks(DeployHook):
+    def prepare(self):
+        open(os.path.join(self.root, 'hello'), 'w').close()
+
+
+hooks = Hooks
+""")
+        self.app.lock()
+        self.app.prepare('foo')
+        self.app.unlock()
+        self.assertTMPPExists('srv', 'test', 'hello')
+
+    def test_deployed(self):
+        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy'))
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'hooks.py'), 'w') as f:
+            f.write("""import os
+
+from yola.deploy.hooks.base import DeployHook
+
+
+class Hooks(DeployHook):
+    def deployed(self):
+        open(os.path.join(self.root, 'hello'), 'w').close()
+
+
+hooks = Hooks
+""")
+        self.app.lock()
+        self.app.deployed('foo')
+        self.app.unlock()
+        self.assertTMPPExists('srv', 'test', 'hello')
+
+    def test_deploy(self):
+        self.create_tar('test.tar.gz', 'foo/bar', contents={
+            'foo/deploy/hooks.py': """import os
+
+from yola.deploy.hooks.base import DeployHook
+
+
+class Hooks(DeployHook):
+    def prepare(self):
+        open(os.path.join(self.root, 'hello'), 'w').close()
+    def deployed(self):
+        open(os.path.join(self.root, 'there'), 'w').close()
+
+
+hooks = Hooks
+"""})
+        self.app.artifacts.upload(self.tmppath('test.tar.gz'))
+        version = self.app.artifacts.versions.latest.version_id
+        os.unlink(self.tmppath('test.tar.gz'))
+
+        self.app.deploy(version)
+        self.assertTMPPExists('srv', 'test', 'versions', version, 'bar')
+        self.assertTMPPExists('srv', 'test', 'live', 'bar')
+        self.assertTMPPExists('srv', 'test', 'hello')
+        self.assertTMPPExists('srv', 'test', 'there')
