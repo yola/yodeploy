@@ -23,19 +23,22 @@ class TmpDirTestCase(unittest.TestCase):
     def mkdir(self, *fragments):
         os.makedirs(self.tmppath(*fragments))
 
-    def create_tar(self, name, *contents):
+    def create_tar(self, name, *paths, **kwargs):
+        contents = kwargs.get('contents', {})
+        for path in paths:
+            contents.setdefault(path, 'foo bar baz\n')
         pwd = os.getcwd()
         os.mkdir(self.tmppath('create_tar_workdir'))
         os.chdir(self.tmppath('create_tar_workdir'))
         roots = set()
         try:
-            for pathname in contents:
+            for pathname, data in contents.iteritems():
                 if '/' in pathname:
                     if not os.path.exists(os.path.dirname(pathname)):
                         os.makedirs(os.path.dirname(pathname))
                 roots.add(pathname.split('/', 1)[0])
                 with open(pathname, 'w') as f:
-                    f.write('foo bar baz\n')
+                    f.write(data)
 
             tar = tarfile.open(self.tmppath(name), 'w:gz')
             try:
