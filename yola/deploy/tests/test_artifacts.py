@@ -1,6 +1,5 @@
 import json
 import os
-import tarfile
 
 from ..artifacts import ArtifactVersions, LocalArtifacts
 from . import TmpDirTestCase
@@ -103,19 +102,8 @@ class TestLocalArtifacts(TmpDirTestCase):
         self.artifacts = LocalArtifacts('test', None, self.tmppath('state'),
                                         self.tmppath('artifacts'))
 
-    def _create_tar(self, name, readme_contents):
-        readme = self.tmppath('README')
-        with open(readme, 'w') as f:
-            f.write(readme_contents)
-        tar = tarfile.open(self.tmppath(name), 'w:gz')
-        try:
-            tar.add(readme, arcname='README')
-        finally:
-            tar.close()
-            os.unlink(readme)
-
     def _sample_data(self):
-        self._create_tar('test.tar.gz', 'Existing data')
+        self.create_tar('test.tar.gz', 'foo/bar')
         os.mkdir(self.tmppath('artifacts', 'test'))
         self.test_version = '123456789000dead0000beef00001234'
         os.rename(self.tmppath('test.tar.gz'),
@@ -144,7 +132,7 @@ class TestLocalArtifacts(TmpDirTestCase):
         self.assertEqual(self.artifacts.list(), [])
 
     def test_upload(self):
-        self._create_tar('a.tar.gz', 'Hello there')
+        self.create_tar('a.tar.gz', 'foo/bar')
         self.artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertTMPPExists('artifacts', 'test', 'test.tar.gz')
 
@@ -153,7 +141,7 @@ class TestLocalArtifacts(TmpDirTestCase):
         symlink = self.tmppath('artifacts', 'test', 'test.tar.gz')
         old_symlink = os.readlink(symlink)
 
-        self._create_tar('a.tar.gz', 'Hello there')
+        self.create_tar('a.tar.gz', 'foo/bar')
         self.artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertNotEqual(os.readlink(symlink), old_symlink)
 
@@ -200,7 +188,7 @@ class TestLocalArtifacts(TmpDirTestCase):
         artifacts = LocalArtifacts('test', 'testing', self.tmppath('state'),
                                    self.tmppath('artifacts'))
 
-        self._create_tar('a.tar.gz', 'Hello there')
+        self.create_tar('a.tar.gz', 'foo/bar')
         artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertTMPPExists('artifacts', 'test', 'testing', 'test.tar.gz')
 
