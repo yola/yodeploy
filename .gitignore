@@ -1,6 +1,7 @@
 *.pyc
-/.coverage
+.*.swp
 /*.egg-info
+/.coverage
 /build
 /dist
 /virtualenv
