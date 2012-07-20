@@ -14,16 +14,16 @@ class LockFileTest(TmpDirTestCase):
     def test_creation_deletion(self):
         lf = LockFile(self.tmppath('lockfile'))
         lf.acquire()
-        self.assertTrue(os.path.exists(self.tmppath('lockfile')))
+        self.assertTMPPExists('lockfile')
         lf.release()
-        self.assertFalse(os.path.exists(self.tmppath('lockfile')))
+        self.assertNotTMPPExists('lockfile')
 
     def test_stale_lock(self):
         lf = LockFile(self.tmppath('lockfile'))
         open(self.tmppath('lockfile'), 'w').close()
         lf.acquire()
         lf.release()
-        self.assertFalse(os.path.exists(self.tmppath('lockfile')))
+        self.assertNotTMPPExists('lockfile')
 
     def test_already_acquired(self):
         lf = LockFile(self.tmppath('lockfile'))

@@ -1,11 +1,9 @@
-from tempfile import mkdtemp
 import json
 import os
-import shutil
 import tarfile
-import unittest
 
-from yola.deploy.artifacts import ArtifactVersions, LocalArtifacts
+from ..artifacts import ArtifactVersions, LocalArtifacts
+from . import TmpDirTestCase
 
 TEST_JSON = """
 {
@@ -36,16 +34,10 @@ TEST_JSON = """
 TEST_VERSIONS = json.loads(TEST_JSON)
 
 
-class TestArtifactiVersions(unittest.TestCase):
-    def setUp(self):
-        self.tmpdir = mkdtemp(prefix='yola.deploy-test')
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir)
-
+class TestArtifactiVersions(TmpDirTestCase):
     @property
     def _test_fn(self):
-        return os.path.join(self.tmpdir, 'test.json')
+        return self.tmppath('test.json')
 
     def _write_test_json(self):
         with open(self._test_fn, 'w') as f:
@@ -103,42 +95,38 @@ class TestArtifactiVersions(unittest.TestCase):
         self.assertTrue(av.distance('abc', 'def') is None)
 
 
-class TestLocalArtifacts(unittest.TestCase):
+class TestLocalArtifacts(TmpDirTestCase):
     def setUp(self):
-        self.tmpdir = mkdtemp(prefix='yola.deploy-test')
-        self.state_dir = os.path.join(self.tmpdir, 'state')
-        self.artifacts_dir = os.path.join(self.tmpdir, 'artifacts')
-        os.mkdir(self.state_dir)
-        os.mkdir(self.artifacts_dir)
-        self.artifacts = LocalArtifacts('test', None, self.state_dir,
-                                        self.artifacts_dir)
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir)
+        super(TestLocalArtifacts, self).setUp()
+        os.mkdir(self.tmppath('state'))
+        os.mkdir(self.tmppath('artifacts'))
+        self.artifacts = LocalArtifacts('test', None, self.tmppath('state'),
+                                        self.tmppath('artifacts'))
 
     def _create_tar(self, name, readme_contents):
-        readme = os.path.join(self.tmpdir, 'README')
+        readme = self.tmppath('README')
         with open(readme, 'w') as f:
             f.write(readme_contents)
-        tar = tarfile.open(os.path.join(self.tmpdir, name), 'w:gz')
-        tar.add(readme, arcname='README')
-        tar.close()
-        os.unlink(readme)
+        tar = tarfile.open(self.tmppath(name), 'w:gz')
+        try:
+            tar.add(readme, arcname='README')
+        finally:
+            tar.close()
+            os.unlink(readme)
 
     def _sample_data(self):
         self._create_tar('test.tar.gz', 'Existing data')
-        os.mkdir(os.path.join(self.artifacts_dir, 'test'))
+        os.mkdir(self.tmppath('artifacts', 'test'))
         self.test_version = '123456789000dead0000beef00001234'
-        os.rename(os.path.join(self.tmpdir, 'test.tar.gz'),
-                  os.path.join(self.artifacts_dir, 'test',
+        os.rename(self.tmppath('test.tar.gz'),
+                  self.tmppath('artifacts', 'test',
                                'test.tar.gz.%s' % self.test_version))
         os.symlink('test.tar.gz.%s' % self.test_version,
-                   os.path.join(self.artifacts_dir, 'test', 'test.tar.gz'))
-        os.mkdir(os.path.join(self.state_dir, 'artifacts'))
-        os.mkdir(os.path.join(self.state_dir, 'artifacts', 'test'))
-        with open(os.path.join(self.state_dir, 'artifacts', 'test',
-                               'test.tar.gz.versions'), 'w'
-                 ) as f:
+                   self.tmppath('artifacts', 'test', 'test.tar.gz'))
+        os.mkdir(self.tmppath('state', 'artifacts'))
+        os.mkdir(self.tmppath('state', 'artifacts', 'test'))
+        with open(self.tmppath('state', 'artifacts', 'test',
+                               'test.tar.gz.versions'), 'w') as f:
             json.dump({
                 'versions': [
                     {
@@ -157,17 +145,16 @@ class TestLocalArtifacts(unittest.TestCase):
 
     def test_upload(self):
         self._create_tar('a.tar.gz', 'Hello there')
-        self.artifacts.upload(os.path.join(self.tmpdir, 'a.tar.gz'))
-        self.assertTrue(os.path.exists(os.path.join(self.artifacts_dir,
-                                                    'test', 'test.tar.gz')))
+        self.artifacts.upload(self.tmppath('a.tar.gz'))
+        self.assertTMPPExists('artifacts', 'test', 'test.tar.gz')
 
     def test_re_upload(self):
         self._sample_data()
-        symlink = os.path.join(self.artifacts_dir, 'test', 'test.tar.gz')
+        symlink = self.tmppath('artifacts', 'test', 'test.tar.gz')
         old_symlink = os.readlink(symlink)
 
         self._create_tar('a.tar.gz', 'Hello there')
-        self.artifacts.upload(os.path.join(self.tmpdir, 'a.tar.gz'))
+        self.artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertNotEqual(os.readlink(symlink), old_symlink)
 
     def test_list(self):
@@ -176,15 +163,14 @@ class TestLocalArtifacts(unittest.TestCase):
 
     def test_list_subdirs(self):
         self._sample_data()
-        os.mkdir(os.path.join(self.artifacts_dir, 'test', 'testing'))
+        os.mkdir(self.tmppath('artifacts', 'test', 'testing'))
         self.assertEqual(sorted(self.artifacts.list()),
                          ['test.tar.gz', 'testing/'])
 
     def test_download(self):
         self._sample_data()
-        dest = os.path.join(self.tmpdir, 'down.tar.gz')
-        self.artifacts.download(dest=dest)
-        self.assertTrue(os.path.exists(dest))
+        self.artifacts.download(dest=self.tmppath('down.tar.gz'))
+        self.assertTMPPExists('down.tar.gz')
 
     def test_download_to_cwd(self):
         self._sample_data()
@@ -192,15 +178,15 @@ class TestLocalArtifacts(unittest.TestCase):
         os.chdir(self.tmpdir)
         try:
             self.artifacts.download()
-            self.assertTrue(os.path.exists('test.tar.gz'))
+            self.assertTMPPExists('test.tar.gz')
         finally:
             os.chdir(pwd)
 
     def test_download_version(self):
         self._sample_data()
-        dest = os.path.join(self.tmpdir, 'down.tar.gz')
+        dest = self.tmppath('down.tar.gz')
         self.artifacts.download(dest=dest, version=self.test_version)
-        self.assertTrue(os.path.exists(dest))
+        self.assertTMPPExists('down.tar.gz')
 
     def test_versions(self):
         self._sample_data()
@@ -211,16 +197,14 @@ class TestLocalArtifacts(unittest.TestCase):
         self.artifacts.update_versions()
 
     def test_with_target(self):
-        artifacts = LocalArtifacts('test', 'testing', self.state_dir,
-                                   self.artifacts_dir)
+        artifacts = LocalArtifacts('test', 'testing', self.tmppath('state'),
+                                   self.tmppath('artifacts'))
 
         self._create_tar('a.tar.gz', 'Hello there')
-        artifacts.upload(os.path.join(self.tmpdir, 'a.tar.gz'))
-        self.assertTrue(os.path.exists(os.path.join(
-            self.artifacts_dir, 'test', 'testing', 'test.tar.gz')))
+        artifacts.upload(self.tmppath('a.tar.gz'))
+        self.assertTMPPExists('artifacts', 'test', 'testing', 'test.tar.gz')
 
         self.assertEqual(artifacts.list(), ['test.tar.gz'])
 
-        dest = os.path.join(self.tmpdir, 'b.tar.gz')
-        artifacts.download(dest)
-        self.assertTrue(os.path.exists(dest))
+        artifacts.download(self.tmppath('b.tar.gz'))
+        self.assertTMPPExists('b.tar.gz')

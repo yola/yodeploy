@@ -1,36 +1,25 @@
 import os
-import shutil
-import tempfile
-import unittest
 
 from yola.configurator.dicts import DotDict
 
 from ..application import Application
 from ..artifacts import LocalArtifacts
+from . import TmpDirTestCase
 
 
-class ApplicationTest(unittest.TestCase):
+class ApplicationTest(TmpDirTestCase):
     def artifact_factory(self, filename=None, app=None):
         return LocalArtifacts('test', None, self.tmppath('state'),
                               self.tmppath('artifacts'))
 
-    def tmppath(self, *fragments):
-        return os.path.join(self.tmpdir, *fragments)
-
-    def mkdir(self, *fragments):
-        os.makedirs(self.tmppath(*fragments))
-
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix='yola.deploy-test')
+        super(ApplicationTest, self).setUp()
         settings = DotDict(
                 paths={
                     'root': self.tmppath('srv'),
                 },
         )
         self.app = Application('test', None, self.artifact_factory, settings)
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdir)
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
@@ -47,3 +36,8 @@ class ApplicationTest(unittest.TestCase):
         os.symlink(os.path.join('versions', 'foobar'),
                    self.tmppath('srv', 'test', 'live'))
         self.assertEqual(self.app.live_version, 'foobar')
+
+    def test_locking(self):
+        self.app.lock()
+        self.assertRaises(Exception, self.app.lock)
+        self.app.unlock()
