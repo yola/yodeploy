@@ -1,9 +1,7 @@
 import grp
 import os
 import pwd
-import shutil
 import stat
-import tarfile
 
 from . import TmpDirTestCase
 from ..util import (LockFile, LockedException, UnlockedException, chown_r,
@@ -84,41 +82,16 @@ class TestTouch(TmpDirTestCase):
 
 
 class TestExtractTar(TmpDirTestCase):
-    def create_tar(self, *contents):
-        pwd = os.getcwd()
-        os.mkdir(self.tmppath('workdir'))
-        os.chdir(self.tmppath('workdir'))
-        roots = set()
-        try:
-            for pathname in contents:
-                if '/' in pathname:
-                    if not os.path.exists(os.path.dirname(pathname)):
-                        os.makedirs(os.path.dirname(pathname))
-                roots.add(pathname.split('/', 1)[0])
-                with open(pathname, 'w') as f:
-                    f.write('foo bar baz\n')
-
-            tar = tarfile.open(self.tmppath('test.tar.gz'), 'w:gz')
-            try:
-                for pathname in list(roots):
-                    tar.add(pathname)
-            finally:
-                tar.close()
-        finally:
-            os.chdir(pwd)
-        shutil.rmtree(self.tmppath('workdir'))
-        return self.tmppath('test.tar.gz')
-
     def test_simple(self):
-        tar = self.create_tar('foo/bar', 'foo/baz')
-        extract_tar(tar, self.tmppath('extracted'))
+        self.create_tar('test.tar.gz', 'foo/bar', 'foo/baz')
+        extract_tar(self.tmppath('test.tar.gz'), self.tmppath('extracted'))
         self.assertTMPPExists('extracted')
         self.assertTMPPExists('extracted/bar')
         self.assertTMPPExists('extracted/baz')
 
     def test_multi_root(self):
-        tar = self.create_tar('foo/bar', 'baz/quux')
-        self.assertRaises(Exception, extract_tar, tar,
+        self.create_tar('test.tar.gz', 'foo/bar', 'baz/quux')
+        self.assertRaises(Exception, extract_tar, self.tmppath('test.tar.gz'),
                           self.tmppath('extracted'))
         self.assertNotTMPPExists('extracted')
         self.assertNotTMPPExists('extracted/bar')
