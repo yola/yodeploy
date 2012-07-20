@@ -2,9 +2,8 @@ import imp
 import logging
 import os
 import shutil
-import tarfile
 
-from yola.deploy.util import LockFile, LockedException
+from yola.deploy.util import LockFile, LockedException, extract_tar
 
 
 log = logging.getLogger(__name__)
@@ -51,26 +50,6 @@ class Application(object):
     def unlock(self):
         self._lock.release()
 
-    def _extract(self, tarball, root):
-        '''Extract a tarball into its parent directory, rename the extracted
-        root directory to root.
-        '''
-        workdir = os.path.dirname(tarball)
-        tar = tarfile.open(tarball, 'r')
-        try:
-            roots = set(name.split('/', 1)[0] for name in tar.getnames())
-            if len(roots) > 1:
-                raise Exception("Tarball has > 1 top-level directory")
-            tar.extractall(path=workdir)
-        finally:
-            tar.close()
-
-        extracted_root = os.path.join(workdir, list(roots)[0])
-        root = os.path.join(workdir, root)
-        if os.path.isdir(root):
-            shutil.rmtree(root)
-        os.rename(extracted_root, root)
-
     def _hook(self, hook, version):
         '''Run hook in the apps hooks'''
         fake_mod = '_deploy_hooks'
@@ -110,7 +89,7 @@ class Application(object):
         tarball = os.path.join(unpack_dir, self.artifacts.filename)
         # TODO: Migrate to git hashes everywhere
         self.artifacts.download(dest=tarball, version=version)
-        self._extract(tarball, version)
+        extract_tar(tarball, os.path.join(unpack_dir, version))
         os.unlink(tarball)
         staging = os.path.join(self.appdir, 'versions', version)
         if os.path.isdir(staging):
