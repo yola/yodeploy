@@ -1,7 +1,8 @@
 import json
 import os
 
-from ..artifacts import ArtifactVersions, LocalArtifacts
+from ..artifacts import (ArtifactVersions, LocalArtifacts, AttrDict,
+                         build_artifacts_factory)
 from . import TmpDirTestCase
 
 TEST_JSON = """
@@ -196,3 +197,41 @@ class TestLocalArtifacts(TmpDirTestCase):
 
         artifacts.download(self.tmppath('b.tar.gz'))
         self.assertTMPPExists('b.tar.gz')
+
+
+class TestBuildArtifactFactory(TmpDirTestCase):
+    def setUp(self):
+        super(TestBuildArtifactFactory, self).setUp()
+        self.deploy_settings = AttrDict(
+            paths=AttrDict(
+                state=self.tmppath('state'),
+                artifacts=self.tmppath('artifacts'),
+            ),
+            artifacts=AttrDict(
+                provider='local',
+            ),
+        )
+
+    def test_local(self):
+        af = build_artifacts_factory('test', 'target', self.deploy_settings)
+        a = af()
+        self.assertIsInstance(a, LocalArtifacts)
+        self.assertEqual(a.app, 'test')
+        self.assertEqual(a.target, 'target')
+        self.assertEqual(a.filename, 'test.tar.gz')
+
+    def test_override_filename(self):
+        af = build_artifacts_factory('test', 'target', self.deploy_settings)
+        a = af('virtualenv.tar.gz')
+        self.assertIsInstance(a, LocalArtifacts)
+        self.assertEqual(a.app, 'test')
+        self.assertEqual(a.target, 'target')
+        self.assertEqual(a.filename, 'virtualenv.tar.gz')
+
+    def test_override_app(self):
+        af = build_artifacts_factory('test', 'target', self.deploy_settings)
+        a = af(app='foo')
+        self.assertIsInstance(a, LocalArtifacts)
+        self.assertEqual(a.app, 'foo')
+        self.assertEqual(a.target, 'target')
+        self.assertEqual(a.filename, 'foo.tar.gz')

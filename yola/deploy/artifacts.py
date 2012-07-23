@@ -293,3 +293,23 @@ class S3Artifacts(ArtifactsBase):
             prefix += '%s/' % self.target
         return [k.name
                 for k in self._bucket.list(prefix=prefix, delimiter='/')]
+
+
+def build_artifacts_factory(app, target, deploy_settings):
+    '''
+    Return a factory that will build the correct Artifacts class for our
+    deploy_settings
+    '''
+    def factory(filename=None, app=app):
+        provider = deploy_settings.artifacts.get('provider', 's3')
+        if provider == 'local':
+            return LocalArtifacts(app, target, deploy_settings.paths.state,
+                                  deploy_settings.paths.artifacts, filename)
+        elif provider == 's3':
+            return S3Artifacts(app, target, deploy_settings.paths.state,
+                               deploy_settings.artifacts.bucket,
+                               deploy_settings.artifacts.access_key,
+                               deploy_settings.artifacts.secret_key, filename)
+        else:
+            raise Exception("Unknown Artifacts Provider: %s" % provider)
+    return factory
