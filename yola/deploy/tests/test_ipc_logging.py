@@ -77,6 +77,7 @@ logger.warn("Testing 123")
         logger.addHandler(handler)
 
         tlss = ThreadedLogStreamServer()
+
         p = subprocess.Popen(
             (
                 'python',
@@ -93,3 +94,4 @@ logger.warn("Testing 123")
         logger.removeHandler(handler)
         logger.propegate = True
         self.assertTrue(buffer_.getvalue())
+        tlss.shutdown()

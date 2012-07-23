@@ -1,4 +1,5 @@
 import SocketServer
+import errno
 import logging
 import logging.handlers
 import pickle
@@ -26,13 +27,17 @@ class LoggingSocketRequestHandler(SocketServer.BaseRequestHandler):
         buf = ''
         header_size = struct.calcsize('>L')
         while True:
-            if len(buf) < header_size:
-                buf += self.request.recv(header_size - len(buf))
-                continue
-            size = struct.unpack('>L', buf[:header_size])[0] + header_size
-            if len(buf) < size:
-                buf += self.request.recv(size - len(buf))
-                continue
+            try:
+                if len(buf) < header_size:
+                    buf += self.request.recv(header_size - len(buf))
+                    continue
+                size = struct.unpack('>L', buf[:header_size])[0] + header_size
+                if len(buf) < size:
+                    buf += self.request.recv(size - len(buf))
+                    continue
+            except IOError, e:
+                if e.errno == errno.EBADF:
+                    break
             record = pickle.loads(buf[header_size:])
             record = logging.makeLogRecord(record)
             logger = logging.getLogger(record.name)
@@ -54,3 +59,7 @@ class ThreadedLogStreamServer(SocketServer.ThreadingMixIn,
         self.RequestHandlerClass = LoggingSocketRequestHandler
         self.daemon_threads = True
         self.process_request(self.socket, None)
+
+    def shutdown(self):
+        self.socket.close()
+        self.remote_socket.close()
