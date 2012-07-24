@@ -1,7 +1,8 @@
-import imp
 import logging
 import os
 import shutil
+import subprocess
+import sys
 
 import yola.deploy.config
 import yola.deploy.ipc_logging
@@ -55,17 +56,30 @@ class Application(object):
 
     def hook(self, hook, version):
         '''Run hook in the apps hooks'''
-        fake_mod = '_deploy_hooks'
         fn = os.path.join(self.appdir, 'versions', version,
                           'deploy', 'hooks.py')
-        if os.path.isfile(fn):
-            description = ('.py', 'r', imp.PY_SOURCE)
-            with open(fn) as f:
-                m = imp.load_module(fake_mod, f, fn, description)
-            hooks = getattr(m, 'hooks')(
-                    self.app, self.target, self.appdir, version,
-                    self.settings, self.artifacts_factory)
-            getattr(hooks, hook)()
+        if not os.path.isfile(fn):
+            return
+        # .__main__ is needed for silly Python 2.6
+        # See http://bugs.python.org/issue2751
+        # TODO: virtualenv
+        tlss = yola.deploy.ipc_logging.ThreadedLogStreamServer()
+        cmd = ['python', '-m', 'yola.deploy.__main__',
+               '--config', self.settings_fn,
+               '--app', self.app,
+               '--hook', hook,
+               '--log-fd', str(tlss.remote_socket.fileno()),
+        ]
+        if self.target:
+            cmd += ['--target', self.target]
+        cmd += [self.appdir, version]
+        try:
+            subprocess.check_call(cmd, env={
+                    'PATH': os.environ['PATH'],
+                    'PYTHONPATH': ':'.join(sys.path),
+            })
+        finally:
+            tlss.shutdown()
 
     def deploy(self, version):
         log.info('Deploying %s/%s', self.app, version)
