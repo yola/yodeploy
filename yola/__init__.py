@@ -1,4 +1,9 @@
 # This is a namespace package
+
+import warnings
+warnings.filterwarnings('ignore', 'Module yola was already imported.*',
+                        UserWarning)
+
 try:
     import pkg_resources
     pkg_resources.declare_namespace(__name__)
