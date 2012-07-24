@@ -5,6 +5,7 @@ import socket
 import os
 
 import yola.deploy.artifacts
+import yola.deploy.ipc_logging
 
 
 def main():
@@ -39,8 +40,9 @@ def main():
     artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
             app, args.target, deploy_settings)
 
-    call_hook(app, args.target, args.appdir, args.version, deploy_settings,
-              artifacts_factory, args.hook)
+    if args.hook:
+        call_hook(app, args.target, args.appdir, args.version, deploy_settings,
+                  artifacts_factory, args.hook)
 
 
 def setup_logging(log_fd, verbose):
