@@ -3,6 +3,8 @@ import logging
 import os
 import shutil
 
+import yola.deploy.config
+import yola.deploy.ipc_logging
 from yola.deploy.util import LockFile, LockedException, extract_tar
 
 
@@ -16,7 +18,7 @@ class Application(object):
     will do it all in the right order.
     '''
 
-    def __init__(self, app, target, artifacts_factory, deploy_settings,
+    def __init__(self, app, target, artifacts_factory, settings_file,
                  artifacts=None):
         self.app = app
         self.target = target
@@ -24,8 +26,9 @@ class Application(object):
         if artifacts is None:
             artifacts = artifacts_factory()
         self.artifacts = artifacts
-        self.settings = deploy_settings
-        self.appdir = os.path.join(deploy_settings.paths.root, app)
+        self.settings_fn = settings_file
+        self.settings = yola.deploy.config.load_settings(settings_file)
+        self.appdir = os.path.join(self.settings.paths.root, app)
         self._lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
 
     @property

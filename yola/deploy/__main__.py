@@ -5,6 +5,7 @@ import socket
 import os
 
 import yola.deploy.artifacts
+import yola.deploy.config
 import yola.deploy.ipc_logging
 
 
@@ -36,7 +37,7 @@ def main():
     setup_logging(args.log_fd, args.verbose)
 
     app = os.path.basename(os.path.abspath(args.appdir))
-    deploy_settings = load_settings(args.config)
+    deploy_settings = yola.deploy.config.load_settings(args.config)
     artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
             app, args.target, deploy_settings)
 
@@ -56,15 +57,6 @@ def setup_logging(log_fd, verbose):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig()
-
-
-def load_settings(fn):
-    '''Load deploy_settings from the specified filename'''
-    fake_mod = '_deploy_settings'
-    description = ('.py', 'r', imp.PY_SOURCE)
-    with open(fn) as f:
-        m = imp.load_module(fake_mod, f, fn, description)
-    return m.deploy_settings
 
 
 def call_hook(app, target, appdir, version, deploy_settings, artifacts_factory,

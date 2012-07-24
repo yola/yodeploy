@@ -1,7 +1,5 @@
 import os
 
-from yola.configurator.dicts import DotDict
-
 from ..application import Application
 from ..artifacts import LocalArtifacts
 
@@ -15,18 +13,21 @@ class ApplicationTest(TmpDirTestCase):
 
     def setUp(self):
         super(ApplicationTest, self).setUp()
-        settings = DotDict(
-                paths={
-                    'root': self.tmppath('srv'),
-                },
-        )
-        self.app = Application('test', None, self.artifact_factory, settings)
+        with open(self.tmppath('config.py'), 'w') as f:
+            f.write("""
+class AttrDict(dict):
+    __getattr__ = dict.__getitem__
+
+deploy_settings = AttrDict(paths=AttrDict(root='%s'))
+""" % self.tmppath('srv'))
+        self.app = Application('test', None, self.artifact_factory,
+                               self.tmppath('config.py'))
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
         self.assertTrue(self.app.target is None)
         self.assertTrue(isinstance(self.app.artifacts, LocalArtifacts))
-        self.assertTrue(isinstance(self.app.settings, DotDict))
+        self.assertTrue(isinstance(self.app.settings, dict))
         self.assertEqual(self.app.appdir, self.tmppath('srv', 'test'))
 
     def test_live_version_never_deployed(self):
