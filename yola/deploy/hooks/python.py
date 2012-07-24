@@ -3,7 +3,8 @@ import os
 import shutil
 
 from .base import DeployHook
-from ..virtualenv import ve_version, sha224sum, download_ve, unpack_ve
+from ..util import extract_tar
+from ..virtualenv import ve_version, sha224sum, download_ve
 
 log = logging.getLogger(__name__)
 
@@ -33,9 +34,9 @@ class PythonApp(DeployHook):
         if not download_ve(self.app, ve_hash, self.artifacts_factory,
                            tarball):
             raise Exception("Could not locate virtualenv %s" % ve_hash)
-        unpack_ve(tarball, ve_working)
+        extract_tar(tarball, ve_working)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
-        os.rename(os.path.join(ve_working, 'virtualenv'), ve_dir)
+        os.rename(ve_working, ve_dir)
         os.symlink(os.path.join('..', '..', 'virtualenvs', ve_hash),
                    self.deploy_path('virtualenv'))

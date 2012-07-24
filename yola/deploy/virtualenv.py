@@ -58,15 +58,6 @@ def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
         artifacts.upload(filename)
 
 
-def unpack_ve(tarball='virtualenv.tar.gz', directory='.'):
-    log.debug('Unpacking virtualenv.tar.gz')
-    t = tarfile.open(tarball, 'r')
-    try:
-        t.extractall(directory)
-    finally:
-        t.close()
-
-
 def create_ve(app_dir):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
