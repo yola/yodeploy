@@ -16,7 +16,8 @@ def main():
     p.add_argument('-v', '--verbose', action='store_true',
                    help='Increase verbosity')
     p.add_argument('--log-fd', metavar='FD', type=int,
-                   help='File descriptor to send pickled log events to '
+                   help='File descriptor referring to a Unix Domain Socket to '
+                        'send pickled log events over '
                         '(not for interactive use)')
     p.add_argument('-A', '--app', metavar='NAME',
                    help='The application name '
