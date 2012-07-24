@@ -50,7 +50,7 @@ class Application(object):
     def unlock(self):
         self._lock.release()
 
-    def _hook(self, hook, version):
+    def hook(self, hook, version):
         '''Run hook in the apps hooks'''
         fake_mod = '_deploy_hooks'
         fn = os.path.join(self.appdir, 'versions', version,
@@ -101,7 +101,7 @@ class Application(object):
         '''Post-unpack, pre-swing hook'''
         assert self._lock is not None
         log.debug('Preparing %s/%s', self.app, version)
-        self._hook('prepare', version)
+        self.hook('prepare', version)
 
     def swing_symlink(self, version):
         '''Make version live'''
@@ -119,4 +119,4 @@ class Application(object):
         '''Post-swing hook'''
         assert self._lock is not None
         log.debug('Deployed hook %s/%s', self.app, version)
-        self._hook('deployed', version)
+        self.hook('deployed', version)
