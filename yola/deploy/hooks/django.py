@@ -1,6 +1,7 @@
 import logging
 import os
 import subprocess
+import sys
 
 from yola.deploy.util import chown_r, touch
 from .configurator import ConfiguratedApp
@@ -49,7 +50,11 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         self.manage_py('collectstatic', '--noinput')
 
     def django_deployed(self):
-        subprocess.check_call(('service', 'apache2', 'reload'))
+        try:
+            subprocess.check_call(('service', 'apache2', 'reload'))
+        except subprocess.CalledProcessError:
+            log.error("Unable to reload apache2")
+            sys.exit(1)
 
     def migrate(self):
         log.info('Running migrations on %s', self.app)
@@ -80,4 +85,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     def manage_py(self, command, *args):
         cmd = ['virtualenv/bin/python', 'manage.py', command] + list(args)
         log.debug("Executing %r", cmd)
-        subprocess.check_call(cmd, cwd=self.deploy_dir)
+        try:
+            subprocess.check_call(cmd, cwd=self.deploy_dir)
+        except subprocess.CalledProcessError:
+            log.error("Management command failed: %r", args)
+            sys.exit(1)

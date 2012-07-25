@@ -108,6 +108,9 @@ class Application(object):
                     'PATH': os.environ['PATH'],
                     'PYTHONPATH': ':'.join(sys.path),
             })
+        except subprocess.CalledProcessError:
+            log.error("Hook '%s' failed %s/%s", hook, self.app, version)
+            raise Exception("Hook failed")
         finally:
             tlss.shutdown()
 
