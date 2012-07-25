@@ -88,5 +88,5 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         try:
             subprocess.check_call(cmd, cwd=self.deploy_dir)
         except subprocess.CalledProcessError:
-            log.error("Management command failed: %r", args)
+            log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
