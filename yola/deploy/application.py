@@ -6,6 +6,7 @@ import sys
 
 import yola.deploy.config
 import yola.deploy.ipc_logging
+import yola.deploy.virtualenv
 from yola.deploy.util import LockFile, LockedException, extract_tar
 
 
@@ -54,17 +55,48 @@ class Application(object):
     def unlock(self):
         self._lock.release()
 
+    def deploy_ve(self, version):
+        '''Unpack a virtualenv for the deploy hooks, and return its location
+        on the FS
+        '''
+        deploy_req_fn = os.path.join(self.appdir, 'versions', version,
+                                     'deploy', 'requirements.txt')
+        ve_hash = yola.deploy.virtualenv.sha224sum(deploy_req_fn)
+        ve_hash = yola.deploy.virtualenv.ve_version(ve_hash)
+        ve_dir = os.path.join(self.settings.paths.root, 'deploy',
+                              'virtualenvs', ve_hash)
+        if os.path.exists(ve_dir):
+            return ve_dir
+        ve_working = os.path.join(self.settings.paths.root, 'deploy',
+                                  'virtualenvs', 'unpack')
+        ve_unpack_root = os.path.join(ve_working, 'virtualenv')
+        tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
+        log.debug('Deploying hook virtualenv %s', ve_hash)
+        if not os.path.exists(ve_working):
+            os.makedirs(ve_working)
+        if not yola.deploy.virtualenv.download_ve('deploy', ve_hash,
+                                                  self.artifacts_factory,
+                                                  tarball):
+            raise Exception("Could not locate virtualenv %s" % ve_hash)
+        extract_tar(tarball, ve_unpack_root)
+        if os.path.exists(ve_dir):
+            shutil.rmtree(ve_dir)
+        os.rename(ve_unpack_root, ve_dir)
+        return ve_dir
+
     def hook(self, hook, version):
         '''Run hook in the apps hooks'''
         fn = os.path.join(self.appdir, 'versions', version,
                           'deploy', 'hooks.py')
         if not os.path.isfile(fn):
             return
+        ve = self.deploy_ve(version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
         # TODO: virtualenv
         tlss = yola.deploy.ipc_logging.ThreadedLogStreamServer()
-        cmd = ['python', '-m', 'yola.deploy.__main__',
+        cmd = [os.path.join(ve, 'bin', 'python'),
+               '-m', 'yola.deploy.__main__',
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,

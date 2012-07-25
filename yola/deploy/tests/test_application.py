@@ -2,14 +2,15 @@ import os
 
 from ..application import Application
 from ..artifacts import LocalArtifacts
+from ..virtualenv import ve_version, sha224sum, create_ve, upload_ve
 
 from . import TmpDirTestCase
 
 
 class ApplicationTest(TmpDirTestCase):
     def artifact_factory(self, filename=None, app=None):
-        return LocalArtifacts('test', None, self.tmppath('state'),
-                              self.tmppath('artifacts'))
+        return LocalArtifacts(app or 'test', None, self.tmppath('state'),
+                              self.tmppath('artifacts'), filename)
 
     def setUp(self):
         super(ApplicationTest, self).setUp()
@@ -22,6 +23,17 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
 """ % self.tmppath('srv'))
         self.app = Application('test', None, self.artifact_factory,
                                self.tmppath('config.py'))
+        if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
+            self._create_test_ve()
+        self._deploy_ve_hash = ve_version(sha224sum(
+            'test-data/deploy-ve/requirements.txt'))
+
+    def _create_test_ve(self):
+        os.makedirs('test-data/deploy-ve')
+        if not os.path.exists('test-data/deploy-ve/requirements.txt'):
+            with open('test-data/deploy-ve/requirements.txt', 'w') as f:
+                f.write('yola.deploy\n')
+        create_ve('test-data/deploy-ve')
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
@@ -141,6 +153,11 @@ class Hooks(DeployHook):
 
 hooks = Hooks
 """)
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'requirements.txt'), 'w') as f:
+            f.write('yola.deploy\n')
+        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
+                  'test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
         self.app.prepare('foo')
         self.app.unlock()
@@ -162,6 +179,11 @@ class Hooks(DeployHook):
 
 hooks = Hooks
 """)
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'requirements.txt'), 'w') as f:
+            f.write('yola.deploy\n')
+        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
+                  'test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
         self.app.deployed('foo')
         self.app.unlock()
@@ -182,8 +204,12 @@ class Hooks(DeployHook):
 
 
 hooks = Hooks
-"""})
+""",
+            'foo/deploy/requirements.txt': 'yola.deploy\n',
+        })
         self.app.artifacts.upload(self.tmppath('test.tar.gz'))
+        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
+                  'test-data/deploy-ve/virtualenv.tar.gz')
         version = self.app.artifacts.versions.latest.version_id
         os.unlink(self.tmppath('test.tar.gz'))
 
