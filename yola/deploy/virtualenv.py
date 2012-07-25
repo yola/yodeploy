@@ -47,7 +47,8 @@ def ve_version(req_hash):
 
 
 def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
-    artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
+    artifacts = artifacts_factory(filename='virtualenv-%s.tar.gz' % version,
+                                  app=app)
     artifacts.update_versions()
     if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
@@ -60,7 +61,8 @@ def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
 
 def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
     log.debug('Uploading virtualenv %s for %s', version, app)
-    artifacts = artifacts_factory('virtualenv-%s.tar.gz' % version)
+    artifacts = artifacts_factory(filename='virtualenv-%s.tar.gz' % version,
+                                  app=app)
     artifacts.update_versions()
     if overwrite or artifacts.versions.latest is None:
         artifacts.upload(filename)
