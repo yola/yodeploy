@@ -74,10 +74,8 @@ class Application(object):
         log.debug('Deploying hook virtualenv %s', ve_hash)
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        if not yola.deploy.virtualenv.download_ve('deploy', ve_hash,
-                                                  self.artifacts_factory,
-                                                  tarball):
-            raise Exception("Could not locate virtualenv %s" % ve_hash)
+        yola.deploy.virtualenv.download_ve('deploy', ve_hash,
+                                           self.artifacts_factory, tarball)
         extract_tar(tarball, ve_unpack_root)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)

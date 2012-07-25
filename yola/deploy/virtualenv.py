@@ -53,10 +53,8 @@ def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
     if artifacts.versions.latest:
         log.debug('Downloading existing virtualenv %s for %s', version, app)
         artifacts.download(dest)
-        return True
     else:
-        log.debug('No existing virtualenv %s for %s', version, app)
-        return False
+        raise KeyError('No existing virtualenv %s for %s' % (version, app))
 
 
 def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
@@ -231,10 +229,16 @@ def main():
         else:
             shutil.rmtree('virtualenv')
 
-    if options.download and download_ve(options.app, version,
-                                        artifacts_factory):
-        options.upload = False
-        yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
+    if options.download:
+        downloaded = False
+        try:
+            download_ve(options.app, version, artifacts_factory)
+            downloaded = True
+        except KeyError:
+            pass
+        if downloaded:
+            options.upload = False
+            yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
         create_ve('.')

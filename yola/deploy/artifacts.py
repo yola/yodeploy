@@ -72,8 +72,8 @@ class ArtifactVersions(object):
             date_uploaded = date_uploaded.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
         if self.get_version(version_id):
-            raise Exception('Failed to append %s to ArtifactVersions, '
-                            'version already exists' % version_id)
+            raise ValueError('Failed to append %s to ArtifactVersions, '
+                             'version already exists' % version_id)
         version = Version(version_id=version_id, date_uploaded=date_uploaded,
                           metadata=meta)
         self._state.versions.append(version)
@@ -311,5 +311,5 @@ def build_artifacts_factory(app, target, deploy_settings):
                                deploy_settings.artifacts.access_key,
                                deploy_settings.artifacts.secret_key, filename)
         else:
-            raise Exception("Unknown Artifacts Provider: %s" % provider)
+            raise ValueError("Unknown Artifacts Provider: %s" % provider)
     return factory

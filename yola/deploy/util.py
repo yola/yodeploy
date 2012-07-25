@@ -78,7 +78,7 @@ def extract_tar(tarball, root):
     try:
         roots = set(name.split('/', 1)[0] for name in tar.getnames())
         if len(roots) > 1:
-            raise Exception("Tarball has > 1 top-level directory")
+            raise ValueError("Tarball has > 1 top-level directory")
         tar.extractall(path=workdir)
     finally:
         tar.close()

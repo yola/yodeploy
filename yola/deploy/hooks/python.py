@@ -31,9 +31,7 @@ class PythonApp(DeployHook):
 
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        if not download_ve(self.app, ve_hash, self.artifacts_factory,
-                           tarball):
-            raise Exception("Could not locate virtualenv %s" % ve_hash)
+        download_ve(self.app, ve_hash, self.artifacts_factory, tarball)
         extract_tar(tarball, ve_working)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
