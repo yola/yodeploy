@@ -91,7 +91,6 @@ class Application(object):
         ve = self.deploy_ve(version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
-        # TODO: virtualenv
         tlss = yola.deploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
                '-m', 'yola.deploy.__main__',
@@ -106,7 +105,6 @@ class Application(object):
         try:
             subprocess.check_call(cmd, env={
                     'PATH': os.environ['PATH'],
-                    'PYTHONPATH': ':'.join(sys.path),
             })
         except subprocess.CalledProcessError:
             log.error("Hook '%s' failed %s/%s", hook, self.app, version)
