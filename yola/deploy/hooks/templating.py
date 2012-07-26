@@ -23,7 +23,7 @@ class TemplatedApp(DeployHook):
 
         output = tmpl.substitute(conf=self.config,
                                  aconf=self.config.get(self.app, {}),
-                                 gconf=self.config.get('global', {}))
+                                 cconf=self.config.get('common', {}))
         with open(destination, 'w') as f:
             f.write(output)
 
