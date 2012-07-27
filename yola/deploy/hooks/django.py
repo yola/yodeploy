@@ -83,8 +83,9 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             chown_r(data_dir, 'www-data', 'www-data')
 
     def manage_py(self, command, *args):
-        cmd = ['virtualenv/bin/python', self.app, 'manage.py', command]
-        cmd += list(args)
+        cmd = ['virtualenv/bin/python',
+               os.path.join(self.app, 'manage.py'),
+               command] + list(args)
         log.debug("Executing %r", cmd)
         try:
             subprocess.check_call(cmd, cwd=self.deploy_dir)
