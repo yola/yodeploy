@@ -75,7 +75,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.manage_py('migrate')
 
         if new_db:
-            seed_data = self.deploy_path('seed_data.json')
+            seed_data = self.deploy_path(self.app, 'seed_data.json')
             if os.path.exists(seed_data):
                 self.manage_py('loaddata', seed_data)
 
