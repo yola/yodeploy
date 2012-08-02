@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     migrate_on_deploy = False
     uses_south = False
+    has_media = False
 
     def __init__(self, *args, **kwargs):
         super(DjangoApp, self).__init__(*args, **kwargs)
@@ -39,6 +40,17 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.template('apache2/wsgi-handler.wsgi.template',
                           self.deploy_path(self.app + '.wsgi'))
 
+        aconf = self.config.get(self.app)
+        uses_sqlite = aconf.db.engine.endswith('sqlite3')
+        data_dir = os.path.join(self.root, 'data')
+        media_dir = os.path.join(self.root, 'data', 'media')
+        if uses_sqlite or self.has_media:
+            if not os.path.exists(data_dir):
+                os.mkdir(data_dir)
+            if self.has_media and not os.path.exists(media_dir):
+                os.mkdir(media_dir)
+            chown_r(data_dir, 'www-data', 'www-data')
+
         if self.migrate_on_deploy:
             self.migrate()
 
@@ -50,6 +62,9 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         self.manage_py('collectstatic', '--noinput')
 
     def django_deployed(self):
+        data_dir = os.path.join(self.root, 'data')
+        if os.path.exists(data_dir):
+            chown_r(data_dir, 'www-data', 'www-data')
         try:
             subprocess.check_call(('service', 'apache2', 'reload'))
         except subprocess.CalledProcessError:
@@ -66,9 +81,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         uses_sqlite = aconf.db.engine.endswith('sqlite3')
         new_db = False
         if uses_sqlite:
-            if not os.path.exists(data_dir):
+            if not os.path.exists(aconf.db.name):
                 new_db = True
-                os.mkdir(data_dir)
 
         self.manage_py('syncdb', '--noinput')
         if self.uses_south:
