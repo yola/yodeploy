@@ -88,6 +88,13 @@ def create_ve(app_dir):
                 continue
             requirements.append(line)
 
+    # Update to distribute 0.6.13 for
+    # https://bitbucket.org/tarek/distribute/issue/163
+    cmd = [os.path.join(ve_dir, 'bin', 'python'),
+           os.path.join(ve_dir, 'bin', 'easy_install'),
+           '--index-url', YOLAPI_URL, 'distribute==0.6.13']
+    subprocess.check_call(cmd)
+
     if requirements:
         cmd = [os.path.join(ve_dir, 'bin', 'python'),
                os.path.join(ve_dir, 'bin', 'easy_install'),
