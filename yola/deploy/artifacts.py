@@ -277,11 +277,6 @@ class S3Artifacts(ArtifactsBase):
             dest = self.filename
         dest = os.path.realpath(dest)
 
-        # check we haven't downloaded it already
-        if os.path.exists(dest):
-            log.debug('File already downloaded, skipping fetch')
-            return
-
         k = self._bucket.get_key(self._s3_filename, version_id=version)
         if version is None:
             version = k.version_id
