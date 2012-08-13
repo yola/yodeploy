@@ -62,7 +62,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         self.manage_py('collectstatic', '--noinput')
         if self.compress:
-            cmd = ['compress']
+            cmd = ['compress', '--force']
             if isinstance(self.compress, list):
                 for extension in self.compress:
                     cmd += ['-e', extension]
