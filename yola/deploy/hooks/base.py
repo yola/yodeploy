@@ -28,5 +28,5 @@ class DeployHook(object):
         return os.path.join(self.root, 'versions', self.version)
 
     def deploy_path(self, *args):
-        '''Convenince function combinig deploy_dir and os.path.join'''
+        '''Convenience function combining deploy_dir and os.path.join'''
         return os.path.join(self.deploy_dir, *args)
