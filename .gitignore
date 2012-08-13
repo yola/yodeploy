@@ -4,5 +4,6 @@
 /.coverage
 /build
 /dist
+/test-data
 /virtualenv
 /virtualenv.tar.gz
