@@ -16,6 +16,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     migrate_on_deploy = False
     uses_south = False
     has_media = False
+    compress = False
 
     def __init__(self, *args, **kwargs):
         super(DjangoApp, self).__init__(*args, **kwargs)
@@ -60,6 +61,12 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             touch(logfile, 'www-data', 'adm', 0640)
 
         self.manage_py('collectstatic', '--noinput')
+        if self.compress:
+            cmd = ['compress']
+            if isinstance(self.compress, list):
+                for extension in self.compress:
+                    cmd += ['-e', extension]
+            self.manage_py(*cmd)
 
     def django_deployed(self):
         data_dir = os.path.join(self.root, 'data')
