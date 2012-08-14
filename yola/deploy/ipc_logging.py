@@ -41,7 +41,7 @@ class LoggingSocketRequestHandler(SocketServer.BaseRequestHandler):
             record = pickle.loads(buf[header_size:])
             record = logging.makeLogRecord(record)
             logger = logging.getLogger(record.name)
-            if logger.filter(record):
+            if logger.isEnabledFor(record.levelno):
                 logger.handle(record)
             buf = buf[size:]
 

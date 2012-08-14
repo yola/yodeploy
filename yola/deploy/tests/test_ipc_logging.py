@@ -51,6 +51,30 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         logger.removeHandler(handler)
         self.assertTrue(buffer_.getvalue())
 
+    def test_filtered(self):
+        # A dummy handler to eventually receive our message
+        logger = logging.getLogger('test')
+        logger.setLevel(logging.WARN)
+        buffer_ = StringIO.StringIO()
+        handler = logging.StreamHandler(buffer_)
+        logger.addHandler(handler)
+
+        a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        # This assumes a bit of buffering...
+        r = logging.LogRecord('test', logging.INFO, __file__, 42,
+                              'Testing 123', [], None, 'test_handle')
+        data = pickle.dumps(r.__dict__)
+        a.send(struct.pack('>L', len(data)))
+        a.send(data)
+
+        # implicitly calls handle() (lovely API, eh?)
+        LoggingSocketRequestHandler(b, None, None, oneshot=True)
+        handler.flush()
+        logger.removeHandler(handler)
+        logger.setLevel(logging.NOTSET)
+        self.assertFalse(buffer_.getvalue())
+
 
 class TestThreadedLogStreamServer(TmpDirTestCase):
     def test_integration(self):
