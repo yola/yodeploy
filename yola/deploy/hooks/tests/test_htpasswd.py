@@ -1,0 +1,1 @@
+from ..htpasswd import AuthenticatedApp
