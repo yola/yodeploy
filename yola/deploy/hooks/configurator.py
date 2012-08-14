@@ -1,6 +1,7 @@
 import logging
 import tarfile
 import os
+import shutil
 
 from yola.configurator.base import read_config, write_config
 from yola.configurator.smush import config_sources, smush_config
@@ -47,6 +48,8 @@ class ConfiguratedApp(DeployHook):
             os.mkdir(conf_root)
         if not os.path.exists(conf_local):
             os.mkdir(conf_local)
+        if os.path.exists(configs):
+            shutil.rmtree(configs)
 
         artifacts.download(conf_tarball)
         tar = tarfile.open(conf_tarball, 'r')
@@ -54,6 +57,7 @@ class ConfiguratedApp(DeployHook):
             tar.extractall(path=conf_root)
         finally:
             tar.close()
+        os.unlink(conf_tarball)
 
         sources = config_sources(self.app, self.settings.environment,
                                  self.settings.cluster,
