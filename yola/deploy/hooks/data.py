@@ -19,7 +19,7 @@ class DataDirApp(DeployHook):
         super(DataDirApp, self).deployed()
         self.datadir_deployed()
 
-    def django_prepare(self):
+    def datadir_prepare(self):
         log.debug('Running DataDirApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
@@ -29,7 +29,7 @@ class DataDirApp(DeployHook):
             os.mkdir(data_dir)
         chown_r(data_dir, 'www-data', 'www-data')
 
-    def django_deployed(self):
+    def datadir_deployed(self):
         data_dir = os.path.join(self.root, 'data')
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
