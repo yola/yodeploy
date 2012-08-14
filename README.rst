@@ -46,3 +46,14 @@ On-disk Deployment layout
         application)
 
         `unpack`: Working area
+
+Building and uploading
+----------------------
+
+If you have not bumped the version, you will need to remove the files and
+current version here: https://yolapi.yola.net/pypi/yola.deploy/manage/versions/
+
+Either way, you can upload this to yolapi by running:
+
+  python setup.py sdist upload -r https://yolapi.yola.net/pypi/
+
