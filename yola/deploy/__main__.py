@@ -49,9 +49,13 @@ def main():
 def setup_logging(log_fd, verbose):
     if log_fd:
         logging.basicConfig(level=0)
+        logger = logging.getLogger()
+        # Remove the default stdout stream handler
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+
         sock = socket.fromfd(log_fd, socket.AF_UNIX, socket.SOCK_STREAM)
         handler = yola.deploy.ipc_logging.ExistingSocketHandler(sock)
-        logger = logging.getLogger()
         logger.addHandler(handler)
     elif verbose:
         logging.basicConfig(level=logging.DEBUG)
