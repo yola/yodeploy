@@ -25,7 +25,7 @@ class AuthenticatedApp(ConfiguratedApp):
         super(AuthenticatedApp, self).prepare()
         self.auth_prepare()
 
-    def app_prepare(self):
+    def auth_prepare(self):
         log.debug('Running AuthenticatedApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
