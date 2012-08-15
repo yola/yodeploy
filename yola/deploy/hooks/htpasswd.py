@@ -37,11 +37,11 @@ class AuthenticatedApp(ConfiguratedApp):
         with open(htpasswd_fn, 'w') as f:
             if 'users' in aconf.htpasswd:
                 for user, password in aconf.htpasswd.users.iteritems():
-                    f.write('%s: %s\n' % (user, crypt.crypt(password, salt())))
+                    f.write('%s:%s\n' % (user, crypt.crypt(password, salt())))
 
             if 'clients' in aconf.htpasswd:
                 for client in aconf.htpasswd.clients:
                     password = seeded_auth_token(client, self.app,
                             self.config.common.credential.api_seed)
                     crypted = crypt.crypt(password, salt())
-                    f.write('%s: %s\n' % (client, crypted))
+                    f.write('%s:%s\n' % (client, crypted))
