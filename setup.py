@@ -22,7 +22,7 @@ setup(
     author='Stefano Rivera',
     author_email='stefanor@yola.com',
     url='https://github.com/yola/yola.deploy',
-    version="0.1",
+    version="0.2dev",
     packages=find_packages(),
     test_suite='nose.collector',
     install_requires=parse_requirements(),
