@@ -11,6 +11,7 @@ import tarfile
 
 try:
     import sysconfig
+    hush_pyflakes = sysconfig
 except ImportError:
     class sysconfig:
         @classmethod

@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 
 import yola.deploy.config
 import yola.deploy.ipc_logging
