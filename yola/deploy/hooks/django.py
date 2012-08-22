@@ -17,7 +17,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     uses_south = False
     has_media = False
     compress = False
-    compile_l10n = False
+    compile_i18n = False
     vhost_path = '/etc/apache2/sites-enabled'
     vhost_snippet_path = '/etc/apache2/yola.d/services'
 
@@ -73,7 +73,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                 for extension in self.compress:
                     cmd += ['-e', extension]
             self.manage_py(*cmd)
-        if self.compile_l10n:
+        if self.compile_i18n:
             self.manage_py('compilemessages')
 
     def django_deployed(self):
