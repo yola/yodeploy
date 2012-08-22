@@ -48,7 +48,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                           self.deploy_path(self.app + '.wsgi'))
 
         aconf = self.config.get(self.app)
-        uses_sqlite = aconf.db.engine.endswith('sqlite3')
+        uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
         data_dir = os.path.join(self.root, 'data')
         media_dir = os.path.join(self.root, 'data', 'media')
         if uses_sqlite or self.has_media:
@@ -93,6 +93,10 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         data_dir = os.path.join(self.root, 'data')
         aconf = self.config.get(self.app)
+
+        if 'db' not in aconf:
+            return
+
         uses_sqlite = aconf.db.engine.endswith('sqlite3')
         new_db = False
         if uses_sqlite:
