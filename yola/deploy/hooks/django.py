@@ -17,6 +17,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     uses_south = False
     has_media = False
     compress = False
+    vhost_path = '/etc/apache2/sites-enabled'
+    vhost_snippet_path = '/etc/apache2/yola.d/services'
 
     def __init__(self, *args, **kwargs):
         super(DjangoApp, self).__init__(*args, **kwargs)
@@ -36,7 +38,10 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         if self.template_exists('apache2/vhost.conf.template'):
             self.template('apache2/vhost.conf.template',
-                    os.path.join('/etc/apache2/sites-enabled', self.app))
+                    os.path.join(self.vhost_path, self.app))
+        if self.template_exists('apache2/vhost-snippet.conf.template'):
+            self.template('apache2/vhost-snippet.conf.template',
+                    os.path.join(self.vhost_snippet_path, self.app))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
             self.template('apache2/wsgi-handler.wsgi.template',
                           self.deploy_path(self.app + '.wsgi'))
