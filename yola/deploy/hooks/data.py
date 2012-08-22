@@ -33,4 +33,3 @@ class DataDirApp(DeployHook):
         data_dir = os.path.join(self.root, 'data')
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
-
