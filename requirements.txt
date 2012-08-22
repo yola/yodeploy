@@ -1,5 +1,5 @@
-Tempita
-boto
-unittest2
-virtualenv
-yola.configurator
+Tempita==0.5dev
+boto==2.2.2
+unittest2==0.5.1
+virtualenv==1.7.2
+yola.configurator==0.1
