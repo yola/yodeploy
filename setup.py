@@ -22,7 +22,7 @@ setup(
     author='Stefano Rivera',
     author_email='stefanor@yola.com',
     url='https://github.com/yola/yola.deploy',
-    version="0.3.0dev",
+    version="0.2.1",
     namespace_packages=['yola'],
     packages=find_packages(),
     scripts=['bin/test-templates.py'],
