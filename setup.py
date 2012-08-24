@@ -22,8 +22,10 @@ setup(
     author='Stefano Rivera',
     author_email='stefanor@yola.com',
     url='https://github.com/yola/yola.deploy',
-    version="0.2.0",
+    version="0.3.0dev",
+    namespace_packages=['yola'],
     packages=find_packages(),
+    scripts=['bin/test-templates.py'],
     test_suite='nose.collector',
     install_requires=parse_requirements(),
 )
