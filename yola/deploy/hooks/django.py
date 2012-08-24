@@ -18,6 +18,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
     has_media = False
     compress = False
     compile_i18n = False
+    has_static = False
     vhost_path = '/etc/apache2/sites-enabled'
     vhost_snippet_path = '/etc/apache2/yola.d/services'
 
@@ -51,6 +52,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
         data_dir = os.path.join(self.root, 'data')
         media_dir = os.path.join(self.root, 'data', 'media')
+
         if uses_sqlite or self.has_media:
             if not os.path.exists(data_dir):
                 os.mkdir(data_dir)
@@ -66,13 +68,16 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         if logfile:
             touch(logfile, 'www-data', 'adm', 0640)
 
-        self.manage_py('collectstatic', '--noinput')
+        if self.has_static:
+            self.manage_py('collectstatic', '--noinput')
+
         if self.compress:
             cmd = ['compress', '--force']
             if isinstance(self.compress, list):
                 for extension in self.compress:
                     cmd += ['-e', extension]
             self.manage_py(*cmd)
+
         if self.compile_i18n:
             self.manage_py('compilemessages')
 
