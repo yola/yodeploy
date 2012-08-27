@@ -43,7 +43,7 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                     os.path.join(self.vhost_path, self.app))
         if self.template_exists('apache2/vhost-snippet.conf.template'):
             self.template('apache2/vhost-snippet.conf.template',
-                    os.path.join(self.vhost_snippet_path, self.app))
+                    os.path.join(self.vhost_snippet_path, self.app + '.conf'))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
             self.template('apache2/wsgi-handler.wsgi.template',
                           self.deploy_path(self.app + '.wsgi'))
