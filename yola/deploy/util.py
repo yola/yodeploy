@@ -80,6 +80,8 @@ def extract_tar(tarball, root):
         for member in members:
             member.uid = 0
             member.gid = 0
+            member.uname = 'root'
+            member.gname = 'root'
         roots = set(member.name.split('/', 1)[0] for member in members)
         if len(roots) > 1:
             raise ValueError("Tarball has > 1 top-level directory")
