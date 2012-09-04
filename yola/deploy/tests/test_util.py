@@ -1,9 +1,12 @@
 import grp
+import itertools
 import os
 import pwd
 import stat
+import subprocess
+import sys
 
-from . import TmpDirTestCase
+from . import unittest, TmpDirTestCase
 from ..util import (LockFile, LockedException, UnlockedException, chown_r,
                     touch, extract_tar)
 
@@ -96,3 +99,27 @@ class TestExtractTar(TmpDirTestCase):
         self.assertNotTMPPExists('extracted')
         self.assertNotTMPPExists('extracted/bar')
         self.assertNotTMPPExists('extracted/quux')
+
+    @unittest.skipIf('fakeroot' not in itertools.chain.from_iterable(
+            os.listdir(component)
+            for component in os.environ['PATH'].split(os.pathsep)
+        ), "Test requires fakeroot")
+    def test_permission_squash(self):
+        self.create_tar('test.tar.gz', 'foo/bar')
+
+        env = {
+            'PATH': os.environ['PATH'],
+            'PYTHONPATH': ':'.join(sys.path),
+        }
+        subprocess.check_call((
+            'fakeroot',
+            'python',
+            '-c', (
+                'import yola.deploy.util, os; '
+                'yola.deploy.util.extract_tar("%s", "%s"); '
+                's = os.stat("%s"); '
+                'assert s.st_uid == 0; '
+                'assert s.st_gid == 0'
+            ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
+                 self.tmppath('extracted/bar'))
+        ), env=env)
