@@ -40,6 +40,7 @@ class ConfiguratedApp(DeployHook):
         app_conf_dir = self.deploy_path('deploy', 'configuration')
         conf_root = os.path.join(self.settings.paths.root, 'configs')
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
+        configs = os.path.join(conf_root, 'configs')
         searchdirs = self.settings.paths.deployconfigs
 
         if not os.path.exists(conf_root):
@@ -47,11 +48,11 @@ class ConfiguratedApp(DeployHook):
         for searchdir in searchdirs:
             if not os.path.exists(searchdir):
                 os.makedirs(searchdir)
-        if os.path.exists(searchdirs[0]):
-            shutil.rmtree(searchdirs[0])
+        if os.path.exists(configs):
+            shutil.rmtree(configs)
 
         artifacts.download(conf_tarball)
-        extract_tar(conf_tarball, searchdirs[0])
+        extract_tar(conf_tarball, configs)
         os.unlink(conf_tarball)
 
         sources = config_sources(self.app, self.settings.environment,
