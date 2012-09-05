@@ -41,13 +41,9 @@ class ConfiguratedApp(DeployHook):
         conf_root = os.path.join(self.settings.paths.root, 'configs')
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
         configs = os.path.join(conf_root, 'configs')
-        searchdirs = self.settings.paths.deployconfigs
 
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
-        for searchdir in searchdirs:
-            if not os.path.exists(searchdir):
-                os.makedirs(searchdir)
         if os.path.exists(configs):
             shutil.rmtree(configs)
 
@@ -56,7 +52,8 @@ class ConfiguratedApp(DeployHook):
         os.unlink(conf_tarball)
 
         sources = config_sources(self.app, self.settings.environment,
-                                 self.settings.cluster, searchdirs,
+                                 self.settings.cluster,
+                                 self.settings.paths.deployconfigs,
                                  app_conf_dir)
         config = smush_config(sources)
         write_config(config, self.deploy_dir)
