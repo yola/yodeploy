@@ -81,6 +81,12 @@ class TestArtifactiVersions(TmpDirTestCase):
         av = ArtifactVersions(self._test_fn)
         self.assertTrue(av.latest is None)
 
+    def test_clear(self):
+        self._write_test_json()
+        av = ArtifactVersions(self._test_fn)
+        av.clear()
+        self.assertTrue(av.latest is None)
+
     def test_distance(self):
         self._write_test_json()
         av = ArtifactVersions(self._test_fn)
