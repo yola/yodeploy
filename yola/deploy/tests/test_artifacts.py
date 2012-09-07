@@ -1,4 +1,6 @@
+import StringIO
 import json
+import logging
 import os
 
 from ..artifacts import (ArtifactVersions, LocalArtifacts, AttrDict,
@@ -57,6 +59,22 @@ class TestArtifactiVersions(TmpDirTestCase):
         with open(self._test_fn, 'r') as f:
             self.assertEqual(json.load(f), TEST_VERSIONS)
 
+    def test_save_eperm(self):
+        logger = logging.getLogger('yola.deploy.artifacts')
+        buffer_ = StringIO.StringIO()
+        handler = logging.StreamHandler(buffer_)
+        logger.addHandler(handler)
+
+        self._write_test_json()
+        os.chmod(self._test_fn, 0400)
+
+        av = ArtifactVersions(self._test_fn, cache=True)
+        av.save()
+
+        handler.flush()
+        logger.removeHandler(handler)
+        self.assertTrue(buffer_.getvalue())
+
     def test_add_existing(self):
         self._write_test_json()
         av = ArtifactVersions(self._test_fn)
@@ -79,6 +97,12 @@ class TestArtifactiVersions(TmpDirTestCase):
 
     def test_no_latest(self):
         av = ArtifactVersions(self._test_fn)
+        self.assertTrue(av.latest is None)
+
+    def test_clear(self):
+        self._write_test_json()
+        av = ArtifactVersions(self._test_fn)
+        av.clear()
         self.assertTrue(av.latest is None)
 
     def test_distance(self):
@@ -145,6 +169,22 @@ class TestLocalArtifacts(TmpDirTestCase):
         self.create_tar('a.tar.gz', 'foo/bar')
         self.artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertNotEqual(os.readlink(symlink), old_symlink)
+
+    def test_re_upload_ro_state_file(self):
+        '''If we can't write to the state file, we shouldn't corrupt our
+        artifact store'''
+        self._sample_data()
+        symlink = self.tmppath('artifacts', 'test', 'test.tar.gz')
+        old_symlink = os.readlink(symlink)
+
+        os.chmod(self.tmppath('state', 'artifacts', 'test',
+                              'test.tar.gz.versions'), 0400)
+
+        self.create_tar('a.tar.gz', 'foo/bar')
+        self.assertRaises(IOError, self.artifacts.upload,
+                          self.tmppath('a.tar.gz'))
+
+        self.assertEqual(os.readlink(symlink), old_symlink)
 
     def test_list(self):
         self._sample_data()
