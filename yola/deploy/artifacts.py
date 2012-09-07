@@ -223,27 +223,18 @@ class S3Artifacts(ArtifactsBase):
     def update_versions(self):
         '''
         Get versions available for an artifact.
-        If marker is given, only versions from marker onwards are returned (so
-        we don't return all versions all the time). The marker actually works
-        from the most recent backwards, so its only useful for paginating, or
-        fetching a resultset and not so much for keeping a marker of the latest
-        version (unfortunately).
 
         Returns Key objects
         '''
 
         log.info('Updating available versions from S3')
 
-        query = {'prefix': self._s3_filename}
         latest = self._versions.latest
-        if latest:
-            query['key_marker'] = self.filename
-            query['version_id_marker'] = latest.version_id
 
         keys = []
-        for k in self._bucket.get_all_versions(**query):
+        for k in self._bucket.get_all_versions(prefix=self._s3_filename):
             if isinstance(k, boto.s3.key.Key) and k.name == self._s3_filename:
-                # It'll give us our version_id_marker too
+                # Stop when we get to a version we already know about
                 if latest and latest.version_id == k.version_id:
                     break
                 # Amazon stores the date differently when querying key directly
