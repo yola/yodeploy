@@ -178,13 +178,13 @@ class LocalArtifacts(ArtifactsBase):
             os.makedirs(parentdir)
         shutil.copy(source, artifactpath)
 
+        # Update the version file
+        self._versions.add_version(version, datetime.datetime.now(), meta)
+
         # Update symlink to the latest version
         if os.path.exists(self._local_artifact):
             os.remove(self._local_artifact)
         os.symlink(os.path.basename(artifactpath), self._local_artifact)
-
-        # Update the version file
-        self._versions.add_version(version, datetime.datetime.now(), meta)
 
     def download(self, dest=None, version=None):
         '''Download artificact to dest'''

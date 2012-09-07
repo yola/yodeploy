@@ -170,6 +170,22 @@ class TestLocalArtifacts(TmpDirTestCase):
         self.artifacts.upload(self.tmppath('a.tar.gz'))
         self.assertNotEqual(os.readlink(symlink), old_symlink)
 
+    def test_re_upload_ro_state_file(self):
+        '''If we can't write to the state file, we shouldn't corrupt our
+        artifact store'''
+        self._sample_data()
+        symlink = self.tmppath('artifacts', 'test', 'test.tar.gz')
+        old_symlink = os.readlink(symlink)
+
+        os.chmod(self.tmppath('state', 'artifacts', 'test',
+                              'test.tar.gz.versions'), 0400)
+
+        self.create_tar('a.tar.gz', 'foo/bar')
+        self.assertRaises(IOError, self.artifacts.upload,
+                          self.tmppath('a.tar.gz'))
+
+        self.assertEqual(os.readlink(symlink), old_symlink)
+
     def test_list(self):
         self._sample_data()
         self.assertEqual(self.artifacts.list(), ['test.tar.gz'])
