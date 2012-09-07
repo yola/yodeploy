@@ -233,15 +233,18 @@ class S3Artifacts(ArtifactsBase):
 
         keys = []
         for k in self._bucket.list_versions(prefix=self._s3_filename):
-            if isinstance(k, boto.s3.key.Key) and k.name == self._s3_filename:
-                # Stop when we get to a version we already know about
-                if latest and latest.version_id == k.version_id:
-                    break
-                # Amazon stores the date differently when querying key directly
-                timestamp = k.last_modified
-                k = self._bucket.get_key(self._s3_filename,
-                                         version_id=k.version_id)
-                keys.append((k.version_id, timestamp, k.metadata))
+            if not isinstance(k, boto.s3.key.Key):
+                continue
+            if k.name != self._s3_filename:
+                continue
+            # Stop when we get to a version we already know about
+            if latest and latest.version_id == k.version_id:
+                break
+            # Amazon stores the date differently when querying key directly
+            timestamp = k.last_modified
+            k = self._bucket.get_key(self._s3_filename,
+                                     version_id=k.version_id)
+            keys.append((k.version_id, timestamp, k.metadata))
 
         # s3 returns blocks from newest>oldest
         for key_tuple in reversed(keys):
