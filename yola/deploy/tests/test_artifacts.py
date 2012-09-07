@@ -68,7 +68,7 @@ class TestArtifactiVersions(TmpDirTestCase):
         self._write_test_json()
         os.chmod(self._test_fn, 0400)
 
-        av = ArtifactVersions(self._test_fn)
+        av = ArtifactVersions(self._test_fn, cache=True)
         av.save()
 
         handler.flush()
