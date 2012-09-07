@@ -232,7 +232,7 @@ class S3Artifacts(ArtifactsBase):
         latest = self._versions.latest
 
         keys = []
-        for k in self._bucket.get_all_versions(prefix=self._s3_filename):
+        for k in self._bucket.list_versions(prefix=self._s3_filename):
             if isinstance(k, boto.s3.key.Key) and k.name == self._s3_filename:
                 # Stop when we get to a version we already know about
                 if latest and latest.version_id == k.version_id:
