@@ -68,6 +68,7 @@ class ArtifactVersions(object):
 
     def add_version(self, version_id, date_uploaded, meta):
         '''Add a version to known versions'''
+        assert version_id is not None
         if isinstance(date_uploaded, datetime.datetime):
             date_uploaded = date_uploaded.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
@@ -207,6 +208,9 @@ class S3Artifacts(ArtifactsBase):
         super(S3Artifacts, self).__init__(app, target, state_dir, filename)
         s3 = boto.connect_s3(access_key, secret_key)
         self._bucket = s3.get_bucket(bucket)
+        if self._bucket.get_versioning_status().get('Versioning') != 'Enabled':
+            raise ValueError('S3 bucket "%s" does not have versioning enabled'
+                             % bucket)
 
     @property
     def _s3_filename(self):
