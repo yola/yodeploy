@@ -1,6 +1,7 @@
 import collections
 import copy
 import datetime
+import errno
 import json
 import logging
 import os
@@ -24,8 +25,13 @@ class ArtifactVersions(object):
     It stores a list of Versions
     '''
 
-    def __init__(self, path):
+    def __init__(self, path, cache=False):
+        '''
+        path:  Path to the state file
+        cache: Set True if durability is not important. Allows save() to fail
+        '''
         self.path = path
+        self._is_cache = cache
         self._state = AttrDict()
         self.load()
 
@@ -45,8 +51,15 @@ class ArtifactVersions(object):
             os.makedirs(parentdir)
         state = copy.copy(self._state)
         state['versions'] = [version._asdict() for version in self.versions]
-        with open(self.path, 'w') as f:
-            json.dump(state, f, indent=2)
+        try:
+            with open(self.path, 'w') as f:
+                json.dump(state, f, indent=2)
+        except IOError, e:
+            if self._is_cache and e.errno == errno.EACCES:
+                log.warn('Unable to store artifact state. '
+                         'Permission denied writing %s', self.path)
+            else:
+                raise
 
     @property
     def versions(self):
@@ -111,6 +124,8 @@ class ArtifactsBase(object):
     Basic Abstract class for Different Artifacts handler to implement
     '''
 
+    _state_is_cache = False
+
     def __init__(self, app, target, state_dir, filename=None):
         self.app = app
         self.filename = filename or (app + '.tar.gz')
@@ -119,11 +134,11 @@ class ArtifactsBase(object):
         if target:
             self._versions = ArtifactVersions(path=os.path.join(
                 state_dir, 'artifacts', self.app, self.target,
-                self.filename + '.versions'))
+                self.filename + '.versions'), cache=self._state_is_cache)
         else:
             self._versions = ArtifactVersions(path=os.path.join(
                 state_dir, 'artifacts', self.app,
-                self.filename + '.versions'))
+                self.filename + '.versions'), cache=self._state_is_cache)
 
     @property
     def versions(self):
@@ -208,6 +223,8 @@ class LocalArtifacts(ArtifactsBase):
 
 # TODO: Log progress.
 class S3Artifacts(ArtifactsBase):
+    _state_is_cache = True
+
     def __init__(self, app, target, state_dir, bucket, access_key, secret_key,
                  filename=None):
         super(S3Artifacts, self).__init__(app, target, state_dir, filename)

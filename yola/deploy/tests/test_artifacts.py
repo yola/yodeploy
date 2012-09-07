@@ -1,4 +1,6 @@
+import StringIO
 import json
+import logging
 import os
 
 from ..artifacts import (ArtifactVersions, LocalArtifacts, AttrDict,
@@ -56,6 +58,22 @@ class TestArtifactiVersions(TmpDirTestCase):
         av.save()
         with open(self._test_fn, 'r') as f:
             self.assertEqual(json.load(f), TEST_VERSIONS)
+
+    def test_save_eperm(self):
+        logger = logging.getLogger('yola.deploy.artifacts')
+        buffer_ = StringIO.StringIO()
+        handler = logging.StreamHandler(buffer_)
+        logger.addHandler(handler)
+
+        self._write_test_json()
+        os.chmod(self._test_fn, 0400)
+
+        av = ArtifactVersions(self._test_fn)
+        av.save()
+
+        handler.flush()
+        logger.removeHandler(handler)
+        self.assertTrue(buffer_.getvalue())
 
     def test_add_existing(self):
         self._write_test_json()
