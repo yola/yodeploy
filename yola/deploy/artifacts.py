@@ -80,6 +80,11 @@ class ArtifactVersions(object):
         self._state.versions.append(version)
         self.save()
 
+    def clear(self):
+        '''Clear our version cache (e.g. if we change artifact store)'''
+        self._state['versions'] = []
+        self.save()
+
     def distance(self, from_version, to_version=None):
         '''
         Calculate distance between two versions
@@ -245,6 +250,11 @@ class S3Artifacts(ArtifactsBase):
             k = self._bucket.get_key(self._s3_filename,
                                      version_id=k.version_id)
             keys.append((k.version_id, timestamp, k.metadata))
+        else:
+            if latest:
+                log.warn('Our latest version_id is not present in the '
+                         'repository. Dropping local version cache')
+                self._versions.clear()
 
         # s3 returns blocks from newest>oldest
         for key_tuple in reversed(keys):
