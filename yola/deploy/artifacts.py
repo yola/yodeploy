@@ -1,6 +1,7 @@
 import collections
 import copy
 import datetime
+import errno
 import json
 import logging
 import os
@@ -24,8 +25,13 @@ class ArtifactVersions(object):
     It stores a list of Versions
     '''
 
-    def __init__(self, path):
+    def __init__(self, path, cache=False):
+        '''
+        path:  Path to the state file
+        cache: Set True if durability is not important. Allows save() to fail
+        '''
         self.path = path
+        self._is_cache = cache
         self._state = AttrDict()
         self.load()
 
@@ -45,8 +51,15 @@ class ArtifactVersions(object):
             os.makedirs(parentdir)
         state = copy.copy(self._state)
         state['versions'] = [version._asdict() for version in self.versions]
-        with open(self.path, 'w') as f:
-            json.dump(state, f, indent=2)
+        try:
+            with open(self.path, 'w') as f:
+                json.dump(state, f, indent=2)
+        except IOError, e:
+            if self._is_cache and e.errno == errno.EACCES:
+                log.warn('Unable to store artifact state. '
+                         'Permission denied writing %s', self.path)
+            else:
+                raise
 
     @property
     def versions(self):
@@ -68,6 +81,7 @@ class ArtifactVersions(object):
 
     def add_version(self, version_id, date_uploaded, meta):
         '''Add a version to known versions'''
+        assert version_id is not None
         if isinstance(date_uploaded, datetime.datetime):
             date_uploaded = date_uploaded.strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
@@ -77,6 +91,11 @@ class ArtifactVersions(object):
         version = Version(version_id=version_id, date_uploaded=date_uploaded,
                           metadata=meta)
         self._state.versions.append(version)
+        self.save()
+
+    def clear(self):
+        '''Clear our version cache (e.g. if we change artifact store)'''
+        self._state['versions'] = []
         self.save()
 
     def distance(self, from_version, to_version=None):
@@ -105,6 +124,8 @@ class ArtifactsBase(object):
     Basic Abstract class for Different Artifacts handler to implement
     '''
 
+    _state_is_cache = False
+
     def __init__(self, app, target, state_dir, filename=None):
         self.app = app
         self.filename = filename or (app + '.tar.gz')
@@ -113,11 +134,11 @@ class ArtifactsBase(object):
         if target:
             self._versions = ArtifactVersions(path=os.path.join(
                 state_dir, 'artifacts', self.app, self.target,
-                self.filename + '.versions'))
+                self.filename + '.versions'), cache=self._state_is_cache)
         else:
             self._versions = ArtifactVersions(path=os.path.join(
                 state_dir, 'artifacts', self.app,
-                self.filename + '.versions'))
+                self.filename + '.versions'), cache=self._state_is_cache)
 
     @property
     def versions(self):
@@ -157,13 +178,13 @@ class LocalArtifacts(ArtifactsBase):
             os.makedirs(parentdir)
         shutil.copy(source, artifactpath)
 
+        # Update the version file
+        self._versions.add_version(version, datetime.datetime.now(), meta)
+
         # Update symlink to the latest version
         if os.path.exists(self._local_artifact):
             os.remove(self._local_artifact)
         os.symlink(os.path.basename(artifactpath), self._local_artifact)
-
-        # Update the version file
-        self._versions.add_version(version, datetime.datetime.now(), meta)
 
     def download(self, dest=None, version=None):
         '''Download artificact to dest'''
@@ -202,11 +223,16 @@ class LocalArtifacts(ArtifactsBase):
 
 # TODO: Log progress.
 class S3Artifacts(ArtifactsBase):
+    _state_is_cache = True
+
     def __init__(self, app, target, state_dir, bucket, access_key, secret_key,
                  filename=None):
         super(S3Artifacts, self).__init__(app, target, state_dir, filename)
         s3 = boto.connect_s3(access_key, secret_key)
         self._bucket = s3.get_bucket(bucket)
+        if self._bucket.get_versioning_status().get('Versioning') != 'Enabled':
+            raise ValueError('S3 bucket "%s" does not have versioning enabled'
+                             % bucket)
 
     @property
     def _s3_filename(self):
@@ -219,34 +245,33 @@ class S3Artifacts(ArtifactsBase):
     def update_versions(self):
         '''
         Get versions available for an artifact.
-        If marker is given, only versions from marker onwards are returned (so
-        we don't return all versions all the time). The marker actually works
-        from the most recent backwards, so its only useful for paginating, or
-        fetching a resultset and not so much for keeping a marker of the latest
-        version (unfortunately).
 
         Returns Key objects
         '''
 
         log.info('Updating available versions from S3')
 
-        query = {'prefix': self._s3_filename}
         latest = self._versions.latest
-        if latest:
-            query['key_marker'] = self.filename
-            query['version_id_marker'] = latest.version_id
 
         keys = []
-        for k in self._bucket.get_all_versions(**query):
-            if isinstance(k, boto.s3.key.Key) and k.name == self._s3_filename:
-                # It'll give us our version_id_marker too
-                if latest and latest.version_id == k.version_id:
-                    break
-                # Amazon stores the date differently when querying key directly
-                timestamp = k.last_modified
-                k = self._bucket.get_key(self._s3_filename,
-                                         version_id=k.version_id)
-                keys.append((k.version_id, timestamp, k.metadata))
+        for k in self._bucket.list_versions(prefix=self._s3_filename):
+            if not isinstance(k, boto.s3.key.Key):
+                continue
+            if k.name != self._s3_filename:
+                continue
+            # Stop when we get to a version we already know about
+            if latest and latest.version_id == k.version_id:
+                break
+            # Amazon stores the date differently when querying key directly
+            timestamp = k.last_modified
+            k = self._bucket.get_key(self._s3_filename,
+                                     version_id=k.version_id)
+            keys.append((k.version_id, timestamp, k.metadata))
+        else:
+            if latest:
+                log.warn('Our latest version_id is not present in the '
+                         'repository. Dropping local version cache')
+                self._versions.clear()
 
         # s3 returns blocks from newest>oldest
         for key_tuple in reversed(keys):
