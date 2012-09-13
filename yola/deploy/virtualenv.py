@@ -217,9 +217,10 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
-    deploy_settings = yola.deploy.config.load_settings(options.config)
-    artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
-            options.app, options.target, deploy_settings)
+    if options.download or options.upload:
+        deploy_settings = yola.deploy.config.load_settings(options.config)
+        artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
+                options.app, options.target, deploy_settings)
 
     version = ve_version(sha224sum('requirements.txt'))
     if options.hash:
