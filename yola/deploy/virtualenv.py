@@ -76,7 +76,8 @@ def create_ve(app_dir):
         virtualenv.logger = virtualenv.Logger([
             (virtualenv.Logger.level_for_integer(2), sys.stdout)])
 
-    virtualenv.create_environment(ve_dir, site_packages=False)
+    virtualenv.create_environment(ve_dir, site_packages=False,
+                                  use_distribute=True)
     with open(os.path.join(app_dir, 'requirements.txt'), 'r') as f:
         requirements = []
         for line in f:
