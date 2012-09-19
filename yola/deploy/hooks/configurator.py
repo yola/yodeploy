@@ -40,15 +40,10 @@ class ConfiguratedApp(DeployHook):
         app_conf_dir = self.deploy_path('deploy', 'configuration')
         conf_root = os.path.join(self.settings.paths.root, 'configs')
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
-        # TODO: Get this from settings
-        conf_local = '/etc/yola/deployconfigs/chef/'
-        # The tarball should contain a single directory called 'configs'
         configs = os.path.join(conf_root, 'configs')
 
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
-        if not os.path.exists(conf_local):
-            os.makedirs(conf_local)
         if os.path.exists(configs):
             shutil.rmtree(configs)
 
@@ -58,7 +53,7 @@ class ConfiguratedApp(DeployHook):
 
         sources = config_sources(self.app, self.settings.environment,
                                  self.settings.cluster,
-                                 [conf_local, configs],
+                                 self.settings.paths.deployconfigs,
                                  app_conf_dir)
         config = smush_config(sources)
         write_config(config, self.deploy_dir)
