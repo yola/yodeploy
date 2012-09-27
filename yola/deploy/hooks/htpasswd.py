@@ -18,6 +18,44 @@ def salt():
 
 
 class AuthenticatedApp(ConfiguratedApp):
+    """A deploy hook that writes an htpasswd file for the app.
+
+    Users and clients can be specified in the application configuration, for
+    example, in `appname/deploy/configuration/appname-default.py`:
+
+        from yola.configurator.dicts import merge_dicts
+
+        def update(config):
+            
+            appname_config = {
+                'appname': {
+                    'htpassword': {
+                        'clients': ['myyola', 'sitebuilder', 'yolacom'],
+                        'users': {'yoladmin': 'password'},
+                    }
+                }
+            }
+
+            return merge_dicts(config, appname_config)
+
+    Client passwords are automatically configured using the client name, app
+    name, and api seed from deployconfigs.
+
+    The file will be written to `/etc/yola/httpasswd/appname`. You can
+    configure your app's auth in its apache template. For example, in
+    `appname/deploy/templates/apache2/vhost.conf.template`:
+
+        <VirtualHost *:80>
+            # ...other vhosty stuff...
+            <Location />
+                AuthType Basic
+                AuthName "appname"
+                AuthUserFile /etc/yola/htpasswd/appname
+                Require valid-user
+            </Location>
+        </VirtualHost>
+    """
+
     def __init__(self, *args, **kwargs):
         super(AuthenticatedApp, self).__init__(*args, **kwargs)
 
