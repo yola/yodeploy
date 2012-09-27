@@ -31,7 +31,7 @@ class AuthenticatedApp(ConfiguratedApp):
                 'appname': {
                     'htpassword': {
                         'clients': ['myyola', 'sitebuilder', 'yolacom'],
-                        'users': {'yoladmin': 'password'}
+                        'users': {'yoladmin': 'password'},
                     }
                 }
             }
