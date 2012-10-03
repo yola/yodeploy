@@ -26,7 +26,7 @@ class AuthenticatedApp(ConfiguratedApp):
         from yola.configurator.dicts import merge_dicts
 
         def update(config):
-            
+
             appname_config = {
                 'appname': {
                     'htpassword': {
