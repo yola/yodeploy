@@ -20,7 +20,7 @@ setup(
     name='yola.deploy',
     description='Helpers for Deploy hooks',
     author='Stefano Rivera',
-    author_email='stefanor@yola.com',
+    author_email='stefano.rivera@yola.com',
     url='https://github.com/yola/yola.deploy',
     version="0.2.3",
     namespace_packages=['yola'],
