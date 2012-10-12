@@ -33,4 +33,4 @@ class UpstartApp(TemplatedApp):
                 subprocess.call(('service', conf_name, 'stop'))
                 subprocess.check_call(('service', conf_name, 'start'))
             except subprocess.CalledProcessError:
-                log.error('Unable to restart %s worker', conf_name)
+                log.error('Unable to restart %s upstart job', conf_name)
