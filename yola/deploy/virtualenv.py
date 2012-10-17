@@ -30,8 +30,6 @@ import yola.deploy.config
 import yola.deploy.util
 
 log = logging.getLogger(__name__)
-# TODO: Get this from configuration
-YOLAPI_URL = 'https://yolapi.yola.net/simple/'
 
 
 def sha224sum(filename):
@@ -67,9 +65,15 @@ def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
         artifacts.upload(filename)
 
 
-def create_ve(app_dir):
+def create_ve(app_dir, pypi=None):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
+
+    if pypi is None:
+        pypi = []
+    else:
+        pypi = ['--index-url', pypi]
+
     # Monkey patch a logger into virtualenv, usually created in main()
     # Newer virtualenvs won't need this
     if not hasattr(virtualenv, 'logger'):
@@ -94,13 +98,14 @@ def create_ve(app_dir):
     # https://bitbucket.org/tarek/distribute/issue/163
     cmd = [os.path.join(ve_dir, 'bin', 'python'),
            os.path.join(ve_dir, 'bin', 'easy_install'),
-           '--index-url', YOLAPI_URL, 'distribute==0.6.13']
+          ] + pypi + [
+           'distribute==0.6.13']
     subprocess.check_call(cmd)
 
     if requirements:
         cmd = [os.path.join(ve_dir, 'bin', 'python'),
                os.path.join(ve_dir, 'bin', 'easy_install'),
-               '--index-url', YOLAPI_URL]
+              ] + pypi
         cmd += requirements
         subprocess.check_call(cmd)
 
@@ -172,7 +177,7 @@ def relocateable_ve(ve_dir):
         f.write('\n'.join(activate))
 
 
-def main():
+def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
     parser = argparse.ArgumentParser(
             description="Prepares virtualenv bundles. "
                         "If a virtualenv with the right hash already exists "
@@ -180,7 +185,7 @@ def main():
                         "unless --force is specified.",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default='/opt/deploy/config/deploy.py',
+                        default=deploy_settings_fn,
                         help='Location of the Deploy configuration file.')
     parser.add_argument('-a', '--app', metavar='NAME',
                         help='Application name')
@@ -218,10 +223,9 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
-    if options.download or options.upload:
-        deploy_settings = yola.deploy.config.load_settings(options.config)
-        artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
-                options.app, options.target, deploy_settings)
+    deploy_settings = yola.deploy.config.load_settings(options.config)
+    artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
+            options.app, options.target, deploy_settings)
 
     version = ve_version(sha224sum('requirements.txt'))
     if options.hash:
@@ -251,7 +255,7 @@ def main():
             yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
-        create_ve('.')
+        create_ve('.', pypi=deploy_settings.get('pypi'))
 
     if options.upload:
         upload_ve(options.app, version, artifacts_factory, 'virtualenv.tar.gz',
