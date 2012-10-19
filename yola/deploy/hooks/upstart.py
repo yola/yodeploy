@@ -1,3 +1,4 @@
+from os.path import basename
 import glob
 import logging
 import subprocess
@@ -18,8 +19,8 @@ class UpstartApp(TemplatedApp):
 
     def configure_upstart(self):
         log.debug('Running UpstartApp deployed hook')
-        jobs = glob.glob1(self.deploy_path('deploy', 'templates', 'upstart'),
-                                          '*.template')
+        jobs = [basename(job) for job in glob.glob(self.deploy_path('deploy', 'templates', 'upstart'),
+                                          '*.template')]
         if not jobs:
             log.warning('UpstartApp %s has no upstart templates', self.app)
             return
