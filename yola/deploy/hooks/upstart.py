@@ -28,7 +28,7 @@ class UpstartApp(TemplatedApp):
         for job in jobs:
             conf_name = job.rsplit('.', 1)[0]
             log.info('Creating and restarting %s upstart job', conf_name)
-            self.template('upstart/apache2/%s' % job, '/etc/init/%s' %
+            self.template('upstart/%s' % job, '/etc/init/%s' %
                           conf_name)
             try:
                 subprocess.call(('service', conf_name, 'stop'))
