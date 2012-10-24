@@ -56,6 +56,8 @@ def main():
         config = build_config(options.app, env, cluster, options.configs_dir)
         for root, dirs, files in os.walk('deploy/templates'):
             for fn in files:
+                if fn.startswith('.'):
+                    continue
                 log.debug('Parsing template: %s in %s/%s', fn, env, cluster)
                 template(os.path.join(root, fn), options.app, config)
 
