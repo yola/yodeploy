@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+0.2.4
+-----
+
+* Allows re-deploying live versions.
+* Adds `UpstartApp`.
+* Squashes file ownership to root.
+* Reads the YolaPI URL from deploy_settings.
+
 0.2.3
 -----
 
