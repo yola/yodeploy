@@ -17,12 +17,12 @@ class ConfiguratedApp(DeployHook):
         self.config = None
 
     def prepare(self):
-        super(ConfiguratedApp, self).prepare()
         self.configurator_prepare()
+        super(ConfiguratedApp, self).prepare()
 
     def deployed(self):
-        super(ConfiguratedApp, self).deployed()
         self.configurator_deployed()
+        super(ConfiguratedApp, self).deployed()
 
     def configurator_prepare(self):
         log.debug('Running ConfiguratedApp prepare hook')
