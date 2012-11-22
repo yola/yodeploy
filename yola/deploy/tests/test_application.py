@@ -95,7 +95,7 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
         self.assertEqual(self.app.live_version, version)
 
         self.app.lock()
-        self.assertRaises(Exception, self.app.unpack, version)
+        self.app.unpack(version)
         self.app.unlock()
 
     def test_swing_symlink_create(self):
