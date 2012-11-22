@@ -196,6 +196,8 @@ class LocalArtifacts(ArtifactsBase):
         # no version specified? get the latest
         if version:
             artifactpath += '.' + version
+        if not os.path.exists(artifactpath):
+            raise Exception("File not present in local artifact store.")
         if os.path.islink(artifactpath):
             artifactpath = os.path.join(os.path.dirname(artifactpath),
                                         os.readlink(artifactpath))
