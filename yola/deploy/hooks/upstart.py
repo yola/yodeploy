@@ -28,11 +28,12 @@ class UpstartApp(TemplatedApp):
 
         for job in jobs:
             conf_name = job.rsplit('.', 1)[0]
+            job_name = conf_name.rsplit('.', 1)[0]
             log.info('Creating and restarting %s upstart job', conf_name)
             self.template('upstart/%s' % job, '/etc/init/%s' %
                           conf_name)
             try:
-                subprocess.call(('service', conf_name, 'stop'))
-                subprocess.check_call(('service', conf_name, 'start'))
+                subprocess.call(('service', job_name, 'stop'))
+                subprocess.check_call(('service', job_name, 'start'))
             except subprocess.CalledProcessError:
                 log.error('Unable to restart %s upstart job', conf_name)
