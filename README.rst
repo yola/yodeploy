@@ -47,6 +47,18 @@ On-disk Deployment layout
 
         `unpack`: Working area
 
+Repository layout
+-----------------
+
+*app*\ `/`\ *artifact*\ `/`\ *target*\ `/`\ *version*\ : A particular version of an
+artifact.
+
+*app*\ `/`\ *artifact*\ `/`\ *target*\ `/`\ *version*\ `.meta`\ : The metadata for an
+artifact. Only used in stores that don't support metadata on objects.
+
+*app*\ `/`\ *artifact*\ `/`\ *target*\ `/latest`: A text file containing
+the *version* of the most recent *artifact*.
+
 Building and uploading
 ----------------------
 
