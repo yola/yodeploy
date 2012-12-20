@@ -17,15 +17,35 @@ def version_sort_key(version):
     return parts
 
 
+class RepositoryFile(object):
+    '''File object wrapper that has a metadata attraibute'''
+
+    def __init__(self, f, metadata):
+        self._f = f
+        self.metadata = metadata
+
+    def __getattr__(self, name):
+        return getattr(self._f, name)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._f.close()
+
+
 class LocalRepository(object):
     '''Store artifacts on local machine'''
 
     def __init__(self, root):
+        if not os.path.isdir(root):
+            raise Exception("root directory %s doesn't exist" % root)
         self._root = root
 
     def get(self, app, version=None, target='default', artifact=None):
         '''
         Return an open file for the requested artifact.
+        The metadata will be attached as a 'metadata' attribute.
         '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
@@ -40,7 +60,7 @@ class LocalRepository(object):
             raise KeyError('Requested version does not exist')
         with open(meta_fn) as f:
             metadata = json.load(f)
-        return open(fn), metadata
+        return RepositoryFile(open(fn), metadata)
 
     def store(self, app, version, fp, metadata, target='default',
               artifact=None):
@@ -50,11 +70,13 @@ class LocalRepository(object):
         if not artifact:
             artifact = u'%s.tar.gz' % app
         artifact_dir = os.path.join(self._root, app, target, artifact)
+        if not os.path.isdir(artifact_dir):
+            os.makedirs(artifact_dir)
 
         fn = os.path.join(artifact_dir, unicode(version))
         meta_fn = fn + '.meta'
         with open(meta_fn, 'w') as f:
-            json.dump(meta_fn, metadata)
+            json.dump(metadata, f)
         with open(fn, 'w') as f:
             shutil.copyfileobj(fp, f)
 
