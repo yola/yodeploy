@@ -42,7 +42,7 @@ class LocalRepository(object):
             raise Exception("root directory %s doesn't exist" % root)
         self._root = root
 
-    def get(self, app, version=None, target='default', artifact=None):
+    def get(self, app, version=None, target='master', artifact=None):
         '''
         Return an open file for the requested artifact.
         The metadata will be attached as a 'metadata' attribute.
@@ -62,7 +62,7 @@ class LocalRepository(object):
             metadata = json.load(f)
         return RepositoryFile(open(fn), metadata)
 
-    def store(self, app, version, fp, metadata, target='default',
+    def store(self, app, version, fp, metadata, target='master',
               artifact=None):
         '''
         Store an artifact (fp)
@@ -83,7 +83,7 @@ class LocalRepository(object):
         with open(os.path.join(artifact_dir, 'latest'), 'w') as f:
             f.write(version + '\n')
 
-    def delete(self, app, version, target='default', artifact=None):
+    def delete(self, app, version, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
         fn = os.path.join(self._root, app, target, artifact, unicode(version))
@@ -102,10 +102,10 @@ class LocalRepository(object):
     def list_targets(self, app):
         return sorted(self._list(os.path.join(self._root, app)))
 
-    def list_artifacts(self, app, target='default'):
+    def list_artifacts(self, app, target='master'):
         return sorted(self._list(os.path.join(self._root, app, 'target')))
 
-    def list_versions(self, app, target='default', artifact=None):
+    def list_versions(self, app, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
         directory = os.path.join(self._root, app, target, artifact)

@@ -50,15 +50,15 @@ class TestLocalRepository(TmpDirTestCase):
     def test_initial_store(self):
         self.repo.store('foo', '1.0', StringIO('data'), {})
         self.assertContents('data',
-                'repo', 'foo', 'default', 'foo.tar.gz', '1.0')
+                'repo', 'foo', 'master', 'foo.tar.gz', '1.0')
 
     def test_store_latest(self):
         self.repo.store('foo', '1.0', StringIO('version 1'), {})
         self.assertContents('1.0\n',
-                'repo', 'foo', 'default', 'foo.tar.gz', 'latest')
+                'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
         self.repo.store('foo', '2.0', StringIO('version 2'), {})
         self.assertContents('2.0\n',
-                'repo', 'foo', 'default', 'foo.tar.gz', 'latest')
+                'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
 
     def test_meta(self):
         self.repo.store('foo', '1.0', StringIO('data'), {'bar': 'baz'})
