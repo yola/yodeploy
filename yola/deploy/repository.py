@@ -69,6 +69,8 @@ class LocalRepository(object):
         '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
+        if version == 'latest':
+            raise ValueError('Illegal version: %s' % version)
         artifact_dir = os.path.join(self._root, app, target, artifact)
         if not os.path.isdir(artifact_dir):
             os.makedirs(artifact_dir)
