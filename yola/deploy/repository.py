@@ -1,3 +1,4 @@
+import errno
 import json
 import logging
 import os
@@ -88,15 +89,42 @@ class LocalRepository(object):
     def delete(self, app, version, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
-        fn = os.path.join(self._root, app, target, artifact, unicode(version))
+        artifact_dir = os.path.join(self._root, app, target, artifact)
+
+        latest_fn = os.path.join(artifact_dir, 'latest')
+        with open(latest_fn) as f:
+            latest = f.read().strip()
+        if latest == version:
+            versions = self.list_versions(app, target, artifact)
+            try:
+                versions.remove(version)
+            except ValueError:
+                pass
+            if versions:
+                with open(latest_fn, 'w') as f:
+                    f.write(versions[-1] + '\n')
+            else:
+                os.unlink(latest_fn)
+
+        fn = os.path.join(artifact_dir, unicode(version))
         os.unlink(fn)
         os.unlink(fn + '.meta')
 
-    def _list(self, directory):
-        for filename in os.listdir(directory):
-            pathname = os.path.join(directory, filename)
-            if os.path.islink(pathname) or os.path.isdir(pathname):
-                yield filename
+    def _list(self, directory, files=False, dirs=True):
+        predicates = [os.path.islink]
+        if files:
+            predicates.append(os.path.isfile)
+        if dirs:
+            predicates.append(os.path.isdir)
+
+        try:
+            for filename in os.listdir(directory):
+                pathname = os.path.join(directory, filename)
+                if any(predicate(pathname) for predicate in predicates):
+                    yield filename
+        except OSError, e:
+            if e.errno != errno.ENOENT:
+                raise
 
     def list_apps(self):
         return sorted(self._list(self._root))
@@ -105,13 +133,18 @@ class LocalRepository(object):
         return sorted(self._list(os.path.join(self._root, app)))
 
     def list_artifacts(self, app, target='master'):
-        return sorted(self._list(os.path.join(self._root, app, 'target')))
+        return sorted(self._list(os.path.join(self._root, app, target)))
 
     def list_versions(self, app, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
         directory = os.path.join(self._root, app, target, artifact)
-        return sorted(self._list(directory), key=version_sort_key)
+        versions = []
+        for version in self._list(directory, files=True, dirs=False):
+            if version == u'latest' or version.endswith(u'.meta'):
+                continue
+            versions.append(version)
+        return sorted(versions, key=version_sort_key)
 
     def gc(self, max_versions=10):
         '''

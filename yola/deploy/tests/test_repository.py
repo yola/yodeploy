@@ -94,3 +94,51 @@ class TestLocalRepository(TmpDirTestCase):
             self.assertEqual(f.read(), 'master data')
         with self.repo.get('foo', target='dev') as f:
             self.assertEqual(f.read(), 'dev data')
+
+    def test_list_apps(self):
+        self.assertFalse(self.repo.list_apps())
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.assertEqual(self.repo.list_apps(), ['foo'])
+
+    def test_list_targets(self):
+        self.assertFalse(self.repo.list_targets('foo'))
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.assertEqual(self.repo.list_targets('foo'), ['master'])
+
+    def test_list_artifacts(self):
+        self.assertFalse(self.repo.list_artifacts('foo'))
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.assertEqual(self.repo.list_artifacts('foo'), ['foo.tar.gz'])
+
+    def test_list_versions(self):
+        self.assertFalse(self.repo.list_versions('foo'))
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.assertEqual(self.repo.list_versions('foo'), ['1.0'])
+
+    def test_delete(self):
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.repo.delete('foo', '1.0')
+        self.assertFalse(self.repo.list_versions('foo'))
+
+    def test_delete_older(self):
+        self.repo.store('foo', '1.0', StringIO('old data'), {})
+        self.repo.store('foo', '2.0', StringIO('new data'), {})
+
+        self.repo.delete('foo', '1.0')
+
+        self.assertEqual(self.repo.list_versions('foo'), ['2.0'])
+        with self.repo.get('foo') as f:
+            self.assertEqual(f.read(), 'new data')
+
+    def test_delete_latest(self):
+        self.repo.store('foo', '1.0', StringIO('old data'), {})
+        self.assertContents('1.0\n',
+                'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
+        self.repo.store('foo', '2.0', StringIO('new data'), {})
+
+        self.repo.delete('foo', '2.0')
+
+        self.assertContents('1.0\n',
+                'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
+        with self.repo.get('foo') as f:
+            self.assertEqual(f.read(), 'old data')
