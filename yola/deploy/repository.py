@@ -90,6 +90,9 @@ class LocalRepository(object):
         if not artifact:
             artifact = u'%s.tar.gz' % app
         artifact_dir = os.path.join(self._root, app, target, artifact)
+        fn = os.path.join(artifact_dir, unicode(version))
+        if not os.path.exists(fn):
+            raise ValueError('No such version: %s/%s %s', app, target, version)
 
         latest_fn = os.path.join(artifact_dir, 'latest')
         with open(latest_fn) as f:
@@ -106,7 +109,6 @@ class LocalRepository(object):
             else:
                 os.unlink(latest_fn)
 
-        fn = os.path.join(artifact_dir, unicode(version))
         os.unlink(fn)
         os.unlink(fn + '.meta')
 

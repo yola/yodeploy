@@ -119,6 +119,8 @@ class TestLocalRepository(TmpDirTestCase):
         self.repo.store('foo', '1.0', StringIO('data'), {})
         self.repo.delete('foo', '1.0')
         self.assertFalse(self.repo.list_versions('foo'))
+        self.assertNotTMPPExists('repo', 'foo', 'master', 'foo.tar.gz',
+                                 'latest')
 
     def test_delete_older(self):
         self.repo.store('foo', '1.0', StringIO('old data'), {})
@@ -142,3 +144,10 @@ class TestLocalRepository(TmpDirTestCase):
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
         with self.repo.get('foo') as f:
             self.assertEqual(f.read(), 'old data')
+
+    def test_delete_missing_app(self):
+        self.assertRaises(ValueError, self.repo.delete, 'foo', '1.0')
+
+    def test_delete_missing_version(self):
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.assertRaises(ValueError, self.repo.delete, 'foo', '2.0')
