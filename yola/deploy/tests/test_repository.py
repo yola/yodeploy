@@ -47,6 +47,9 @@ class TestLocalRepository(TmpDirTestCase):
         with open(self.tmppath(*fragments)) as f:
             self.assertEqual(f.read(), contents)
 
+    def test_init_nonexistent(self):
+        self.assertRaises(Exception, LocalRepository, self.tmppath('missing'))
+
     def test_initial_store(self):
         self.repo.store('foo', '1.0', StringIO('data'), {})
         self.assertContents('data',
