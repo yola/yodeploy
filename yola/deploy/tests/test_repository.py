@@ -63,6 +63,10 @@ class TestLocalRepository(TmpDirTestCase):
         self.assertContents('2.0\n',
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
 
+    def test_store_illegal_versions(self):
+        self.assertRaises(ValueError, self.repo.store, 'foo', 'latest',
+                          StringIO('version 1'), {})
+
     def test_meta(self):
         self.repo.store('foo', '1.0', StringIO('data'), {'bar': 'baz'})
         with self.repo.get('foo') as f:
