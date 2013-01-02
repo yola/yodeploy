@@ -151,3 +151,14 @@ class TestLocalRepository(TmpDirTestCase):
     def test_delete_missing_version(self):
         self.repo.store('foo', '1.0', StringIO('data'), {})
         self.assertRaises(ValueError, self.repo.delete, 'foo', '2.0')
+
+    def test_gc(self):
+        self.repo.store('foo', '1.0', StringIO('data'), {})
+        self.repo.store('foo', '2.0', StringIO('data'), {})
+        self.repo.store('foo', '3.0', StringIO('data'), {})
+        self.repo.store('foo', '4.0', StringIO('data'), {})
+        self.repo.store('foo', '3.1', StringIO('data'), {}, 'dev')
+        self.repo.store('foo', '4.1', StringIO('data'), {}, 'dev')
+        self.repo.gc(2)
+        self.assertEqual(self.repo.list_versions('foo'), ['3.0', '4.0'])
+        self.assertEqual(self.repo.list_versions('foo', 'dev'), ['3.1', '4.1'])

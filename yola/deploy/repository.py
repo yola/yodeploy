@@ -157,6 +157,7 @@ class LocalRepository(object):
             for target in self.list_targets(app):
                 for artifact in self.list_artifacts(app, target):
                     versions = self.list_versions(app, target, artifact)
+                    versions.reverse()
                     for version in versions[max_versions:]:
                         self.delete(app, version, target, artifact)
 
