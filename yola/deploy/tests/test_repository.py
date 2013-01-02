@@ -69,3 +69,21 @@ class TestLocalRepository(TmpDirTestCase):
         self.repo.store('foo', '1.0', StringIO('data'), {})
         with self.repo.get('foo', '1.0') as f:
             self.assertEqual(f.read(), 'data')
+
+    def test_get_latest(self):
+        self.repo.store('foo', '1.0', StringIO('old data'), {})
+        self.repo.store('foo', '2.0', StringIO('new data'), {})
+        with self.repo.get('foo') as f:
+            self.assertEqual(f.read(), 'new data')
+
+    def test_get_missing(self):
+        self.repo.store('foo', '1.0', StringIO('old data'), {})
+        self.assertRaises(KeyError, self.repo.get, 'foo', '2.0')
+
+    def test_targets(self):
+        self.repo.store('foo', '1.0', StringIO('master data'), {})
+        self.repo.store('foo', '2.0', StringIO('dev data'), {}, 'dev')
+        with self.repo.get('foo') as f:
+            self.assertEqual(f.read(), 'master data')
+        with self.repo.get('foo', target='dev') as f:
+            self.assertEqual(f.read(), 'dev data')
