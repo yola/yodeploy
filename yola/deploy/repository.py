@@ -73,7 +73,30 @@ class Repository(object):
         self.store.put(latest_path, StringIO(version + '\n'))
 
     def delete(self, app, version, target='master', artifact=None):
-        self.store.delete(app, version, target, artifact)
+        if not artifact:
+            artifact = u'%s.tar.gz' % app
+        artifact_path = os.path.join(app, target, artifact)
+
+        versions = self.list_versions(app, target, artifact)
+        if version and version not in versions:
+            raise ValueError('Non-existent version: %s', version)
+        elif not version and not versions:
+            raise ValueError('No versions present in the repository')
+
+        latest_path = os.path.join(artifact_path, 'latest')
+        latest = versions[-1]
+        if latest == version:
+            try:
+                versions.remove(version)
+            except ValueError:
+                pass
+            if versions:
+                self.store.put(latest_path, StringIO(versions[-1] + '\n'))
+            else:
+                self.store.delete(latest_path)
+
+        path = os.path.join(artifact_path, unicode(version))
+        self.store.delete(path, metadata=True)
 
     def list_apps(self):
         return self.store.list_apps()
@@ -135,7 +158,7 @@ class LocalRepositoryStore(object):
 
     def put(self, path, fp, metadata=None):
         '''
-        Store an artifact (fp).
+        Store a file (fp).
         Optionally attach metadata to it.
         '''
         directory = os.path.dirname(os.path.join(self.root, path))
@@ -150,31 +173,15 @@ class LocalRepositoryStore(object):
         with open(fn, 'w') as f:
             shutil.copyfileobj(fp, f)
 
-    def delete(self, app, version, target='master', artifact=None):
-        if not artifact:
-            artifact = u'%s.tar.gz' % app
-        artifact_dir = os.path.join(self.root, app, target, artifact)
-        fn = os.path.join(artifact_dir, unicode(version))
-        if not os.path.exists(fn):
-            raise ValueError('No such version: %s/%s %s', app, target, version)
-
-        latest_fn = os.path.join(artifact_dir, 'latest')
-        with open(latest_fn) as f:
-            latest = f.read().strip()
-        if latest == version:
-            versions = self.list_versions(app, target, artifact)
-            try:
-                versions.remove(version)
-            except ValueError:
-                pass
-            if versions:
-                with open(latest_fn, 'w') as f:
-                    f.write(versions[-1] + '\n')
-            else:
-                os.unlink(latest_fn)
-
+    def delete(self, path, metadata=False):
+        '''
+        Delete a file.
+        If metadata is True, this file has metadata that should be removed too
+        '''
+        fn = os.path.join(self.root, path)
         os.unlink(fn)
-        os.unlink(fn + '.meta')
+        if metadata:
+            os.unlink(fn + '.meta')
 
     def _list(self, directory, files=False, dirs=True):
         predicates = [os.path.islink]
