@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import shutil
+from StringIO import StringIO
 
 import boto
 
@@ -55,13 +56,21 @@ class Repository(object):
             with self.store.get(os.path.join(artifact_path, 'latest')) as f:
                 version = f.read().strip()
 
-        fn = os.path.join(artifact_path, unicode(version))
-        f, metadata = self.store.get(fn, meta=True)
+        path = os.path.join(artifact_path, unicode(version))
+        f, metadata = self.store.get(path, meta=True)
         return RepositoryFile(f, metadata)
 
     def put(self, app, version, fp, metadata, target='master',
             artifact=None):
-        self.store.put(app, version, fp, metadata, target, artifact)
+        if not artifact:
+            artifact = u'%s.tar.gz' % app
+        if version == 'latest':
+            raise ValueError('Illegal version: %s' % version)
+        artifact_path = os.path.join(app, target, artifact)
+        path = os.path.join(artifact_path, unicode(version))
+        self.store.put(path, fp, metadata)
+        latest_path = os.path.join(artifact_path, 'latest')
+        self.store.put(latest_path, StringIO(version + '\n'))
 
     def delete(self, app, version, target='master', artifact=None):
         self.store.delete(app, version, target, artifact)
@@ -124,28 +133,22 @@ class LocalRepositoryStore(object):
             return open(fn), metadata
         return open(fn)
 
-    def put(self, app, version, fp, metadata, target='master',
-            artifact=None):
+    def put(self, path, fp, metadata=None):
         '''
-        Store an artifact (fp)
+        Store an artifact (fp).
+        Optionally attach metadata to it.
         '''
-        if not artifact:
-            artifact = u'%s.tar.gz' % app
-        if version == 'latest':
-            raise ValueError('Illegal version: %s' % version)
-        artifact_dir = os.path.join(self.root, app, target, artifact)
-        if not os.path.isdir(artifact_dir):
-            os.makedirs(artifact_dir)
+        directory = os.path.dirname(os.path.join(self.root, path))
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
 
-        fn = os.path.join(artifact_dir, unicode(version))
-        meta_fn = fn + '.meta'
-        with open(meta_fn, 'w') as f:
-            json.dump(metadata, f)
+        fn = os.path.join(self.root, path)
+        if metadata is not None:
+            meta_fn = fn + '.meta'
+            with open(meta_fn, 'w') as f:
+                json.dump(metadata, f)
         with open(fn, 'w') as f:
             shutil.copyfileobj(fp, f)
-
-        with open(os.path.join(artifact_dir, 'latest'), 'w') as f:
-            f.write(version + '\n')
 
     def delete(self, app, version, target='master', artifact=None):
         if not artifact:
