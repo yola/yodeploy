@@ -277,5 +277,3 @@ class Repository(object):
                     versions.reverse()
                     for version in versions[max_versions:]:
                         self.delete(app, version, target, artifact)
-
-
