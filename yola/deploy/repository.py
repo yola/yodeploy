@@ -99,28 +99,24 @@ class Repository(object):
         self.store.delete(path, metadata=True)
 
     def list_apps(self):
-        return self.store.list_apps()
-        #return sorted(self._list(self.root))
+        return sorted(self.store.list(''))
 
     def list_targets(self, app):
-        return self.store.list_targets(app)
-        #return sorted(self.list(os.path.join(self.root, app)))
+        return sorted(self.store.list(app))
 
     def list_artifacts(self, app, target='master'):
-        return self.store.list_artifacts(app, target)
-        #return sorted(self.list(os.path.join(self.root, app, target)))
+        return sorted(self.store.list(os.path.join(app, target)))
 
     def list_versions(self, app, target='master', artifact=None):
-        return self.store.list_versions(app, target, artifact)
-        #if not artifact:
-        #    artifact = u'%s.tar.gz' % app
-        #directory = os.path.join(self.root, app, target, artifact)
-        #versions = []
-        #for version in self._list(directory, files=True, dirs=False):
-        #    if version == u'latest' or version.endswith(u'.meta'):
-        #        continue
-        #    versions.append(version)
-        #return sorted(versions, key=version_sort_key)
+        if not artifact:
+            artifact = u'%s.tar.gz' % app
+        path = os.path.join(app, target, artifact)
+        versions = []
+        for version in self.store.list(path, files=True, dirs=False):
+            if version == u'latest' or version.endswith(u'.meta'):
+                continue
+            versions.append(version)
+        return sorted(versions, key=version_sort_key)
 
     def gc(self, max_versions=10):
         '''
@@ -183,7 +179,14 @@ class LocalRepositoryStore(object):
         if metadata:
             os.unlink(fn + '.meta')
 
-    def _list(self, directory, files=False, dirs=True):
+    def list(self, path, files=False, dirs=True):
+        '''
+        List the contents of path.
+        Symlinks will always be listed.
+        Files will be listed when files is True.
+        Directories will be listed when dirs is True.
+        '''
+        directory = os.path.join(self.root, path)
         predicates = [os.path.islink]
         if files:
             predicates.append(os.path.isfile)
@@ -198,26 +201,6 @@ class LocalRepositoryStore(object):
         except OSError, e:
             if e.errno != errno.ENOENT:
                 raise
-
-    def list_apps(self):
-        return sorted(self._list(self.root))
-
-    def list_targets(self, app):
-        return sorted(self._list(os.path.join(self.root, app)))
-
-    def list_artifacts(self, app, target='master'):
-        return sorted(self._list(os.path.join(self.root, app, target)))
-
-    def list_versions(self, app, target='master', artifact=None):
-        if not artifact:
-            artifact = u'%s.tar.gz' % app
-        directory = os.path.join(self.root, app, target, artifact)
-        versions = []
-        for version in self._list(directory, files=True, dirs=False):
-            if version == u'latest' or version.endswith(u'.meta'):
-                continue
-            versions.append(version)
-        return sorted(versions, key=version_sort_key)
 
 
 class S3Repository(object):
