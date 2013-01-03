@@ -38,6 +38,147 @@ class RepositoryFile(object):
         self._f.close()
 
 
+class LocalRepositoryStore(object):
+    '''Store artifacts on local machine'''
+
+    def __init__(self, root):
+        if not os.path.isdir(root):
+            raise Exception("root directory %s doesn't exist" % root)
+        self.root = root
+
+    def get(self, path, metadata=False):
+        '''
+        Retrieve a file.
+        If metadata is True, metadata will be returned as well, in a tuple.
+        '''
+        fn = os.path.join(self.root, path)
+        meta_fn = fn + '.meta'
+        if not os.path.exists(fn) or (
+                metadata and not os.path.exists(meta_fn)):
+            raise KeyError('No such object')
+
+        if metadata:
+            with open(meta_fn) as f:
+                metadata = json.load(f)
+            return open(fn), metadata
+        return open(fn)
+
+    def put(self, path, fp, metadata=None):
+        '''
+        Store a file (fp).
+        Optionally attach metadata to it.
+        '''
+        directory = os.path.dirname(os.path.join(self.root, path))
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+
+        fn = os.path.join(self.root, path)
+        if metadata is not None:
+            meta_fn = fn + '.meta'
+            with open(meta_fn, 'w') as f:
+                json.dump(metadata, f)
+        with open(fn, 'w') as f:
+            shutil.copyfileobj(fp, f)
+
+    def delete(self, path, metadata=False):
+        '''
+        Delete a file.
+        If metadata is True, this file has metadata that should be removed too
+        '''
+        fn = os.path.join(self.root, path)
+        try:
+            os.unlink(fn)
+        except OSError, e:
+            if e.errno == errno.ENOENT:
+                raise KeyError(e)
+            raise
+        if metadata:
+            try:
+                os.unlink(fn + '.meta')
+            except OSError, e:
+                if e.errno != errno.ENOENT:
+                    raise
+
+    def list(self, path=None, files=False, dirs=True):
+        '''
+        List the contents of path.
+        Files will be listed when files is True.
+        Directories will be listed when dirs is True.
+        '''
+        if path:
+            directory = os.path.join(self.root, path)
+        else:
+            directory = self.root
+        predicates = []
+        if files:
+            predicates.append(os.path.isfile)
+        if dirs:
+            predicates.append(os.path.isdir)
+
+        try:
+            for filename in os.listdir(directory):
+                pathname = os.path.join(directory, filename)
+                if any(predicate(pathname) for predicate in predicates):
+                    yield filename
+        except OSError, e:
+            if e.errno != errno.ENOENT:
+                raise
+
+
+class S3RepositoryStore(object):
+    '''Store artifacts on S3'''
+
+    def __init__(self, bucket, access_key, secret_key):
+        s3 = boto.connect_s3(access_key, secret_key)
+        self.bucket = s3.get_bucket(bucket)
+
+    def get(self, path, metadata=False):
+        '''
+        Retrieve a file.
+        If metadata is True, metadata will be returned as well, in a tuple.
+        '''
+        k = self.bucket.get_key(path)
+        if metadata:
+            return k.open(), k.metadata
+        return k.open()
+
+    def put(self, path, fp, metadata=None):
+        '''
+        Store a file (fp).
+        Optionally attach metadata to it.
+        '''
+        k = self.bucket.new_key(path)
+        if metadata:
+            k.update_metadata(metadata)
+        k.set_contents_from_stream(fp)
+
+    def delete(self, path, metadata=False):
+        '''
+        Delete a file.
+        If metadata is True, this file has metadata that should be removed too
+        '''
+        k = self.bucket.get_key(path)
+        k.delete()
+
+    def list(self, path=None, files=False, dirs=True):
+        '''
+        List the contents of path.
+        Files will be listed when files is True.
+        Directories will be listed when dirs is True.
+        '''
+        if not path:
+            path = ''
+        accepted_classes = []
+        if files:
+            accepted_classes.append(boto.s3.key.Key)
+        if dirs:
+            accepted_classes.append(boto.s3.prefix.Prefix)
+
+        for k in self.bucket.list(prefix=path, delimiter='/'):
+            if any(isinstance(k, class_) for class_ in accepted_classes):
+                yield k.name
+
+
 class Repository(object):
     '''An artifact repository'''
 
@@ -57,7 +198,7 @@ class Repository(object):
                 version = f.read().strip()
 
         path = os.path.join(artifact_path, unicode(version))
-        f, metadata = self.store.get(path, meta=True)
+        f, metadata = self.store.get(path, metadata=True)
         return RepositoryFile(f, metadata)
 
     def put(self, app, version, fp, metadata, target='master',
@@ -105,7 +246,7 @@ class Repository(object):
         self.store.delete(path, metadata=True)
 
     def list_apps(self):
-        return sorted(self.store.list(''))
+        return sorted(self.store.list())
 
     def list_targets(self, app):
         return sorted(self.store.list(app))
@@ -138,94 +279,3 @@ class Repository(object):
                         self.delete(app, version, target, artifact)
 
 
-class LocalRepositoryStore(object):
-    '''Store artifacts on local machine'''
-
-    def __init__(self, root):
-        if not os.path.isdir(root):
-            raise Exception("root directory %s doesn't exist" % root)
-        self.root = root
-
-    def get(self, path, meta=False):
-        fn = os.path.join(self.root, path)
-        meta_fn = fn + '.meta'
-        if not os.path.exists(fn) or (meta and not os.path.exists(meta_fn)):
-            raise KeyError('No such object')
-
-        if meta:
-            with open(meta_fn) as f:
-                metadata = json.load(f)
-            return open(fn), metadata
-        return open(fn)
-
-    def put(self, path, fp, metadata=None):
-        '''
-        Store a file (fp).
-        Optionally attach metadata to it.
-        '''
-        directory = os.path.dirname(os.path.join(self.root, path))
-        if not os.path.isdir(directory):
-            os.makedirs(directory)
-
-        fn = os.path.join(self.root, path)
-        if metadata is not None:
-            meta_fn = fn + '.meta'
-            with open(meta_fn, 'w') as f:
-                json.dump(metadata, f)
-        with open(fn, 'w') as f:
-            shutil.copyfileobj(fp, f)
-
-    def delete(self, path, metadata=False):
-        '''
-        Delete a file.
-        If metadata is True, this file has metadata that should be removed too
-        '''
-        fn = os.path.join(self.root, path)
-        os.unlink(fn)
-        if metadata:
-            os.unlink(fn + '.meta')
-
-    def list(self, path, files=False, dirs=True):
-        '''
-        List the contents of path.
-        Symlinks will always be listed.
-        Files will be listed when files is True.
-        Directories will be listed when dirs is True.
-        '''
-        directory = os.path.join(self.root, path)
-        predicates = [os.path.islink]
-        if files:
-            predicates.append(os.path.isfile)
-        if dirs:
-            predicates.append(os.path.isdir)
-
-        try:
-            for filename in os.listdir(directory):
-                pathname = os.path.join(directory, filename)
-                if any(predicate(pathname) for predicate in predicates):
-                    yield filename
-        except OSError, e:
-            if e.errno != errno.ENOENT:
-                raise
-
-
-class S3Repository(object):
-    '''Store artifacts on S3'''
-
-    def __init__(self, bucket, access_key, secret_key):
-        s3 = boto.connect_s3(access_key, secret_key)
-        self.bucket = s3.get_bucket(bucket)
-
-
-def build_repository_factory(deploy_settings):
-    '''
-    Return a factory that will build the correct Artifacts class for our
-    deploy_settings
-    '''
-    def factory():
-        provider = deploy_settings.artifacts.get('provider', 's3')
-        if provider == 'local':
-            return LocalRepository(deploy_settings.paths.artifacts)
-        else:
-            raise ValueError("Unknown Artifacts Provider: %s" % provider)
-    return factory
