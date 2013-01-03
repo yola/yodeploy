@@ -67,7 +67,7 @@ class Repository(object):
         '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
-        if version == 'latest':
+        if version == 'latest' or version.endswith('.meta'):
             raise ValueError('Illegal version: %s' % version)
         artifact_path = os.path.join(app, target, artifact)
         path = os.path.join(artifact_path, unicode(version))
