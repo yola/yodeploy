@@ -65,3 +65,7 @@ class TmpDirTestCase(unittest.TestCase):
         if os.path.exists(self.tmppath(*fragments)):
             self.fail(self._formatMessage(msg,
                 "does not exist: %s" % (os.path.join(*fragments))))
+
+    def assertTMPPContents(self, contents, *fragments):
+        with open(self.tmppath(*fragments)) as f:
+            self.assertEqual(f.read(), contents)

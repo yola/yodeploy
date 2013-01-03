@@ -39,31 +39,97 @@ class TestRepositoryFile(unittest.TestCase):
         self.assertRaises(ValueError, f.read)
 
 
-class TestLocalRepository(TmpDirTestCase):
+class TestLocalRepositoryStore(TmpDirTestCase):
     def setUp(self):
-        super(TestLocalRepository, self).setUp()
-        store = LocalRepositoryStore(self.mkdir('repo'))
-        self.repo = Repository(store)
-
-    def assertContents(self, contents, *fragments):
-        with open(self.tmppath(*fragments)) as f:
-            self.assertEqual(f.read(), contents)
+        super(TestLocalRepositoryStore, self).setUp()
+        self.store = LocalRepositoryStore(self.mkdir('repo'))
 
     def test_init_nonexistent(self):
         self.assertRaises(Exception, LocalRepositoryStore,
                           self.tmppath('missing'))
 
+    def test_get(self):
+        with open(self.tmppath('repo', 'foo'), 'w') as f:
+            f.write('bar')
+        with self.store.get('foo') as f:
+            self.assertEqual(f.read(), 'bar')
+
+    def test_get_meta(self):
+        with open(self.tmppath('repo', 'foo'), 'w') as f:
+            f.write('bar')
+        with open(self.tmppath('repo', 'foo.meta'), 'w') as f:
+            f.write('{"baz": "quux"}')
+
+        f, meta = self.store.get('foo', True)
+        try:
+            self.assertEqual(f.read(), 'bar')
+            self.assertEqual(meta, {'baz': 'quux'})
+        finally:
+            f.close()
+
+    def test_get_missing_meta(self):
+        with open(self.tmppath('repo', 'foo'), 'w') as f:
+            f.write('bar')
+
+        self.assertRaises(KeyError, self.store.get, 'foo', True)
+
+    def test_put(self):
+        self.store.put('foo', StringIO('bar'))
+        self.assertTMPPContents('bar', 'repo', 'foo')
+        self.assertNotTMPPExists('repo', 'foo.meta')
+
+    def test_put_meta(self):
+        self.store.put('foo', StringIO('bar'), {'baz': 'quux'})
+        self.assertTMPPContents('bar', 'repo', 'foo')
+        self.assertTMPPContents('{"baz": "quux"}', 'repo', 'foo.meta')
+
+    def test_delete(self):
+        self.store.put('foo', StringIO('bar'))
+        self.store.delete('foo')
+
+    def test_delete_missing(self):
+        self.assertRaises(KeyError, self.store.delete, 'foo')
+
+    def test_delete_meta(self):
+        self.store.put('foo', StringIO('bar'), {'baz': 'quux'})
+        self.store.delete('foo', metadata=True)
+
+    def test_delete_missing_meta(self):
+        self.store.put('foo', StringIO('bar'))
+        # Error is ignored
+        self.store.delete('foo', metadata=True)
+
+    def test_list(self):
+        with open(self.tmppath('repo', 'foo'), 'w') as f:
+            f.write('quux')
+        with open(self.tmppath('repo', 'bar'), 'w') as f:
+            f.write('quux')
+        self.mkdir('repo', 'baz')
+        self.assertEqual(sorted(self.store.list()), ['baz'])
+        self.assertEqual(sorted(self.store.list(files=True)),
+                         ['bar', 'baz', 'foo'])
+        self.assertEqual(sorted(self.store.list(files=True, dirs=False)),
+                         ['bar', 'foo'])
+
+
+class TestLocalRepository(TmpDirTestCase):
+    '''Integration test: A localRepositoryStore backed Repository'''
+    def setUp(self):
+        super(TestLocalRepository, self).setUp()
+        store = LocalRepositoryStore(self.mkdir('repo'))
+        self.repo = Repository(store)
+
     def test_initial_put(self):
         self.repo.put('foo', '1.0', StringIO('data'), {})
-        self.assertContents('data',
+        self.assertTMPPContents('data',
                 'repo', 'foo', 'master', 'foo.tar.gz', '1.0')
 
     def test_store_latest(self):
         self.repo.put('foo', '1.0', StringIO('version 1'), {})
-        self.assertContents('1.0\n',
+        self.assertTMPPContents('1.0\n',
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
         self.repo.put('foo', '2.0', StringIO('version 2'), {})
-        self.assertContents('2.0\n',
+        self.assertTMPPContents('2.0\n',
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
 
     def test_store_illegal_versions(self):
@@ -137,13 +203,13 @@ class TestLocalRepository(TmpDirTestCase):
 
     def test_delete_latest(self):
         self.repo.put('foo', '1.0', StringIO('old data'), {})
-        self.assertContents('1.0\n',
+        self.assertTMPPContents('1.0\n',
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
         self.repo.put('foo', '2.0', StringIO('new data'), {})
 
         self.repo.delete('foo', '2.0')
 
-        self.assertContents('1.0\n',
+        self.assertTMPPContents('1.0\n',
                 'repo', 'foo', 'master', 'foo.tar.gz', 'latest')
         with self.repo.get('foo') as f:
             self.assertEqual(f.read(), 'old data')
