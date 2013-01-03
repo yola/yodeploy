@@ -5,6 +5,8 @@ import os
 import re
 import shutil
 
+import boto
+
 log = logging.getLogger(__name__)
 
 
@@ -35,13 +37,11 @@ class RepositoryFile(object):
         self._f.close()
 
 
-class LocalRepository(object):
-    '''Store artifacts on local machine'''
+class Repository(object):
+    '''An artifact repository'''
 
-    def __init__(self, root):
-        if not os.path.isdir(root):
-            raise Exception("root directory %s doesn't exist" % root)
-        self._root = root
+    def __init__(self, store):
+        self.store = store
 
     def get(self, app, version=None, target='master', artifact=None):
         '''
@@ -50,21 +50,82 @@ class LocalRepository(object):
         '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
-        artifact_dir = os.path.join(self._root, app, target, artifact)
+        artifact_path = os.path.join(app, target, artifact)
         if not version:
-            with open(os.path.join(artifact_dir, 'latest')) as f:
+            with self.store.get(os.path.join(artifact_path, 'latest')) as f:
                 version = f.read().strip()
 
-        fn = os.path.join(artifact_dir, unicode(version))
-        meta_fn = fn + '.meta'
-        if not os.path.exists(fn) or not os.path.exists(meta_fn):
-            raise KeyError('Requested version does not exist')
-        with open(meta_fn) as f:
-            metadata = json.load(f)
-        return RepositoryFile(open(fn), metadata)
+        fn = os.path.join(artifact_path, unicode(version))
+        f, metadata = self.store.get(fn, meta=True)
+        return RepositoryFile(f, metadata)
 
-    def store(self, app, version, fp, metadata, target='master',
-              artifact=None):
+    def put(self, app, version, fp, metadata, target='master',
+            artifact=None):
+        self.store.put(app, version, fp, metadata, target, artifact)
+
+    def delete(self, app, version, target='master', artifact=None):
+        self.store.delete(app, version, target, artifact)
+
+    def list_apps(self):
+        return self.store.list_apps()
+        #return sorted(self._list(self.root))
+
+    def list_targets(self, app):
+        return self.store.list_targets(app)
+        #return sorted(self.list(os.path.join(self.root, app)))
+
+    def list_artifacts(self, app, target='master'):
+        return self.store.list_artifacts(app, target)
+        #return sorted(self.list(os.path.join(self.root, app, target)))
+
+    def list_versions(self, app, target='master', artifact=None):
+        return self.store.list_versions(app, target, artifact)
+        #if not artifact:
+        #    artifact = u'%s.tar.gz' % app
+        #directory = os.path.join(self.root, app, target, artifact)
+        #versions = []
+        #for version in self._list(directory, files=True, dirs=False):
+        #    if version == u'latest' or version.endswith(u'.meta'):
+        #        continue
+        #    versions.append(version)
+        #return sorted(versions, key=version_sort_key)
+
+    def gc(self, max_versions=10):
+        '''
+        Delete all but the most recent max_versions versions of each artifact
+        in the repository
+        '''
+        for app in self.list_apps():
+            for target in self.list_targets(app):
+                for artifact in self.list_artifacts(app, target):
+                    versions = self.list_versions(app, target, artifact)
+                    versions.reverse()
+                    for version in versions[max_versions:]:
+                        self.delete(app, version, target, artifact)
+
+
+class LocalRepositoryStore(object):
+    '''Store artifacts on local machine'''
+
+    def __init__(self, root):
+        if not os.path.isdir(root):
+            raise Exception("root directory %s doesn't exist" % root)
+        self.root = root
+
+    def get(self, path, meta=False):
+        fn = os.path.join(self.root, path)
+        meta_fn = fn + '.meta'
+        if not os.path.exists(fn) or (meta and not os.path.exists(meta_fn)):
+            raise KeyError('No such object')
+
+        if meta:
+            with open(meta_fn) as f:
+                metadata = json.load(f)
+            return open(fn), metadata
+        return open(fn)
+
+    def put(self, app, version, fp, metadata, target='master',
+            artifact=None):
         '''
         Store an artifact (fp)
         '''
@@ -72,7 +133,7 @@ class LocalRepository(object):
             artifact = u'%s.tar.gz' % app
         if version == 'latest':
             raise ValueError('Illegal version: %s' % version)
-        artifact_dir = os.path.join(self._root, app, target, artifact)
+        artifact_dir = os.path.join(self.root, app, target, artifact)
         if not os.path.isdir(artifact_dir):
             os.makedirs(artifact_dir)
 
@@ -89,7 +150,7 @@ class LocalRepository(object):
     def delete(self, app, version, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
-        artifact_dir = os.path.join(self._root, app, target, artifact)
+        artifact_dir = os.path.join(self.root, app, target, artifact)
         fn = os.path.join(artifact_dir, unicode(version))
         if not os.path.exists(fn):
             raise ValueError('No such version: %s/%s %s', app, target, version)
@@ -129,18 +190,18 @@ class LocalRepository(object):
                 raise
 
     def list_apps(self):
-        return sorted(self._list(self._root))
+        return sorted(self._list(self.root))
 
     def list_targets(self, app):
-        return sorted(self._list(os.path.join(self._root, app)))
+        return sorted(self._list(os.path.join(self.root, app)))
 
     def list_artifacts(self, app, target='master'):
-        return sorted(self._list(os.path.join(self._root, app, target)))
+        return sorted(self._list(os.path.join(self.root, app, target)))
 
     def list_versions(self, app, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
-        directory = os.path.join(self._root, app, target, artifact)
+        directory = os.path.join(self.root, app, target, artifact)
         versions = []
         for version in self._list(directory, files=True, dirs=False):
             if version == u'latest' or version.endswith(u'.meta'):
@@ -148,18 +209,13 @@ class LocalRepository(object):
             versions.append(version)
         return sorted(versions, key=version_sort_key)
 
-    def gc(self, max_versions=10):
-        '''
-        Delete all but the most recent max_versions versions of each artifact
-        in the repository
-        '''
-        for app in self.list_apps():
-            for target in self.list_targets(app):
-                for artifact in self.list_artifacts(app, target):
-                    versions = self.list_versions(app, target, artifact)
-                    versions.reverse()
-                    for version in versions[max_versions:]:
-                        self.delete(app, version, target, artifact)
+
+class S3Repository(object):
+    '''Store artifacts on S3'''
+
+    def __init__(self, bucket, access_key, secret_key):
+        s3 = boto.connect_s3(access_key, secret_key)
+        self.bucket = s3.get_bucket(bucket)
 
 
 def build_repository_factory(deploy_settings):
