@@ -62,6 +62,9 @@ class Repository(object):
 
     def put(self, app, version, fp, metadata, target='master',
             artifact=None):
+        '''
+        Store an object (fp) in the repository.
+        '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
         if version == 'latest':
@@ -73,6 +76,9 @@ class Repository(object):
         self.store.put(latest_path, StringIO(version + '\n'))
 
     def delete(self, app, version, target='master', artifact=None):
+        '''
+        Delete an object from the repository.
+        '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
         artifact_path = os.path.join(app, target, artifact)
