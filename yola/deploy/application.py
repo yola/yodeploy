@@ -19,14 +19,10 @@ class Application(object):
     will do it all in the right order.
     '''
 
-    def __init__(self, app, target, artifacts_factory, settings_file,
-                 artifacts=None):
+    def __init__(self, app, target, repository, settings_file):
         self.app = app
         self.target = target
-        self.artifacts_factory = artifacts_factory
-        if artifacts is None:
-            artifacts = artifacts_factory()
-        self.artifacts = artifacts
+        self.repository = repository
         self.settings_fn = settings_file
         self.settings = yola.deploy.config.load_settings(settings_file)
         self.appdir = os.path.join(self.settings.paths.root, app)
@@ -73,8 +69,8 @@ class Application(object):
         log.debug('Deploying hook virtualenv %s', ve_hash)
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        yola.deploy.virtualenv.download_ve('deploy', ve_hash,
-                                           self.artifacts_factory, tarball)
+        yola.deploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
+                                           self.target, tarball)
         extract_tar(tarball, ve_unpack_root)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
@@ -133,9 +129,10 @@ class Application(object):
         unpack_dir = os.path.join(self.appdir, 'versions', 'unpack')
         if not os.path.isdir(unpack_dir):
             os.makedirs(unpack_dir)
-        tarball = os.path.join(unpack_dir, self.artifacts.filename)
-        # TODO: Migrate to git hashes everywhere
-        self.artifacts.download(dest=tarball, version=version)
+        tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
+        with self.repository.get(self.app, version, self.target) as f1:
+            with open(tarball, 'w') as f2:
+                shutil.copyfileobj(f1, f2)
         extract_tar(tarball, os.path.join(unpack_dir, version))
         os.unlink(tarball)
         staging = os.path.join(self.appdir, 'versions', version)
