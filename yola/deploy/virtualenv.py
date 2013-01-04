@@ -25,8 +25,8 @@ except ImportError:
 
 import virtualenv
 
-import yola.deploy.artifacts
 import yola.deploy.config
+import yola.deploy.repository
 import yola.deploy.util
 
 log = logging.getLogger(__name__)
@@ -45,24 +45,27 @@ def ve_version(req_hash):
                          req_hash)
 
 
-def download_ve(app, version, artifacts_factory, dest='virtualenv.tar.gz'):
-    artifacts = artifacts_factory(filename='virtualenv-%s.tar.gz' % version,
-                                  app=app)
-    artifacts.update_versions()
-    if artifacts.versions.latest:
-        log.debug('Downloading existing virtualenv %s for %s', version, app)
-        artifacts.download(dest)
-    else:
-        raise KeyError('No existing virtualenv %s for %s' % (version, app))
+def download_ve(repository, app, ve_version, target='master',
+                dest='virtualenv.tar.gz'):
+    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    with repository.get(app, target=target, artifact=artifact) as f1:
+        with open(dest, 'w') as f2:
+            shutil.copyfileobj(f1, f2)
 
 
-def upload_ve(app, version, artifacts_factory, filename, overwrite=False):
-    log.debug('Uploading virtualenv %s for %s', version, app)
-    artifacts = artifacts_factory(filename='virtualenv-%s.tar.gz' % version,
-                                  app=app)
-    artifacts.update_versions()
-    if overwrite or artifacts.versions.latest is None:
-        artifacts.upload(filename)
+def upload_ve(repository, app, ve_version, target='master',
+              source='virtualenv.tar.gz', overwrite=False):
+    log.debug('Uploading virtualenv %s for %s', ve_version, app)
+    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    versions = repository.list_versions(app, target, artifact)
+    version = '1'
+    if versions:
+        if not overwrite:
+            log.error('Skipping: already exists')
+            return
+        version = str(int(versions[-1]) + 1)
+    with open(source) as f:
+        repository.put(app, version, f, {}, target, artifact)
 
 
 def create_ve(app_dir, pypi=None):
@@ -190,6 +193,7 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
     parser.add_argument('-a', '--app', metavar='NAME',
                         help='Application name')
     parser.add_argument('--target', metavar='TARGET',
+                        default='master',
                         help='Target to store/retrieve virtualenvs from')
     parser.add_argument('--env', dest='target', help=argparse.SUPPRESS)
     parser.add_argument('--hash',
@@ -224,8 +228,15 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
     deploy_settings = yola.deploy.config.load_settings(options.config)
-    artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
-            options.app, options.target, deploy_settings)
+    if deploy_settings.artifacts.get('provider', 's3') == 's3':
+        store = yola.deploy.repository.S3RepositoryStore(
+                deploy_settings.artifacts.bucket,
+                deploy_settings.artifacts.access_key,
+                deploy_settings.artifacts.secret_key)
+    else:
+        store = yola.deploy.repository.LocalRepositoryStore(
+                deploy_settings.paths.artifacts)
+    repository = yola.deploy.repository.Repository(store)
 
     version = ve_version(sha224sum('requirements.txt'))
     if options.hash:
@@ -239,6 +250,7 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
 
     if existing_ve:
         if existing_ve == version and not options.force:
+            log.info('Existing virtualenv matches requirements.txt')
             options.download = False
         else:
             shutil.rmtree('virtualenv')
@@ -246,10 +258,10 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
     if options.download:
         downloaded = False
         try:
-            download_ve(options.app, version, artifacts_factory)
+            download_ve(repository, options.app, version, options.target)
             downloaded = True
         except KeyError:
-            pass
+            log.warn('No existing virtualenv, building...')
         if downloaded:
             options.upload = False
             yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
@@ -258,8 +270,8 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
         create_ve('.', pypi=deploy_settings.get('pypi'))
 
     if options.upload:
-        upload_ve(options.app, version, artifacts_factory, 'virtualenv.tar.gz',
-                  options.force)
+        upload_ve(repository, options.app, version, options.target,
+                  overwrite=options.force)
 
 if __name__ == '__main__':
     main()
