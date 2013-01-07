@@ -26,8 +26,8 @@ hooks = Hooks
         with open(self.tmppath('config.py'), 'w') as f:
             f.write("""import os
 
-from yola.deploy.artifacts import AttrDict
-
+class AttrDict(dict):
+    __getattr__ = dict.__getitem__
 
 prefix='%s'
 deploy_settings = AttrDict(
