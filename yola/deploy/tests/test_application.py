@@ -16,8 +16,16 @@ class ApplicationTest(TmpDirTestCase):
 class AttrDict(dict):
     __getattr__ = dict.__getitem__
 
-deploy_settings = AttrDict(paths=AttrDict(root='%s'))
-""" % self.tmppath('srv'))
+deploy_settings = AttrDict(
+    artifacts=AttrDict(
+        provider='local',
+    ),
+    paths=AttrDict(
+        artifacts='%s',
+        root='%s',
+    ),
+)
+""" % (self.tmppath('artifacts'), self.tmppath('srv')))
 
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
