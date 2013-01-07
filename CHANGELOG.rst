@@ -1,8 +1,13 @@
 Change Log
 ==========
 
+0.3.0
+-----
+
+* Backwards-incompatible repository layout change.
+
 0.2.7
-------------
+-----
 
 * Added supervisord hook.
 
