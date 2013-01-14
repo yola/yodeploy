@@ -142,9 +142,12 @@ class LocalRepositoryStore(object):
 class S3RepositoryStore(object):
     '''Store artifacts on S3'''
 
-    def __init__(self, bucket, access_key, secret_key):
+    def __init__(self, bucket, access_key, secret_key, reduced_redundancy,
+                 encrypted):
         s3 = boto.connect_s3(access_key, secret_key)
         self.bucket = s3.get_bucket(bucket)
+        self.reduced_redundancy = reduced_redundancy
+        self.encrypted = encrypted
 
     def get(self, path, metadata=False):
         '''
@@ -164,7 +167,9 @@ class S3RepositoryStore(object):
         k = self.bucket.new_key(path)
         if metadata:
             k.update_metadata(metadata)
-        k.set_contents_from_stream(fp)
+        k.set_contents_from_stream(fp,
+                reduced_redundancy=self.reduced_redundancy,
+                encrypt_key=self.encrypted)
 
     def delete(self, path, metadata=False):
         '''
