@@ -228,15 +228,7 @@ def main(deploy_settings_fn='/opt/deploy/config/deploy.py'):
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
     deploy_settings = yola.deploy.config.load_settings(options.config)
-    if deploy_settings.artifacts.get('provider', 's3') == 's3':
-        store = yola.deploy.repository.S3RepositoryStore(
-                deploy_settings.artifacts.bucket,
-                deploy_settings.artifacts.access_key,
-                deploy_settings.artifacts.secret_key)
-    else:
-        store = yola.deploy.repository.LocalRepositoryStore(
-                deploy_settings.paths.artifacts)
-    repository = yola.deploy.repository.Repository(store)
+    repository = yola.deploy.repository.get_repository(deploy_settings)
 
     version = ve_version(sha224sum('requirements.txt'))
     if options.hash:

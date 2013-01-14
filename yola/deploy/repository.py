@@ -21,6 +21,20 @@ def version_sort_key(version):
     return parts
 
 
+def get_repository(deploy_settings):
+    '''Create the Repository specified in deploy_settings'''
+    if deploy_settings.artifacts.get('provider', 's3') == 's3':
+        store = S3RepositoryStore(
+                    deploy_settings.artifacts.bucket,
+                    deploy_settings.artifacts.access_key,
+                    deploy_settings.artifacts.secret_key,
+                    deploy_settings.artifacts.get('reduced_redundancy', True),
+                    deploy_settings.artifacts.get('encrypted', True))
+    else:
+        store = LocalRepositoryStore(deploy_settings.paths.artifacts)
+    return Repository(store)
+
+
 class RepositoryFile(object):
     '''File object wrapper that has a metadata attraibute'''
 

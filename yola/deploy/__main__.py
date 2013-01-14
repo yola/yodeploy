@@ -40,15 +40,7 @@ def main():
     app = os.path.basename(os.path.abspath(args.appdir))
     deploy_settings = yola.deploy.config.load_settings(args.config)
 
-    if deploy_settings.artifacts.get('provider', 's3') == 's3':
-        store = yola.deploy.repository.S3RepositoryStore(
-                deploy_settings.artifacts.bucket,
-                deploy_settings.artifacts.access_key,
-                deploy_settings.artifacts.secret_key)
-    else:
-        store = yola.deploy.repository.LocalRepositoryStore(
-                deploy_settings.paths.artifacts)
-    repository = yola.deploy.repository.Repository(store)
+    repository = yola.deploy.repository.get_repository(deploy_settings)
 
     if args.hook:
         call_hook(app, args.target, args.appdir, args.version, deploy_settings,
