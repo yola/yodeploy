@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 
 
 class UpstartApp(TemplatedApp):
+    reload_on_deploy = False
+
     def __init__(self, *args, **kwargs):
         super(TemplatedApp, self).__init__(*args, **kwargs)
 
@@ -33,7 +35,10 @@ class UpstartApp(TemplatedApp):
             self.template('upstart/%s' % job, '/etc/init/%s' %
                           conf_name)
             try:
-                subprocess.call(('service', job_name, 'stop'))
-                subprocess.check_call(('service', job_name, 'start'))
+                if self.reload_on_deploy:
+                    subprocess.check_call(('service', job_name, 'reload'))
+                else:
+                    subprocess.call(('service', job_name, 'stop'))
+                    subprocess.check_call(('service', job_name, 'start'))
             except subprocess.CalledProcessError:
                 log.error('Unable to restart %s upstart job', conf_name)
