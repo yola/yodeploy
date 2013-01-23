@@ -33,6 +33,12 @@ class SupervisordApp(TemplatedApp):
             self.template('supervisord/%s' % job, '/etc/supervisor/conf.d/%s' %
                           conf_name)
             try:
+                subprocess.check_call(('supervisorctl', 'reread'))
+                subprocess.check_call(('supervisorctl', 'update'))
+            except subprocess.CalledProcessError:
+                log.error('Unable to update supervisord configs')
+
+            try:
                 subprocess.call(('supervisorctl', 'stop', job_name))
                 subprocess.check_call(('supervisorctl', 'start', job_name))
             except subprocess.CalledProcessError:
