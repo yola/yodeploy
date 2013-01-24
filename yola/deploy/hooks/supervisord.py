@@ -10,8 +10,8 @@ log = logging.getLogger(__name__)
 
 
 class SupervisordApp(TemplatedApp):
-    """ This looks for *.template jobs in deploy/templates/supervisord
-        and sticks them in /etc/supervisor/conf.d/{job}.
+    """ This looks for *.conf.template jobs in deploy/templates/supervisord
+        and sticks them in /etc/supervisor/conf.d/{job}.conf
 
         It then calls supervisorctl reread and supervisorctl update.
         reread: reloads the job configurations in /etc/supervisor/conf.d/
