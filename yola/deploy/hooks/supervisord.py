@@ -10,6 +10,13 @@ log = logging.getLogger(__name__)
 
 
 class SupervisordApp(TemplatedApp):
+    """ This looks for *.template jobs in deploy/templates/supervisord
+        and sticks them in /etc/supervisor/conf.d/{job}.
+
+        It then calls supervisorctl reread and supervisorctl update.
+        reread: reloads the job configurations in /etc/supervisor/conf.d/
+        update: applys any changes to currently running jobs."""
+
     def __init__(self, *args, **kwargs):
         super(TemplatedApp, self).__init__(*args, **kwargs)
 
