@@ -108,6 +108,8 @@ class Application(object):
             tlss.shutdown()
 
     def deploy(self, version):
+        if version is None:
+            version = self.repository.latest_version(self.app, self.target)
         log.info('Deploying %s/%s', self.app, version)
         self.lock()
         self.unpack(version)
