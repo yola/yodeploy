@@ -31,7 +31,6 @@ def main():
     parser.add_argument('--target', metavar='TARGET',
                         default='master',
                         help='Target to store/retrieve virtualenvs from')
-    parser.add_argument('--env', dest='target', help=argparse.SUPPRESS)
     parser.add_argument('--hash',
                         action='store_true',
                         help="Only determine the virtualenv's version")
