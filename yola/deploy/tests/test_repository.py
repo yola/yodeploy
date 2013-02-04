@@ -54,7 +54,16 @@ class TestLocalRepositoryStore(TmpDirTestCase):
         with self.store.get('foo') as f:
             self.assertEqual(f.read(), 'bar')
 
-    def test_get_meta(self):
+    def test_get_metadata(self):
+        with open(self.tmppath('repo', 'foo'), 'w') as f:
+            f.write('bar')
+        with open(self.tmppath('repo', 'foo.meta'), 'w') as f:
+            f.write('{"baz": "quux"}')
+
+        meta = self.store.get_metadata('foo')
+        self.assertEqual(meta, {'baz': 'quux'})
+
+    def test_get_w_meta(self):
         with open(self.tmppath('repo', 'foo'), 'w') as f:
             f.write('bar')
         with open(self.tmppath('repo', 'foo.meta'), 'w') as f:
@@ -155,6 +164,16 @@ class TestLocalRepository(TmpDirTestCase):
     def test_get_missing(self):
         self.repo.put('foo', '1.0', StringIO('old data'), {})
         self.assertRaises(KeyError, self.repo.get, 'foo', '2.0')
+
+    def test_get_metadata(self):
+        self.repo.put('foo', '1.0', StringIO('data'), {'foo': 'bar'})
+        self.assertEqual(self.repo.get_metadata('foo', '1.0'), {'foo': 'bar'})
+
+    def test_latest_version(self):
+        self.repo.put('foo', '1.0', StringIO('old data'), {})
+        self.assertEqual(self.repo.latest_version('foo'), '1.0')
+        self.repo.put('foo', '2.0', StringIO('new data'), {})
+        self.assertEqual(self.repo.latest_version('foo'), '2.0')
 
     def test_targets(self):
         self.repo.put('foo', '1.0', StringIO('master data'), {})

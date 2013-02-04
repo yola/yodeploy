@@ -72,10 +72,21 @@ class LocalRepositoryStore(object):
             raise KeyError('No such object')
 
         if metadata:
-            with open(meta_fn) as f:
-                metadata = json.load(f)
+            metadata = self.get_metadata(path)
             return open(fn), metadata
         return open(fn)
+
+    def get_metadata(self, path):
+        '''
+        Retrieve a file's metadata
+        '''
+        fn = os.path.join(self.root, path)
+        meta_fn = fn + '.meta'
+        if not os.path.exists(fn) or not os.path.exists(meta_fn):
+            raise KeyError('No such object')
+
+        with open(meta_fn) as f:
+            return json.load(f)
 
     def put(self, path, fp, metadata=None):
         '''
@@ -159,6 +170,13 @@ class S3RepositoryStore(object):
             return k.open(), k.metadata
         return k.open()
 
+    def get_metadata(self, path):
+        '''
+        Retrieve a file's metadata.
+        '''
+        k = self.bucket.get_key(path)
+        return k.metadata
+
     def put(self, path, fp, metadata=None):
         '''
         Store a file (fp).
@@ -219,6 +237,27 @@ class Repository(object):
         path = os.path.join(artifact_path, unicode(version))
         f, metadata = self.store.get(path, metadata=True)
         return RepositoryFile(f, metadata)
+
+    def latest_version(self, app, target='master', artifact=None):
+        if not artifact:
+            artifact = u'%s.tar.gz' % app
+        artifact_path = os.path.join(app, target, artifact)
+        with self.store.get(os.path.join(artifact_path, 'latest')) as f:
+            return f.read().strip()
+
+    def get_metadata(self, app, version=None, target='master', artifact=None):
+        '''
+        Return just the metadata for the requested artifact.
+        '''
+        if not artifact:
+            artifact = u'%s.tar.gz' % app
+        artifact_path = os.path.join(app, target, artifact)
+        if not version:
+            with self.store.get(os.path.join(artifact_path, 'latest')) as f:
+                version = f.read().strip()
+
+        path = os.path.join(artifact_path, unicode(version))
+        return self.store.get_metadata(path)
 
     def put(self, app, version, fp, metadata, target='master',
             artifact=None):
