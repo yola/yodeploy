@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import copy
 import os
 import shutil
 import subprocess
@@ -44,18 +45,24 @@ def main():
                           cwd='deploy')
     shutil.rmtree('deploy/virtualenv')
     os.unlink('deploy/virtualenv.tar.gz')
-    subprocess.check_call('scripts/build.sh')
+
+    env = copy.copy(os.environ)
+    env['APPNAME'] = opts.app
+    subprocess.check_call('scripts/build.sh', env=env)
     if not opts.skip_tests:
-        subprocess.check_call('scripts/test.sh')
-    subprocess.check_call('scripts/dist.sh')
+        subprocess.check_call('scripts/test.sh', env=env)
+    subprocess.check_call('scripts/dist.sh', env=env)
+
     artifact = 'dist/%s.tar.gz' % opts.app
     metadata = {
         'deploy_compat': '2',
     }
+
     deploy_settings = yola.deploy.config.load_settings(opts.config)
     repository = yola.deploy.repository.get_repository(deploy_settings)
     try:
-        latest_version = repository.latest_version(opts.app, target=opts.target)
+        latest_version = repository.latest_version(opts.app,
+                                                   target=opts.target)
     except KeyError:
         latest_version = '0'
     version = str(int(latest_version) + 1)
