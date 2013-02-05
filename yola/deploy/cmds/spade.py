@@ -94,7 +94,7 @@ def configure_logging(verbose):
     log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 
-def do_uplod(opts, repository):
+def do_upload(opts, repository):
     "Upload a file to the repository"
 
     meta = None
