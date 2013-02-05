@@ -80,7 +80,12 @@ class TestLocalRepositoryStore(TmpDirTestCase):
         with open(self.tmppath('repo', 'foo'), 'w') as f:
             f.write('bar')
 
-        self.assertRaises(KeyError, self.store.get, 'foo', True)
+        f, meta = self.store.get('foo', True)
+        try:
+            self.assertEqual(f.read(), 'bar')
+            self.assertEqual(meta, {})
+        finally:
+            f.close()
 
     def test_put(self):
         self.store.put('foo', StringIO('bar'))
