@@ -12,7 +12,8 @@ import yola.deploy.application
 import yola.deploy.config
 import yola.deploy.repository
 
-log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
+# Replaced when configured
+log = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -56,7 +57,8 @@ def parse_args():
 
 
 def configure_logging(verbose, deploy_settings):
-    "Set up logging"
+    "Set up logging, return the logger for this script"
+    global log
 
     logging.basicConfig(level=logging.DEBUG)
     root = logging.getLogger()
@@ -78,6 +80,8 @@ def configure_logging(verbose, deploy_settings):
         logging.getLogger().addHandler(handler)
 
     logging.getLogger('boto').setLevel(logging.WARNING)
+
+    log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 
 def report(app, action, message, deploy_settings):
@@ -157,6 +161,7 @@ def do_deploy(opts, deploy_settings):
 
 
 def main():
+    "Dispatch"
     opts = parse_args()
     deploy_settings = yola.deploy.config.load_settings(opts.config)
     configure_logging(opts.debug, deploy_settings)
@@ -164,9 +169,9 @@ def main():
     if opts.target is None:
         opts.target = deploy_settings.get('target')
 
-    fn = 'do_%s' % opts.command.replace('-', '_')
-    if fn in globals():
-        globals()[fn](opts, deploy_settings)
+    cmd = globals().get('do_%s' % opts.command.replace('-', '_'))
+    if cmd:
+        cmd(opts, deploy_settings)
     else:
         log.error('Unsupported command: %s', opts.command)
         sys.exit(1)

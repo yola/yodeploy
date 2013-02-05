@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 import yola.deploy.config
 import yola.deploy.repository
 
-# Replaced in main
+# Replaced when configured
 log = logging.getLogger(__name__)
 
 
