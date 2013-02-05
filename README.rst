@@ -59,6 +59,17 @@ artifact. Only used in stores that don't support metadata on objects.
 *app*\ `/`\ *artifact*\ `/`\ *target*\ `/latest`: A text file containing
 the *version* of the most recent *artifact*.
 
+Compat levels
+-------------
+
+Artifacts have a 'deploy_compat' attribute, defining the deployment
+system they were designed for. It is defined in `deploy/compat` in the
+source.
+
+1. Yola's legacy deployment system (Duncan Deploy)
+2. The legacy repository with yola.deploy < 0.3.
+3. yola.deploy >= 0.3.
+
 Building and uploading
 ----------------------
 

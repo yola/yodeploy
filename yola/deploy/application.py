@@ -133,7 +133,7 @@ class Application(object):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
         with self.repository.get(self.app, version, self.target) as f1:
-            if f1.metadata.get('deploy_compat') != '2':
+            if f1.metadata.get('deploy_compat') != '3':
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
             with open(tarball, 'w') as f2:

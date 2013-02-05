@@ -35,6 +35,12 @@ def parse_args():
 
 def main():
     opts = parse_args()
+
+    with open('deploy/compat') as f:
+        if f.read().strip() != '3':
+            print >> sys.stderr, 'Only deploy compat 3 apps are supported'
+            sys.exit(1)
+
     python = os.path.abspath(sys.executable)
     build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                 'build_virtualenv'))
@@ -55,7 +61,7 @@ def main():
 
     artifact = 'dist/%s.tar.gz' % opts.app
     metadata = {
-        'deploy_compat': '2',
+        'deploy_compat': '3',
     }
 
     deploy_settings = yola.deploy.config.load_settings(opts.config)

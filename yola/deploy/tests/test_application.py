@@ -68,7 +68,7 @@ deploy_settings = AttrDict(
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
         with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '2'})
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
@@ -82,7 +82,7 @@ deploy_settings = AttrDict(
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
         with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '2'})
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
@@ -220,7 +220,7 @@ hooks = Hooks
         })
         version = '1'
         with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '2'})
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         os.unlink(self.tmppath('test.tar.gz'))
