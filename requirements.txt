@@ -1,4 +1,5 @@
 Tempita==0.5dev
+argparse==1.2.1
 boto==2.2.2
 coverage==3.5.2
 nose==1.2.1
