@@ -66,9 +66,7 @@ class LocalRepositoryStore(object):
         If metadata is True, metadata will be returned as well, in a tuple.
         '''
         fn = os.path.join(self.root, path)
-        meta_fn = fn + '.meta'
-        if not os.path.exists(fn) or (
-                metadata and not os.path.exists(meta_fn)):
+        if not os.path.exists(fn):
             raise KeyError('No such object')
 
         if metadata:
@@ -82,8 +80,11 @@ class LocalRepositoryStore(object):
         '''
         fn = os.path.join(self.root, path)
         meta_fn = fn + '.meta'
-        if not os.path.exists(fn) or not os.path.exists(meta_fn):
+        if not os.path.exists(fn):
             raise KeyError('No such object')
+
+        if not os.path.exists(meta_fn):
+            return {}
 
         with open(meta_fn) as f:
             return json.load(f)
