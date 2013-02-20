@@ -100,7 +100,8 @@ def main():
             yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
-        yola.deploy.virtualenv.create_ve('.', pypi=deploy_settings.get('pypi'))
+        yola.deploy.virtualenv.create_ve('.',
+                                         pypi=deploy_settings.services.pypi)
 
     if options.upload:
         yola.deploy.virtualenv.upload_ve(repository, options.app, version,

@@ -3,8 +3,7 @@ import sys
 import os
 
 
-SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf',
-                          '/opt/deploy/config/deploy.py']
+SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf']
 
 
 def load_settings(fn):

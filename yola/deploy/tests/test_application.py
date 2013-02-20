@@ -18,11 +18,15 @@ class AttrDict(dict):
 
 deploy_settings = AttrDict(
     artifacts=AttrDict(
-        provider='local',
+        store='local',
+        store_settings=AttrDict(
+            local=AttrDict(
+                directory='%s',
+            ),
+        ),
     ),
     paths=AttrDict(
-        artifacts='%s',
-        root='%s',
+        apps='%s',
     ),
 )
 """ % (self.tmppath('artifacts'), self.tmppath('srv')))

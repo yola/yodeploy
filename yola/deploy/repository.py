@@ -9,6 +9,7 @@ from StringIO import StringIO
 import boto
 
 log = logging.getLogger(__name__)
+STORES = {}
 
 
 def version_sort_key(version):
@@ -23,16 +24,19 @@ def version_sort_key(version):
 
 def get_repository(deploy_settings):
     '''Create the Repository specified in deploy_settings'''
-    if deploy_settings.artifacts.get('provider', 's3') == 's3':
-        store = S3RepositoryStore(
-                    deploy_settings.artifacts.bucket,
-                    deploy_settings.artifacts.access_key,
-                    deploy_settings.artifacts.secret_key,
-                    deploy_settings.artifacts.get('reduced_redundancy', True),
-                    deploy_settings.artifacts.get('encrypted', True))
-    else:
-        store = LocalRepositoryStore(deploy_settings.paths.artifacts)
-    return Repository(store)
+    store = deploy_settings.artifacts.store
+    StoreClass = STORES[store]
+    store_settings = deploy_settings.artifacts.store_settings[store]
+    return Repository(StoreClass(**store_settings))
+
+
+def _register_store(name):
+    '''Register a store class in STORES'''
+    def wrapped_register_store(class_):
+        STORES[name] = class_
+        return class_
+
+    return wrapped_register_store
 
 
 class RepositoryFile(object):
@@ -52,13 +56,14 @@ class RepositoryFile(object):
         self._f.close()
 
 
+@_register_store('local')
 class LocalRepositoryStore(object):
     '''Store artifacts on local machine'''
 
-    def __init__(self, root):
-        if not os.path.isdir(root):
-            raise Exception("root directory %s doesn't exist" % root)
-        self.root = root
+    def __init__(self, directory):
+        if not os.path.isdir(directory):
+            raise Exception("root directory %s doesn't exist" % directory)
+        self.root = directory
 
     def get(self, path, metadata=False):
         '''
@@ -151,6 +156,7 @@ class LocalRepositoryStore(object):
                 raise
 
 
+@_register_store('s3')
 class S3RepositoryStore(object):
     '''Store artifacts on S3'''
 

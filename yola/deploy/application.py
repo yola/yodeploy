@@ -25,7 +25,7 @@ class Application(object):
         self.repository = repository
         self.settings_fn = settings_file
         self.settings = yola.deploy.config.load_settings(settings_file)
-        self.appdir = os.path.join(self.settings.paths.root, app)
+        self.appdir = os.path.join(self.settings.paths.apps, app)
         self._lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
 
     @property
@@ -58,11 +58,11 @@ class Application(object):
                                      'deploy', 'requirements.txt')
         ve_hash = yola.deploy.virtualenv.sha224sum(deploy_req_fn)
         ve_hash = yola.deploy.virtualenv.ve_version(ve_hash)
-        ve_dir = os.path.join(self.settings.paths.root, 'deploy',
+        ve_dir = os.path.join(self.settings.paths.apps, 'deploy',
                               'virtualenvs', ve_hash)
         if os.path.exists(ve_dir):
             return ve_dir
-        ve_working = os.path.join(self.settings.paths.root, 'deploy',
+        ve_working = os.path.join(self.settings.paths.apps, 'deploy',
                                   'virtualenvs', 'unpack')
         ve_unpack_root = os.path.join(ve_working, 'virtualenv')
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')

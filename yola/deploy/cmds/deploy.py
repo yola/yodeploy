@@ -88,29 +88,32 @@ def report(app, action, message, deploy_settings):
     "Report to the world that we deployed."
 
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
-    environment = deploy_settings.environment
+    environment = deploy_settings.artifacts.environment
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
     message = '%s@%s: %s' % (user, fqdn, message)
 
     log.info(message)
+    services = deploy_settings.report.services
 
-    if 'statsd' in deploy_settings:
+    if 'statsd' in services:
+        service_settings = deploy_settings.report.service_settings.statsd
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        addr = (deploy_settings.statsd.host, deploy_settings.statsd.port)
+        addr = (service_settings.host, service_settings.port)
         sock.sendto('deploys.%s.%s.%s:1|c' % (environment, hostname, app),
                     addr)
 
-    if 'campfire' in deploy_settings:
+    if 'campfire' in services:
         try:
             from pinder.campfire import Campfire
 
             log.info('Creating campfire report')
-            room = deploy_settings.campfire.get('room', 'Platform')
-            connection = Campfire(deploy_settings.campfire.subdomain,
-                                  deploy_settings.campfire.token,
-                                  ssl=True)
+            service_settings = deploy_settings.report.service_settings.campfire
+            room = service_settings.room
+            connection = Campfire(service_settings.subdomain,
+                                  service_settings.token,
+                                  service_settings.ssl)
             emoji = ' :collision:' if environment == 'production' else ''
             connection.find_room_by_name(room).speak(message + emoji)
         except ImportError:
@@ -120,11 +123,11 @@ def report(app, action, message, deploy_settings):
 def available_applications(deploy_settings):
     "Return the applications available for deployment"
 
-    available_applications = deploy_settings.available_applications
-    if available_applications is True:
-        repository = yola.deploy.repository.get_repository(deploy_settings)
-        return repository.list_apps()
-    return available_applications
+    if deploy_settings.apps.limit:
+        return deploy_settings.apps.available
+
+    repository = yola.deploy.repository.get_repository(deploy_settings)
+    return repository.list_apps()
 
 
 def do_available_apps(opts, deploy_settings):
@@ -167,7 +170,7 @@ def main():
     configure_logging(opts.debug, deploy_settings)
     log.debug('Running: %r', sys.argv)
     if opts.target is None:
-        opts.target = deploy_settings.get('target')
+        opts.target = deploy_settings.artifacts.target
 
     cmd = globals().get('do_%s' % opts.command.replace('-', '_'))
     if cmd:

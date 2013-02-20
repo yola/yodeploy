@@ -33,8 +33,7 @@ class ConfiguratedApp(DeployHook):
         self.config = self.read_config()
 
     def write_config(self):
-        app_conf_dir = self.deploy_path('deploy', 'configuration')
-        conf_root = os.path.join(self.settings.paths.root, 'configs')
+        conf_root = os.path.join(self.settings.paths.apps, 'configs')
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
@@ -52,10 +51,11 @@ class ConfiguratedApp(DeployHook):
         extract_tar(conf_tarball, configs)
         os.unlink(conf_tarball)
 
-        sources = config_sources(self.app, self.settings.environment,
-                                 self.settings.cluster,
-                                 self.settings.paths.deployconfigs,
-                                 app_conf_dir)
+        configs_dirs = [configs] + self.settings.deployconfigs.overrides,
+        app_conf_dir = self.deploy_path('deploy', 'configuration')
+        sources = config_sources(self.app, self.settings.artifacts.environment,
+                                 self.settings.artifacts.cluster,
+                                 configs_dirs, app_conf_dir)
         config = smush_config(sources)
         write_config(config, self.deploy_dir)
 

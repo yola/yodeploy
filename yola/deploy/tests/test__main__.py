@@ -29,13 +29,14 @@ hooks = Hooks
 class AttrDict(dict):
     __getattr__ = dict.__getitem__
 
-prefix='%s'
 deploy_settings = AttrDict(
-    paths=AttrDict(
-        artifacts=os.path.join(prefix, 'artifacts'),
-    ),
     artifacts=AttrDict(
-        provider='local',
+        store='local',
+        store_settings=AttrDict(
+            local=AttrDict(
+                directory=os.path.join('%s', 'artifacts'),
+            ),
+        ),
     ),
 )
 """ % self.tmpdir)
