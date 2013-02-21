@@ -1,3 +1,5 @@
+# This should be self-contained, local-bootstrap imports it
+
 import imp
 import sys
 import os
@@ -22,6 +24,20 @@ def find_deploy_config(exit_if_missing=True):
     If they can't be found, if exit_if_missing is set, spit out an error and
     exit Python otherwise, return None.
     """
+
+    paths = deploy_config_paths()
+    for path in paths:
+        if os.path.exists(path):
+            return path
+    if exit_if_missing:
+        print >> sys.stderr, "Deploy settings couldn't be located."
+        print >> sys.stderr, ("Copy yola.deploy's conf/yola.deploy.conf.sample"
+                              " to %s" % paths[0])
+        sys.exit(1)
+
+
+def deploy_config_paths():
+    '''Return all the potential paths for deploy_settings'''
     paths = []
     fn = 'yola.deploy.conf'
     if sys.platform.startswith('win'):
@@ -37,12 +53,4 @@ def find_deploy_config(exit_if_missing=True):
 
     paths = [os.path.expanduser(os.path.join(*path)) for path in paths]
     paths += SYSTEM_DEPLOY_SETTINGS
-    for path in paths:
-        if os.path.exists(path):
-            return path
-
-    if exit_if_missing:
-        print >> sys.stderr, "Deploy settings couldn't be located."
-        print >> sys.stderr, ("Copy yola.deploy's conf/yola.deploy.conf.sample"
-                              " to %s" % paths[0])
-        sys.exit(1)
+    return paths
