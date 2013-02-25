@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from ..application import Application
 from ..repository import LocalRepositoryStore, Repository
@@ -52,6 +53,8 @@ deploy_settings = AttrDict(
                     yola.deploy.config.find_deploy_config())
             pypi = deploy_settings.services.pypi
 
+        if os.path.exists('test-data/deploy-ve'):
+            shutil.rmtree('test-data/deploy-ve')
         os.makedirs('test-data/deploy-ve')
         if not os.path.exists('test-data/deploy-ve/requirements.txt'):
             with open('test-data/deploy-ve/requirements.txt', 'w') as f:
