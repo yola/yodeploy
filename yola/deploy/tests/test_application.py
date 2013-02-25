@@ -41,11 +41,22 @@ deploy_settings = AttrDict(
             'test-data/deploy-ve/requirements.txt'))
 
     def _create_test_ve(self):
+        """
+        Bootstrap a deploy virtualenv, for our tests
+        This needs a PYPI that contains yola.deploy
+        """
+        pypi = os.environ.get('PYPI')
+        if not pypi:
+            import yola.deploy.config
+            deploy_settings = yola.deploy.config.load_settings(
+                    yola.deploy.config.find_deploy_config())
+            pypi = deploy_settings.services.pypi
+
         os.makedirs('test-data/deploy-ve')
         if not os.path.exists('test-data/deploy-ve/requirements.txt'):
             with open('test-data/deploy-ve/requirements.txt', 'w') as f:
                 f.write('yola.deploy\n')
-        create_ve('test-data/deploy-ve')
+        create_ve('test-data/deploy-ve', pypi)
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
