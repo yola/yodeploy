@@ -86,7 +86,7 @@ class LocalRepositoryStore(object):
         fn = os.path.join(self.root, path)
         meta_fn = fn + '.meta'
         if not os.path.exists(fn):
-            raise KeyError('No such object: %s.meta' % path)
+            raise KeyError('No such object: %s' % path)
 
         if not os.path.exists(meta_fn):
             return {}
