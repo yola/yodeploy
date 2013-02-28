@@ -27,6 +27,7 @@ def main():
                         default=yola.deploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
     parser.add_argument('-a', '--app', metavar='NAME',
+                        default=os.path.basename(os.getcwd()),
                         help='Application name')
     parser.add_argument('--target', metavar='TARGET',
                         default='master',
