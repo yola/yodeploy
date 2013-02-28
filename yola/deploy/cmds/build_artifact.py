@@ -82,6 +82,43 @@ class Builder(object):
         raise NotImplemented()
 
 
+class BuildCompat2(Builder):
+    """Call the old scripts in /opt/deploy"""
+
+    def spade_target(self):
+        target = ()
+        if self.target != 'master':
+            target = ('--target', self.target)
+        return target
+
+    def prepare(self):
+        subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                               '-a', self.app, '--download', '--upload',
+                              ) + self.spade_target())
+        subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                               '-a', 'deploy', '--download', '--upload',
+                              ) + self.spade_target(), cwd='deploy')
+        shutil.rmtree('deploy/virtualenv')
+        os.unlink('deploy/virtualenv.tar.gz')
+
+    def upload(self):
+        artifact = 'dist/%s.tar.gz' % self.app
+        metadata = {
+            'vcs_tag': self.tag,
+            'build_number': self.version,
+            'commit_msg': self.commit_msg,
+            'commit': self.commit,
+            'deploy_compat': '2',
+        }
+
+        with open('meta.json', 'w') as f:
+            json.dump(metadata, f, indent=4)
+
+        subprocess.check_call(('/opt/deploy/spade.py', self.app, artifact,
+                               '-m', 'meta.json',
+                              ) + self.spade_target())
+
+
 class BuildCompat3(Builder):
     def prepare(self):
         python = os.path.abspath(sys.executable)
@@ -152,10 +189,18 @@ def next_version(app, target, repository, deploy_settings):
 def main():
     opts = parse_args()
 
-    with open('deploy/compat') as f:
-        if f.read().strip() != '3':
-            print >> sys.stderr, 'Only deploy compat 3 apps are supported'
-            sys.exit(1)
+    compat = 1
+    if os.path.exists('deploy/compat'):
+        with open('deploy/compat') as f:
+            compat = int(f.read().strip())
+    try:
+        BuilderClass = {
+            2: BuildCompat2,
+            3: BuildCompat3,
+        }[compat]
+    except KeyError:
+        print >> sys.stderr, 'Only deploy compat >=3 apps are supported'
+        sys.exit(1)
 
     deploy_settings = yola.deploy.config.load_settings(opts.config)
     repository = yola.deploy.repository.get_repository(deploy_settings)
@@ -170,7 +215,7 @@ def main():
         version = next_version(opts.app, opts.target, repository,
                                deploy_settings)
 
-    builder = BuildCompat3(app=opts.app, target=opts.target, version=version,
+    builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, deploy_settings=deploy_settings,
                            repository=repository)
     builder.prepare()
