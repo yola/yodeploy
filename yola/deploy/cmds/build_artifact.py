@@ -88,9 +88,11 @@ class BuildCompat3(Builder):
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
         subprocess.check_call((python, build_ve,
-                               '-a', self.app, '--download', '--upload'))
+                               '-a', self.app, '--target', self.target,
+                               '--download', '--upload'))
         subprocess.check_call((python, build_ve,
-                               '-a', 'deploy', '--download', '--upload'),
+                               '-a', 'deploy', '--target', self.target,
+                               '--download', '--upload'),
                               cwd='deploy')
         shutil.rmtree('deploy/virtualenv')
         os.unlink('deploy/virtualenv.tar.gz')
