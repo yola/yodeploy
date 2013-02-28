@@ -17,8 +17,9 @@ def parse_args():
     parser = argparse.ArgumentParser(
             description='Build and upload an artifact',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--app', '-a', help='The application name',
-                        default=os.path.basename(os.getcwd()))
+    parser.add_argument('--app', '-a',
+                        default=os.path.basename(os.getcwd()),
+                        help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
                           help="Don't run tests")
     parser.add_argument('--target', default='master',
