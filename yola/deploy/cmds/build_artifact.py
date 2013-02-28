@@ -29,7 +29,7 @@ def parse_args():
     opts = parser.parse_args()
 
     if opts.config is None:
-        # Yes, it was a default, but we want to prent the error
+        # Yes, it was a default, but we want to detect its non-existence early
         opts.config = yola.deploy.config.find_deploy_config()
 
     return opts
