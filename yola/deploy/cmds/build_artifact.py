@@ -61,10 +61,15 @@ class Builder(object):
     def prepare(self):
         raise NotImplemented()
 
-    def build(self, skip_tests=False):
+    def build_env(self):
+        """Return environment variables to be exported for the build"""
         env = copy.copy(os.environ)
         # Some of the old build scripts depend on APPNAME
         env['APPNAME'] = self.app
+        return env
+
+    def build(self, skip_tests=False):
+        env = self.build_env()
         subprocess.check_call('scripts/build.sh', env=env)
         if not skip_tests:
             self.set_commit_status('pending', 'Tests Running')
@@ -80,6 +85,37 @@ class Builder(object):
 
     def upload(self):
         raise NotImplemented()
+
+
+class BuildCompat1(Builder):
+    """The old shell deploy system"""
+
+    def dcs_target(self):
+        if self.target == 'master':
+            return 'trunk'
+        return self.target
+
+    def prepare(self):
+        # Legacy config
+        self.distname = os.environ.get('DISTNAME', self.app)
+        self.dcs = os.environ.get('DEPLOYSERVER',
+                self.deploy_settings.build.deploy_content_server)
+        self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
+                                                   % self.app)
+
+    def build_env(self):
+        env = super(BuildCompat1, self).build_env()
+        env['DISTNAME'] = self.distname
+        env['DEPLOYSERVER'] = self.dcs
+        env['ARTIFACT'] = self.artifact
+        return env
+
+    def upload(self):
+        subprocess.check_call(('./scripts/upload.sh',
+                               '%s-%s' % (self.app, self.dcs_target()),
+                               self.version,
+                               self.artifact,
+                              ), shell=True, env=self.build_env())
 
 
 class BuildCompat2(Builder):
