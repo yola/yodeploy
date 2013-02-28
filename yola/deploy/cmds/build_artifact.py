@@ -2,7 +2,6 @@
 
 import argparse
 import copy
-import functools
 import json
 import os
 import shutil
@@ -15,6 +14,96 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 import yola.deploy.config
 import yola.deploy.repository
+
+
+class Builder(object):
+    def __init__(self, app, target, version, commit, deploy_settings,
+                 repository):
+        self.app = app
+        self.target = target
+        self.version = version
+        self.commit = commit
+        self.deploy_settings = deploy_settings
+        self.repository = repository
+
+    def set_commit_status(self, status, description):
+        """Report test status to GitHub"""
+        settings = self.deploy_settings.build.github
+        if not settings.report:
+            return
+
+        subst = {
+            'app': self.app,
+            'commit': self.commit,
+            'fqdn': socket.getfqdn(),
+            'version': self.version,
+        }
+        repo = settings.repo % subst
+        subst['repo'] = repo
+        url = ('https://api.github.com/repos/%(repo)s/statuses/%(commit)s'
+               % subst)
+        data = {
+            'state': status,
+            'target_url': settings.url % subst,
+            'description': description,
+        }
+        req = urllib2.Request(
+                url=url,
+                data=json.dumps(data),
+                headers={
+                    'Authorization': 'token %s' % settings.oauth_token,
+                })
+        try:
+            urllib2.urlopen(req)
+        except urllib2.URLError, e:
+            print >> sys.stderr, "Failed to notify GitHub: %s" % e.reason
+
+    def prepare(self):
+        raise NotImplemented()
+
+    def build(self, skip_tests=False):
+        env = copy.copy(os.environ)
+        # Some of the old build scripts depend on APPNAME
+        env['APPNAME'] = self.app
+        subprocess.check_call('scripts/build.sh', env=env)
+        if not skip_tests:
+            self.set_commit_status('pending', 'Tests Running')
+            try:
+                subprocess.check_call('scripts/test.sh', env=env)
+            except subprocess.CalledProcessError:
+                self.set_commit_status('failed', 'Tests did not pass')
+                print >> sys.stderr, 'Tests failed'
+                sys.exit(1)
+            self.set_commit_status('success', 'Tests passed')
+
+        subprocess.check_call('scripts/dist.sh', env=env)
+
+    def upload(self):
+        raise NotImplemented()
+
+
+class BuildCompat3(Builder):
+    def prepare(self):
+        python = os.path.abspath(sys.executable)
+        build_ve = os.path.abspath(__file__.replace('build_artifact',
+                                                    'build_virtualenv'))
+        subprocess.check_call((python, build_ve,
+                               '-a', self.app, '--download', '--upload'))
+        subprocess.check_call((python, build_ve,
+                               '-a', 'deploy', '--download', '--upload'),
+                              cwd='deploy')
+        shutil.rmtree('deploy/virtualenv')
+        os.unlink('deploy/virtualenv.tar.gz')
+
+    def upload(self):
+        artifact = 'dist/%s.tar.gz' % self.app
+        metadata = {
+            'deploy_compat': '3',
+        }
+
+        with open(artifact) as f:
+            self.repository.put(self.app, self.version, f, metadata,
+                                target=self.target)
 
 
 def parse_args():
@@ -38,39 +127,6 @@ def parse_args():
         opts.config = yola.deploy.config.find_deploy_config()
 
     return opts
-
-
-def set_commit_status(status, description, app, commit, version,
-                      deploy_settings):
-    """Report test status to GitHub"""
-    settings = deploy_settings.build.github
-    if not settings.report:
-        return
-
-    subst = {
-        'app': app,
-        'commit': commit,
-        'fqdn': socket.getfqdn(),
-        'version': version,
-    }
-    repo = settings.repo % subst
-    subst['repo'] = repo
-    url = 'https://api.github.com/repos/%(repo)s/statuses/%(commit)s' % subst
-    data = {
-        'state': status,
-        'target_url': settings.url % subst,
-        'description': description,
-    }
-    req = urllib2.Request(
-            url=url,
-            data=json.dumps(data),
-            headers={
-                'Authorization': 'token %s' % settings.oauth_token,
-            })
-    try:
-        urllib2.urlopen(req)
-    except urllib2.URLError, e:
-        print >> sys.stderr, "Failed to notify GitHub: %s" % e.reason
 
 
 def next_version(app, target, repository, deploy_settings):
@@ -112,44 +168,13 @@ def main():
         version = next_version(opts.app, opts.target, repository,
                                deploy_settings)
 
-    set_commit_status_p = functools.partial(set_commit_status, app=opts.app,
-                                            commit=commit, version=version,
-                                            deploy_settings=deploy_settings)
+    builder = BuildCompat3(app=opts.app, target=opts.target, version=version,
+                           commit=commit, deploy_settings=deploy_settings,
+                           repository=repository)
+    builder.prepare()
+    builder.build(opts.skip_tests)
+    builder.upload()
 
-    python = os.path.abspath(sys.executable)
-    build_ve = os.path.abspath(__file__.replace('build_artifact',
-                                                'build_virtualenv'))
-    subprocess.check_call((python, build_ve,
-                           '-a', opts.app, '--download', '--upload'))
-    subprocess.check_call((python, build_ve,
-                           '-a', 'deploy', '--download', '--upload'),
-                          cwd='deploy')
-    shutil.rmtree('deploy/virtualenv')
-    os.unlink('deploy/virtualenv.tar.gz')
-
-    env = copy.copy(os.environ)
-    # Some of the old build scripts depend on APPNAME
-    env['APPNAME'] = opts.app
-    subprocess.check_call('scripts/build.sh', env=env)
-    if not opts.skip_tests:
-        set_commit_status_p('pending', 'Tests Running')
-        try:
-            subprocess.check_call('scripts/test.sh', env=env)
-        except subprocess.CalledProcessError:
-            set_commit_status_p('failed', 'Tests did not pass')
-            print >> sys.stderr, 'Tests failed'
-            sys.exit(1)
-        set_commit_status_p('success', 'Tests passed')
-
-    subprocess.check_call('scripts/dist.sh', env=env)
-
-    artifact = 'dist/%s.tar.gz' % opts.app
-    metadata = {
-        'deploy_compat': '3',
-    }
-
-    with open(artifact) as f:
-        repository.put(opts.app, version, f, metadata, target=opts.target)
 
 if __name__ == '__main__':
     main()
