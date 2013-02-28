@@ -15,8 +15,10 @@ import yola.deploy.repository
 
 def parse_args():
     parser = argparse.ArgumentParser(
-            description='Build and upload an artifact')
-    parser.add_argument('app', help='The application name')
+            description='Build and upload an artifact',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--app', '-a', help='The application name',
+                        default=os.path.basename(os.getcwd()))
     parser.add_argument('-T', '--skip-tests', action='store_true',
                           help="Don't run tests")
     parser.add_argument('--target', default='master',
@@ -53,6 +55,7 @@ def main():
     os.unlink('deploy/virtualenv.tar.gz')
 
     env = copy.copy(os.environ)
+    # Some of the old build scripts depend on APPNAME
     env['APPNAME'] = opts.app
     subprocess.check_call('scripts/build.sh', env=env)
     if not opts.skip_tests:
