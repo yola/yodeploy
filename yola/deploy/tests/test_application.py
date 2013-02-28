@@ -51,7 +51,7 @@ deploy_settings = AttrDict(
             import yola.deploy.config
             deploy_settings = yola.deploy.config.load_settings(
                     yola.deploy.config.find_deploy_config())
-            pypi = deploy_settings.services.pypi
+            pypi = deploy_settings.build.pypi
 
         if os.path.exists('test-data/deploy-ve'):
             shutil.rmtree('test-data/deploy-ve')
