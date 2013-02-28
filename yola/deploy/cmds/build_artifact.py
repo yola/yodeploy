@@ -17,12 +17,14 @@ import yola.deploy.repository
 
 
 class Builder(object):
-    def __init__(self, app, target, version, commit, deploy_settings,
-                 repository):
+    def __init__(self, app, target, version, commit, commit_msg, tag,
+                 deploy_settings, repository):
         self.app = app
         self.target = target
         self.version = version
         self.commit = commit
+        self.commit_msg = commit_msg
+        self.tag = tag
         self.deploy_settings = deploy_settings
         self.repository = repository
 
@@ -173,6 +175,10 @@ class BuildCompat3(Builder):
     def upload(self):
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
+            'vcs_tag': self.tag,
+            'build_number': self.version,
+            'commit_msg': self.commit_msg,
+            'commit': self.commit,
             'deploy_compat': '3',
         }
 
@@ -231,6 +237,7 @@ def main():
             compat = int(f.read().strip())
     try:
         BuilderClass = {
+            1: BuildCompat1,
             2: BuildCompat2,
             3: BuildCompat3,
         }[compat]
@@ -250,9 +257,21 @@ def main():
     if not version:
         version = next_version(opts.app, opts.target, repository,
                                deploy_settings)
+    # Other git bits:
+    commit_msg = subprocess.check_output(('git', 'show', '-s', '--format=%s',
+                                          commit)).strip()
+    tags = subprocess.check_output(('git', 'tag', '--contains', commit))
+    tag = None
+    for line in tags.splitlines():
+        line = line.strip()
+        if line.startswith('jenkins-'):
+            continue
+        tag = line
+        break
 
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
-                           commit=commit, deploy_settings=deploy_settings,
+                           commit=commit, commit_msg=commit_msg, tag=tag,
+                           deploy_settings=deploy_settings,
                            repository=repository)
     builder.prepare()
     builder.build(opts.skip_tests)
