@@ -15,6 +15,9 @@ class Hooks(PythonApp):
             wrapper_name = os.path.join('/usr/local/bin', name)
             ve = self.deploy_path('virtualenv', 'bin', 'python')
             script = self.deploy_path('yola', 'deploy', 'cmds', fn)
+            if os.path.exists(wrapper_name):
+                # Remove existing symlinks
+                os.unlink(wrapper_name)
             with open(wrapper_name, 'w') as f:
                 f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
             os.chmod(wrapper_name, 0755)
