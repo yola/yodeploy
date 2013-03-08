@@ -361,10 +361,12 @@ def build_virtualenv():
     shutil.rmtree('bootstrap_ve')
 
 
-def write_wrapper(script, ve):
+def write_wrapper(script, ve, args=None):
     '''Install a wrapper for script in ~/bin'''
     name = os.path.basename(script).rsplit('.', 1)[0].replace('_', '-')
     wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+    if args:
+        script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
         f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
     os.chmod(wrapper_name, 0755)
@@ -415,7 +417,8 @@ def setup_yola_configurator(yola_src):
     # Install our single wrapper script
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')
     script = os.path.join(root, 'bin', 'configurator.py')
-    write_wrapper(script, ve)
+    args = ('-d', os.path.join(yola_src, 'deployconfigs', 'configs'))
+    write_wrapper(script, ve, args)
 
 
 def main():
