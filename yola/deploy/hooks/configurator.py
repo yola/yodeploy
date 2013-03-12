@@ -38,7 +38,7 @@ class ConfiguratedApp(DeployHook):
             os.mkdir(conf_root)
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
         try:
-            with self.repository.get('configs', target=self.target) as f1:
+            with self.repository.get('configs', target='master') as f1:
                 with open(conf_tarball, 'w') as f2:
                     shutil.copyfileobj(f1, f2)
         except KeyError:

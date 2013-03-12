@@ -5,6 +5,7 @@ Change Log
 -----
 
 * Backwards-incompatible repository layout change.
+* configs now always come from the master branch/target.
 
 0.2.7
 -----
