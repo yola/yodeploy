@@ -258,7 +258,7 @@ def bootstrap_virtualenv(cmd):
 
 
 def find_required_version(package):
-    '''See what verison of packages was requested in requirements.txt'''
+    '''See what version of packages was requested in requirements.txt'''
     with open('requirements.txt') as f:
         for line in f:
             line = line.strip()

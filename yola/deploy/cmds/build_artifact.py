@@ -211,7 +211,7 @@ def parse_args():
 
 
 def next_version(app, target, repository, deploy_settings):
-    """Produce a suitable next verison for app, based on existing verisons"""
+    """Produce a suitable next version for app, based on existing versions"""
     try:
         latest_version = repository.latest_version(app, target=target)
     except KeyError:
