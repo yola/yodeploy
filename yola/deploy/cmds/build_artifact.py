@@ -59,7 +59,7 @@ class Builder(object):
         try:
             urllib2.urlopen(req)
         except urllib2.URLError, e:
-            print >> sys.stderr, "Failed to notify GitHub: %s" % e.reason
+            print >> sys.stderr, "Failed to notify GitHub: %s" % e
 
     def prepare(self):
         raise NotImplemented()
