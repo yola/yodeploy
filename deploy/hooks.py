@@ -22,5 +22,9 @@ class Hooks(PythonApp):
                 f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
             os.chmod(wrapper_name, 0755)
 
+        logdir = '/var/log/deploy'
+        if not os.path.exists(logdir):
+            os.mkdir(logdir)
+
 
 hooks = Hooks
