@@ -5,7 +5,7 @@ import sys
 import os
 
 
-SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf']
+SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf.py']
 
 
 def load_settings(fn):
@@ -39,7 +39,7 @@ def find_deploy_config(exit_if_missing=True):
 def deploy_config_paths():
     '''Return all the potential paths for deploy_settings'''
     paths = []
-    fn = 'yola.deploy.conf'
+    fn = 'yola.deploy.conf.py'
     if sys.platform.startswith('win'):
         if 'APPDATA' in os.environ:
             paths.append((os.environ['APPDATA'], fn))

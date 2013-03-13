@@ -389,7 +389,7 @@ def setup_deployconfigs(yola_src):
             os.makedirs(dir_)
 
         shutil.copyfile(os.path.join(yola_src, 'deployconfigs', 'other',
-                                     'yola.deploy.conf'),
+                                     'yola.deploy.conf.py'),
                         deploy_settings_fn)
 
 
