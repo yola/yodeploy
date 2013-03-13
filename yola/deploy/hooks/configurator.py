@@ -51,7 +51,7 @@ class ConfiguratedApp(DeployHook):
         extract_tar(conf_tarball, configs)
         os.unlink(conf_tarball)
 
-        configs_dirs = [configs] + self.settings.deployconfigs.overrides,
+        configs_dirs = [configs] + self.settings.deployconfigs.overrides
         app_conf_dir = self.deploy_path('deploy', 'configuration')
         sources = config_sources(self.app, self.settings.artifacts.environment,
                                  self.settings.artifacts.cluster,
