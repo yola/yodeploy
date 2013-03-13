@@ -253,7 +253,7 @@ def bootstrap_virtualenv(cmd):
 
     check_call(['bootstrap_ve/bin/python',
                 'bootstrap_ve/bin/easy_install',
-                '-i', deploy_settings().services.pypi,
+                '-i', deploy_settings().build.pypi,
                ] + packages)
 
 
@@ -344,7 +344,7 @@ def build_virtualenv():
         bootstrap_virtualenv('virtualenv')
     else:
         version = find_required_version('virtualenv')
-        pypi = deploy_settings().services.pypi
+        pypi = deploy_settings().build.pypi
         fn = get_from_pypi('virtualenv', version, pypi)
         tar = tarfile.open(fn)
         tar.extractall()
