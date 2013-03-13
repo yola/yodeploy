@@ -133,13 +133,14 @@ class BuildCompat2(Builder):
     def prepare(self):
         if self.build_virtualenvs:
             subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                                   '-a', self.app, '--download', '--upload',
-                                  ) + self.spade_target())
-            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
                                    '-a', 'deploy', '--download', '--upload',
                                   ) + self.spade_target(), cwd='deploy')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
+        if os.path.exists('requirements.txt'):
+            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                                   '-a', self.app, '--download', '--upload',
+                                  ) + self.spade_target())
 
     def upload(self):
         artifact = 'dist/%s.tar.gz' % self.app
@@ -166,14 +167,15 @@ class BuildCompat3(Builder):
                                                     'build_virtualenv'))
         if self.build_virtualenvs:
             subprocess.check_call((python, build_ve,
-                                   '-a', self.app, '--target', self.target,
-                                   '--download', '--upload'))
-            subprocess.check_call((python, build_ve,
                                    '-a', 'deploy', '--target', self.target,
                                    '--download', '--upload'),
                                   cwd='deploy')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
+        if os.path.exists('requirements.txt'):
+            subprocess.check_call((python, build_ve,
+                                   '-a', self.app, '--target', self.target,
+                                   '--download', '--upload'))
 
     def upload(self):
         artifact = 'dist/%s.tar.gz' % self.app
@@ -203,7 +205,7 @@ def parse_args():
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
-                        help='Ignore building virtualenvs')
+                        help='Skip building deploy virtualenvs')
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yola.deploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
