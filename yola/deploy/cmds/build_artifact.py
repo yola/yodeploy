@@ -228,6 +228,18 @@ def next_version(app, target, repository, deploy_settings):
     return '.'.join(version)
 
 
+def check_output(*args, **kwargs):
+    '''
+    Backport of subprocess.check_output, with enough features for this module
+    '''
+    p = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
+    output = p.communicate()[0]
+    ret = p.poll()
+    if ret:
+        raise subprocess.CalledProcessError(ret, *args, output=output)
+    return output
+
+
 def main():
     opts = parse_args()
 
@@ -252,15 +264,15 @@ def main():
     # but we have some fallbacks
     commit = os.environ.get('GIT_COMMIT')
     if not commit:
-        commit = subprocess.check_output(('git', 'rev-parse', 'HEAD')).strip()
+        commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
     version = os.environ.get('BUILD_NUMBER')
     if not version:
         version = next_version(opts.app, opts.target, repository,
                                deploy_settings)
     # Other git bits:
-    commit_msg = subprocess.check_output(('git', 'show', '-s', '--format=%s',
-                                          commit)).strip()
-    tags = subprocess.check_output(('git', 'tag', '--contains', commit))
+    commit_msg = check_output(('git', 'show', '-s', '--format=%s',
+                               commit)).strip()
+    tags = check_output(('git', 'tag', '--contains', commit))
     tag = None
     for line in tags.splitlines():
         line = line.strip()
