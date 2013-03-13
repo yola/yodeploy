@@ -18,7 +18,7 @@ import yola.deploy.repository
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, tag,
-                 deploy_settings, repository):
+                 deploy_settings, repository, build_virtualenvs):
         self.app = app
         self.target = target
         self.version = version
@@ -27,6 +27,7 @@ class Builder(object):
         self.tag = tag
         self.deploy_settings = deploy_settings
         self.repository = repository
+        self.build_virtualenvs = build_virtualenvs
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -130,14 +131,15 @@ class BuildCompat2(Builder):
         return target
 
     def prepare(self):
-        subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                               '-a', self.app, '--download', '--upload',
-                              ) + self.spade_target())
-        subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                               '-a', 'deploy', '--download', '--upload',
-                              ) + self.spade_target(), cwd='deploy')
-        shutil.rmtree('deploy/virtualenv')
-        os.unlink('deploy/virtualenv.tar.gz')
+        if self.build_virtualenvs:
+            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                                   '-a', self.app, '--download', '--upload',
+                                  ) + self.spade_target())
+            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                                   '-a', 'deploy', '--download', '--upload',
+                                  ) + self.spade_target(), cwd='deploy')
+            shutil.rmtree('deploy/virtualenv')
+            os.unlink('deploy/virtualenv.tar.gz')
 
     def upload(self):
         artifact = 'dist/%s.tar.gz' % self.app
@@ -162,15 +164,16 @@ class BuildCompat3(Builder):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        subprocess.check_call((python, build_ve,
-                               '-a', self.app, '--target', self.target,
-                               '--download', '--upload'))
-        subprocess.check_call((python, build_ve,
-                               '-a', 'deploy', '--target', self.target,
-                               '--download', '--upload'),
-                              cwd='deploy')
-        shutil.rmtree('deploy/virtualenv')
-        os.unlink('deploy/virtualenv.tar.gz')
+        if self.build_virtualenvs:
+            subprocess.check_call((python, build_ve,
+                                   '-a', self.app, '--target', self.target,
+                                   '--download', '--upload'))
+            subprocess.check_call((python, build_ve,
+                                   '-a', 'deploy', '--target', self.target,
+                                   '--download', '--upload'),
+                                  cwd='deploy')
+            shutil.rmtree('deploy/virtualenv')
+            os.unlink('deploy/virtualenv.tar.gz')
 
     def upload(self):
         artifact = 'dist/%s.tar.gz' % self.app
@@ -195,9 +198,12 @@ def parse_args():
                         default=os.path.basename(os.getcwd()),
                         help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
-                          help="Don't run tests")
+                        help="Don't run tests")
     parser.add_argument('--target', default='master',
-                          help='The target to upload to')
+                        help='The target to upload to')
+    parser.add_argument('--no-virtualenvs', action='store_false',
+                        dest='build_virtualenvs',
+                        help='Ignore building virtualenvs')
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yola.deploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -284,7 +290,8 @@ def main():
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, tag=tag,
                            deploy_settings=deploy_settings,
-                           repository=repository)
+                           repository=repository,
+                           build_virtualenvs=opts.build_virtualenvs)
     builder.prepare()
     builder.build(opts.skip_tests)
     builder.upload()
