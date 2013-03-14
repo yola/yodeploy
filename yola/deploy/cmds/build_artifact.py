@@ -244,7 +244,7 @@ def check_output(*args, **kwargs):
     output = p.communicate()[0]
     ret = p.poll()
     if ret:
-        raise subprocess.CalledProcessError(ret, *args, output=output)
+        raise subprocess.CalledProcessError(ret, args)
     return output
 
 
