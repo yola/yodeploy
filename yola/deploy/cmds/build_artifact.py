@@ -158,8 +158,8 @@ class BuildCompat2(Builder):
         with open('meta.json', 'w') as f:
             json.dump(metadata, f, indent=4)
 
-        subprocess.check_call(('/opt/deploy/spade.py', self.app, artifact,
-                               '-m', 'meta.json',
+        subprocess.check_call(('/opt/deploy/spade.py', 'upload', self.app,
+                               artifact, '-m', 'meta.json',
                               ) + self.spade_target())
 
 
