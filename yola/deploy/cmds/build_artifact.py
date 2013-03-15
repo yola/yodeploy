@@ -116,11 +116,11 @@ class BuildCompat1(Builder):
         return env
 
     def upload(self):
-        subprocess.check_call(('./scripts/upload.sh',
-                               '%s-%s' % (self.app, self.dcs_target()),
-                               self.version,
-                               self.artifact,
-                              ), shell=True, env=self.build_env())
+        subprocess.check_call(' '.join('./scripts/upload.sh',
+                                       '%s-%s' % (self.app, self.dcs_target()),
+                                       self.version,
+                                       self.artifact,
+                                      ), shell=True, env=self.build_env())
 
 
 class BuildCompat2(Builder):
