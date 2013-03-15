@@ -106,7 +106,7 @@ class BuildCompat1(Builder):
         self.dcs = os.environ.get('DEPLOYSERVER',
                 self.deploy_settings.build.deploy_content_server)
         self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
-                                                   % self.app)
+                                                   % self.distname)
 
     def build_env(self):
         env = super(BuildCompat1, self).build_env()
