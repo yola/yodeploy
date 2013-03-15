@@ -94,6 +94,8 @@ class BuildCompat1(Builder):
     """The old shell deploy system"""
 
     def dcs_target(self):
+        if self.deploy_settings.environment == 'integration':
+            return 'integration'
         if self.target == 'master':
             return 'trunk'
         return self.target
