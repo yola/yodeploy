@@ -19,6 +19,7 @@ import yola.deploy.repository
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, tag,
                  deploy_settings, repository, build_virtualenvs):
+        print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
         self.version = version
@@ -28,6 +29,7 @@ class Builder(object):
         self.deploy_settings = deploy_settings
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
+
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -62,7 +64,7 @@ class Builder(object):
             print >> sys.stderr, "Failed to notify GitHub: %s" % e
 
     def prepare(self):
-        raise NotImplemented()
+        pass
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
@@ -72,22 +74,47 @@ class Builder(object):
         return env
 
     def build(self, skip_tests=False):
+        print_banner('Build')
         env = self.build_env()
-        subprocess.check_call('scripts/build.sh', env=env)
-        if not skip_tests:
+        try:
+            subprocess.check_call('scripts/build.sh', env=env)
+        except subprocess.CalledProcessError:
+            abort('Build script failed')
+        print_banner('Test')
+        if skip_tests:
+            print 'Tests skipped'
+        else:
             self.set_commit_status('pending', 'Tests Running')
             try:
                 subprocess.check_call('scripts/test.sh', env=env)
             except subprocess.CalledProcessError:
                 self.set_commit_status('failed', 'Tests did not pass')
-                print >> sys.stderr, 'Tests failed'
-                sys.exit(1)
+                abort('Tests failed')
             self.set_commit_status('success', 'Tests passed')
 
-        subprocess.check_call('scripts/dist.sh', env=env)
+        print_banner('Package')
+        try:
+            subprocess.check_call('scripts/dist.sh', env=env)
+        except subprocess.CalledProcessError:
+            abort('Dist script failed')
 
     def upload(self):
         raise NotImplemented()
+
+    def summary(self):
+        print_banner('Summary')
+        print 'App: %s' % self.app
+        print 'Target: %s' % self.target
+        print 'Version: %s' % self.version
+        print 'Commit: %s' % self.commit
+        print 'Commit message: %s' % self.commit_msg
+        jenkins_tag = ''
+        if self.tag:
+            print 'Tag: %s' % self.tag
+            jenkins_tag = ' (tag: %s)' % self.tag
+        print
+        print ('Jenkins description: %s:%.8s%s "%s"'
+               % (self.target, self.commit, jenkins_tag, self.commit_msg))
 
 
 class BuildCompat1(Builder):
@@ -107,6 +134,10 @@ class BuildCompat1(Builder):
                 self.deploy_settings.build.deploy_content_server)
         self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
                                                    % self.distname)
+        print 'Environment:'
+        print ' DISTNAME=%s' % self.distname
+        print ' DEPLOYSERVER=%s' % self.dcs
+        print ' ARTIFACT=%s' % self.artifact
 
     def build_env(self):
         env = super(BuildCompat1, self).build_env()
@@ -116,12 +147,16 @@ class BuildCompat1(Builder):
         return env
 
     def upload(self):
-        subprocess.check_call(' '.join((
-                './scripts/upload.sh',
-                '%s-%s' % (self.app, self.dcs_target()),
-                self.version,
-                self.artifact,
-            )), shell=True, env=self.build_env())
+        print_banner('Upload')
+        try:
+            subprocess.check_call(' '.join((
+                    './scripts/upload.sh',
+                    '%s-%s' % (self.app, self.dcs_target()),
+                    self.version,
+                    self.artifact,
+                )), shell=True, env=self.build_env())
+        except subprocess.CalledProcessError:
+            abort('Upload script failed')
 
 
 class BuildCompat2(Builder):
@@ -135,17 +170,28 @@ class BuildCompat2(Builder):
 
     def prepare(self):
         if self.build_virtualenvs:
-            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                                   '-a', 'deploy', '--download', '--upload',
-                                  ) + self.spade_target(), cwd='deploy')
+            print_banner('Build deploy virtualenv')
+            try:
+                subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                                       '-a', 'deploy', '--download',
+                                       '--upload',
+                                      ) + self.spade_target(), cwd='deploy')
+            except subprocess.CalledProcessError:
+                abort('build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
-            subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                                   '-a', self.app, '--download', '--upload',
-                                  ) + self.spade_target())
+            print_banner('Build app virtualenv')
+            try:
+                subprocess.check_call(('/opt/deploy/build-virtualenv.py',
+                                       '-a', self.app, '--download',
+                                       '--upload',
+                                      ) + self.spade_target())
+            except subprocess.CalledProcessError:
+                abort('build-virtualenv failed')
 
     def upload(self):
+        print_banner('Upload')
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
             'vcs_tag': self.tag,
@@ -158,9 +204,12 @@ class BuildCompat2(Builder):
         with open('meta.json', 'w') as f:
             json.dump(metadata, f, indent=4)
 
-        subprocess.check_call(('/opt/deploy/spade.py', 'upload', self.app,
-                               artifact, '-m', 'meta.json',
-                              ) + self.spade_target())
+        try:
+            subprocess.check_call(('/opt/deploy/spade.py', 'upload', self.app,
+                                   artifact, '-m', 'meta.json',
+                                  ) + self.spade_target())
+        except subprocess.CalledProcessError:
+            abort('Spade upload failed')
 
 
 class BuildCompat3(Builder):
@@ -169,6 +218,7 @@ class BuildCompat3(Builder):
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
         if self.build_virtualenvs:
+            print_banner('Build deploy virtualenv')
             subprocess.check_call((python, build_ve,
                                    '-a', 'deploy', '--target', self.target,
                                    '--download', '--upload'),
@@ -176,11 +226,13 @@ class BuildCompat3(Builder):
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
+            print_banner('Build app virtualenv')
             subprocess.check_call((python, build_ve,
                                    '-a', self.app, '--target', self.target,
                                    '--download', '--upload'))
 
     def upload(self):
+        print_banner('Upload')
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
             'vcs_tag': self.tag,
@@ -193,6 +245,7 @@ class BuildCompat3(Builder):
         with open(artifact) as f:
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
+        print 'Uploaded'
 
 
 def parse_args():
@@ -251,6 +304,76 @@ def check_output(*args, **kwargs):
     return output
 
 
+def print_box(lines, border='light'):
+    '''Print lines (a list of unicode strings) inside a pretty box.'''
+    styles = {
+        'ascii': {
+            'ul': '+',
+            'ur': '+',
+            'dl': '+',
+            'dr': '+',
+            'h': '-',
+            'v': '|',
+        },
+        'light': {
+            'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
+            'ur': u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}',
+            'dl': u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}',
+            'dr': u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}',
+            'h': u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
+            'v': u'\N{BOX DRAWINGS LIGHT VERTICAL}',
+        },
+        'heavy': {
+            'ul': u'\N{BOX DRAWINGS HEAVY UP AND LEFT}',
+            'ur': u'\N{BOX DRAWINGS HEAVY UP AND RIGHT}',
+            'dl': u'\N{BOX DRAWINGS HEAVY DOWN AND LEFT}',
+            'dr': u'\N{BOX DRAWINGS HEAVY DOWN AND RIGHT}',
+            'h': u'\N{BOX DRAWINGS HEAVY HORIZONTAL}',
+            'v': u'\N{BOX DRAWINGS HEAVY VERTICAL}',
+        },
+        'double': {
+            'ul': u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
+            'ur': u'\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
+            'dl': u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
+            'dr': u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
+            'h': u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
+            'v': u'\N{BOX DRAWINGS DOUBLE VERTICAL}',
+        },
+    }
+    borders = styles[border]
+
+    width = max(len(line) for line in lines)
+
+    output = [borders['dr'] + borders['h'] * width + borders['dl']]
+    for line in lines:
+        output.append(borders['v'] + line.ljust(width) + borders['v'])
+    output.append(borders['ur'] + borders['h'] * width + borders['ul'])
+
+    print '\n'.join(line.encode('utf-8') for line in output)
+
+
+def print_banner(message, width=79, position='left', **kwargs):
+    '''Print a single-line message in a box'''
+    # Ensure there's always space for the border
+    assert len(message) <= (width - 4)
+    width -= 2
+
+    if position == 'left':
+        message = u' ' + message.ljust(width - 1)
+    elif position in ('center', 'centre'):
+        message = message.center(width)
+    elif position == 'right':
+        message = message.rjust(width)
+
+    print_box([message], **kwargs)
+
+
+def abort(message):
+    print >> sys.stderr, message
+    print_banner('Aborted')
+    sys.exit(1)
+
+
 def main():
     opts = parse_args()
 
@@ -258,6 +381,7 @@ def main():
     if os.path.exists('deploy/compat'):
         with open('deploy/compat') as f:
             compat = int(f.read().strip())
+    print 'Detected build compat level %s' % compat
     try:
         BuilderClass = {
             1: BuildCompat1,
@@ -300,6 +424,7 @@ def main():
     builder.prepare()
     builder.build(opts.skip_tests)
     builder.upload()
+    builder.summary()
 
 
 if __name__ == '__main__':
