@@ -14,3 +14,10 @@ virtualenv/bin/python setup.py nosetests --with-xunit \
                                          --cover-package=yola.deploy \
                                          --with-xcoverage \
                                          --xcoverage-file=reports/coverage.xml
+
+# Ignore the return status of these linters
+set +e
+pep8 yola > reports/pep8.report
+pyflakes yola > reports/pyflakes.report
+pylint yola > reports/pylint.report
+exit 0
