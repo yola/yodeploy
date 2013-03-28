@@ -36,6 +36,8 @@ class Builder(object):
         settings = self.deploy_settings.build.github
         if not settings.report:
             return
+        if self.target in settings.except_branches:
+            return
 
         subst = {
             'app': self.app,
