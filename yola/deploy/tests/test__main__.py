@@ -7,7 +7,8 @@ from . import TmpDirTestCase
 
 class TestHookery(TmpDirTestCase):
     def test_hook(self):
-        os.makedirs(self.tmppath('test', 'versions', 'foo', 'deploy'))
+        self.mkdir('artifacts')
+        self.mkdir('test', 'versions', 'foo', 'deploy')
         with open(self.tmppath('test', 'versions', 'foo', 'deploy',
                                'hooks.py'), 'w') as f:
             f.write("""import os
@@ -25,17 +26,17 @@ hooks = Hooks
         with open(self.tmppath('config.py'), 'w') as f:
             f.write("""import os
 
-from yola.deploy.artifacts import AttrDict
+class AttrDict(dict):
+    __getattr__ = dict.__getitem__
 
-
-prefix='%s'
 deploy_settings = AttrDict(
-    paths=AttrDict(
-        state=os.path.join(prefix, 'state'),
-        artifacts=os.path.join(prefix, 'artifacts'),
-    ),
     artifacts=AttrDict(
-        provider='local',
+        store='local',
+        store_settings=AttrDict(
+            local=AttrDict(
+                directory=os.path.join('%s', 'artifacts'),
+            ),
+        ),
     ),
 )
 """ % self.tmpdir)

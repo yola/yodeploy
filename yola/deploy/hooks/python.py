@@ -32,7 +32,8 @@ class PythonApp(DeployHook):
 
             if not os.path.exists(ve_working):
                 os.makedirs(ve_working)
-            download_ve(self.app, ve_hash, self.artifacts_factory, tarball)
+            download_ve(self.repository, self.app, ve_hash, self.target,
+                        dest=tarball)
             extract_tar(tarball, ve_unpack_root)
             os.rename(ve_unpack_root, ve_dir)
 

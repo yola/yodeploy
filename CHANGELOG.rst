@@ -1,8 +1,14 @@
 Change Log
 ==========
 
+0.3.0
+-----
+
+* Backwards-incompatible repository layout change.
+* configs now always come from the master branch/target.
+
 0.2.7
-------------
+-----
 
 * Added supervisord hook.
 

@@ -18,7 +18,7 @@ class TestDeployHook(unittest.TestCase):
         self.assertEqual(self.dh.root, '/tmp/test')
         self.assertEqual(self.dh.version, '123')
         self.assertEqual(self.dh.settings, {})
-        self.assertEqual(self.dh.artifacts_factory, None)
+        self.assertEqual(self.dh.repository, None)
         self.assertEqual(self.dh.deploy_dir, '/tmp/test/versions/123')
         self.assertEqual(self.dh.deploy_path('foo'),
                          '/tmp/test/versions/123/foo')

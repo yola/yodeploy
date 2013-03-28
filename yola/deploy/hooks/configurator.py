@@ -33,28 +33,29 @@ class ConfiguratedApp(DeployHook):
         self.config = self.read_config()
 
     def write_config(self):
-        artifacts = self.artifacts_factory('configs.tar.gz', app='configs')
-        artifacts.update_versions()
-        if not artifacts.versions.latest:
-            raise Exception("No configs in artifacts repository")
-        app_conf_dir = self.deploy_path('deploy', 'configuration')
-        conf_root = os.path.join(self.settings.paths.root, 'configs')
-        conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
-        configs = os.path.join(conf_root, 'configs')
-
+        conf_root = os.path.join(self.settings.paths.apps, 'configs')
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
+        conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
+        try:
+            with self.repository.get('configs', target='master') as f1:
+                with open(conf_tarball, 'w') as f2:
+                    shutil.copyfileobj(f1, f2)
+        except KeyError:
+            raise Exception("No configs in artifacts repository")
+
+        configs = os.path.join(conf_root, 'configs')
         if os.path.exists(configs):
             shutil.rmtree(configs)
 
-        artifacts.download(conf_tarball)
         extract_tar(conf_tarball, configs)
         os.unlink(conf_tarball)
 
-        sources = config_sources(self.app, self.settings.environment,
-                                 self.settings.cluster,
-                                 self.settings.paths.deployconfigs,
-                                 app_conf_dir)
+        configs_dirs = [configs] + self.settings.deployconfigs.overrides
+        app_conf_dir = self.deploy_path('deploy', 'configuration')
+        sources = config_sources(self.app, self.settings.artifacts.environment,
+                                 self.settings.artifacts.cluster,
+                                 configs_dirs, app_conf_dir)
         config = smush_config(sources)
         write_config(config, self.deploy_dir)
 
