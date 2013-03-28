@@ -4,7 +4,7 @@ import logging
 import socket
 import os
 
-import yola.deploy.artifacts
+import yola.deploy.repository
 import yola.deploy.config
 import yola.deploy.ipc_logging
 
@@ -29,7 +29,8 @@ def main():
     p.add_argument('version',
                    help='The version of the application to operate on')
     p.add_argument('--target', metavar='TARGET',
-                   help='Target to use for artifacts')
+                   default='master',
+                   help='Deploy target')
     p.add_argument('-H', '--hook', metavar='HOOK',
                    help='Call HOOK in the application')
     args = p.parse_args()
@@ -38,12 +39,12 @@ def main():
 
     app = os.path.basename(os.path.abspath(args.appdir))
     deploy_settings = yola.deploy.config.load_settings(args.config)
-    artifacts_factory = yola.deploy.artifacts.build_artifacts_factory(
-            app, args.target, deploy_settings)
+
+    repository = yola.deploy.repository.get_repository(deploy_settings)
 
     if args.hook:
         call_hook(app, args.target, args.appdir, args.version, deploy_settings,
-                  artifacts_factory, args.hook)
+                  repository, args.hook)
 
 
 def setup_logging(log_fd, verbose):
@@ -63,7 +64,7 @@ def setup_logging(log_fd, verbose):
         logging.basicConfig()
 
 
-def call_hook(app, target, appdir, version, deploy_settings, artifacts_factory,
+def call_hook(app, target, appdir, version, deploy_settings, repository,
               hook):
     '''Load and fire a hook'''
     fake_mod = '_deploy_hooks'
@@ -72,7 +73,7 @@ def call_hook(app, target, appdir, version, deploy_settings, artifacts_factory,
     with open(fn) as f:
         m = imp.load_module(fake_mod, f, fn, description)
     hooks = m.hooks(app, target, appdir, version, deploy_settings,
-                    artifacts_factory)
+                    repository)
     getattr(hooks, hook)()
 
 

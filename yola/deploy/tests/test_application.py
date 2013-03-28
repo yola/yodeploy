@@ -1,16 +1,14 @@
 import os
+import shutil
 
 from ..application import Application
-from ..artifacts import LocalArtifacts
+from ..repository import LocalRepositoryStore, Repository
 from ..virtualenv import ve_version, sha224sum, create_ve, upload_ve
 
 from . import TmpDirTestCase
 
 
 class ApplicationTest(TmpDirTestCase):
-    def artifact_factory(self, filename=None, app=None):
-        return LocalArtifacts(app or 'test', None, self.tmppath('state'),
-                              self.tmppath('artifacts'), filename)
 
     def setUp(self):
         super(ApplicationTest, self).setUp()
@@ -19,9 +17,24 @@ class ApplicationTest(TmpDirTestCase):
 class AttrDict(dict):
     __getattr__ = dict.__getitem__
 
-deploy_settings = AttrDict(paths=AttrDict(root='%s'))
-""" % self.tmppath('srv'))
-        self.app = Application('test', None, self.artifact_factory,
+deploy_settings = AttrDict(
+    artifacts=AttrDict(
+        store='local',
+        store_settings=AttrDict(
+            local=AttrDict(
+                directory='%s',
+            ),
+        ),
+    ),
+    paths=AttrDict(
+        apps='%s',
+    ),
+)
+""" % (self.tmppath('artifacts'), self.tmppath('srv')))
+
+        store = LocalRepositoryStore(self.mkdir('artifacts'))
+        self.repo = Repository(store)
+        self.app = Application('test', 'master', self.repo,
                                self.tmppath('config.py'))
         if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
             self._create_test_ve()
@@ -29,16 +42,29 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
             'test-data/deploy-ve/requirements.txt'))
 
     def _create_test_ve(self):
+        """
+        Bootstrap a deploy virtualenv, for our tests
+        This needs a PYPI that contains yola.deploy
+        """
+        pypi = os.environ.get('PYPI')
+        if not pypi:
+            import yola.deploy.config
+            deploy_settings = yola.deploy.config.load_settings(
+                    yola.deploy.config.find_deploy_config())
+            pypi = deploy_settings.build.pypi
+
+        if os.path.exists('test-data/deploy-ve'):
+            shutil.rmtree('test-data/deploy-ve')
         os.makedirs('test-data/deploy-ve')
         if not os.path.exists('test-data/deploy-ve/requirements.txt'):
             with open('test-data/deploy-ve/requirements.txt', 'w') as f:
                 f.write('yola.deploy\n')
-        create_ve('test-data/deploy-ve')
+        create_ve('test-data/deploy-ve', pypi)
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
-        self.assertTrue(self.app.target is None)
-        self.assertTrue(isinstance(self.app.artifacts, LocalArtifacts))
+        self.assertEqual(self.app.target, 'master')
+        self.assertTrue(isinstance(self.app.repository, Repository))
         self.assertTrue(isinstance(self.app.settings, dict))
         self.assertEqual(self.app.appdir, self.tmppath('srv', 'test'))
 
@@ -58,8 +84,9 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
 
     def test_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
-        self.app.artifacts.upload(self.tmppath('test.tar.gz'))
-        version = self.app.artifacts.versions.latest.version_id
+        version = '1'
+        with open(self.tmppath('test.tar.gz')) as f:
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
@@ -71,8 +98,9 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
 
     def test_double_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
-        self.app.artifacts.upload(self.tmppath('test.tar.gz'))
-        version = self.app.artifacts.versions.latest.version_id
+        version = '1'
+        with open(self.tmppath('test.tar.gz')) as f:
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
@@ -85,8 +113,9 @@ deploy_settings = AttrDict(paths=AttrDict(root='%s'))
 
     def test_unpack_live(self):
         self.create_tar('test.tar.gz', 'foo/bar')
-        self.app.artifacts.upload(self.tmppath('test.tar.gz'))
-        version = self.app.artifacts.versions.latest.version_id
+        version = '1'
+        with open(self.tmppath('test.tar.gz')) as f:
+            self.repo.put('test', version, f, {})
         os.unlink(self.tmppath('test.tar.gz'))
 
         os.makedirs(self.tmppath('srv', 'test', 'versions', version))
@@ -156,8 +185,8 @@ hooks = Hooks
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
             f.write('yola.deploy\n')
-        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
-                  'test-data/deploy-ve/virtualenv.tar.gz')
+        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
+                  source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
         self.app.prepare('foo')
         self.app.unlock()
@@ -182,8 +211,8 @@ hooks = Hooks
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
             f.write('yola.deploy\n')
-        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
-                  'test-data/deploy-ve/virtualenv.tar.gz')
+        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
+                  source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
         self.app.deployed('foo')
         self.app.unlock()
@@ -207,10 +236,11 @@ hooks = Hooks
 """,
             'foo/deploy/requirements.txt': 'yola.deploy\n',
         })
-        self.app.artifacts.upload(self.tmppath('test.tar.gz'))
-        upload_ve('deploy', self._deploy_ve_hash, self.app.artifacts_factory,
-                  'test-data/deploy-ve/virtualenv.tar.gz')
-        version = self.app.artifacts.versions.latest.version_id
+        version = '1'
+        with open(self.tmppath('test.tar.gz')) as f:
+            self.repo.put('test', version, f, {'deploy_compat': '3'})
+        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
+                  source='test-data/deploy-ve/virtualenv.tar.gz')
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.deploy(version)

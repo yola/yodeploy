@@ -23,7 +23,9 @@ class TmpDirTestCase(unittest.TestCase):
         return os.path.join(self.tmpdir, *fragments)
 
     def mkdir(self, *fragments):
-        os.makedirs(self.tmppath(*fragments))
+        path = self.tmppath(*fragments)
+        os.makedirs(path)
+        return path
 
     def create_tar(self, name, *paths, **kwargs):
         contents = kwargs.get('contents', {})
@@ -63,3 +65,7 @@ class TmpDirTestCase(unittest.TestCase):
         if os.path.exists(self.tmppath(*fragments)):
             self.fail(self._formatMessage(msg,
                 "does not exist: %s" % (os.path.join(*fragments))))
+
+    def assertTMPPContents(self, contents, *fragments):
+        with open(self.tmppath(*fragments)) as f:
+            self.assertEqual(f.read(), contents)
