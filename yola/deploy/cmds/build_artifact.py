@@ -76,27 +76,21 @@ class Builder(object):
     def build(self, skip_tests=False):
         print_banner('Build')
         env = self.build_env()
-        try:
-            subprocess.check_call('scripts/build.sh', env=env)
-        except subprocess.CalledProcessError:
-            abort('Build script failed')
+        check_call('scripts/build.sh', env=env, abort='Build script failed')
         print_banner('Test')
         if skip_tests:
             print 'Tests skipped'
         else:
             self.set_commit_status('pending', 'Tests Running')
             try:
-                subprocess.check_call('scripts/test.sh', env=env)
+                check_call('scripts/test.sh', env=env)
             except subprocess.CalledProcessError:
                 self.set_commit_status('failed', 'Tests did not pass')
                 abort('Tests failed')
             self.set_commit_status('success', 'Tests passed')
 
         print_banner('Package')
-        try:
-            subprocess.check_call('scripts/dist.sh', env=env)
-        except subprocess.CalledProcessError:
-            abort('Dist script failed')
+        check_call('scripts/dist.sh', env=env, abort='Dist script failed')
 
     def upload(self):
         raise NotImplemented()
@@ -148,15 +142,13 @@ class BuildCompat1(Builder):
 
     def upload(self):
         print_banner('Upload')
-        try:
-            subprocess.check_call(' '.join((
-                    './scripts/upload.sh',
-                    '%s-%s' % (self.app, self.dcs_target()),
-                    self.version,
-                    self.artifact,
-                )), shell=True, env=self.build_env())
-        except subprocess.CalledProcessError:
-            abort('Upload script failed')
+        check_call(' '.join(('./scripts/upload.sh',
+                             '%s-%s' % (self.app, self.dcs_target()),
+                             self.version,
+                             self.artifact,
+                           )),
+                   shell=True, env=self.build_env(),
+                   abort='Upload script failed')
 
 
 class BuildCompat2(Builder):
@@ -171,24 +163,16 @@ class BuildCompat2(Builder):
     def prepare(self):
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
-            try:
-                subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                                       '-a', 'deploy', '--download',
-                                       '--upload',
-                                      ) + self.spade_target(), cwd='deploy')
-            except subprocess.CalledProcessError:
-                abort('build-virtualenv failed')
+            check_call(('/opt/deploy/build-virtualenv.py', '-a', 'deploy',
+                        '--download', '--upload') + self.spade_target(),
+                       cwd='deploy', abort='build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
             print_banner('Build app virtualenv')
-            try:
-                subprocess.check_call(('/opt/deploy/build-virtualenv.py',
-                                       '-a', self.app, '--download',
-                                       '--upload',
-                                      ) + self.spade_target())
-            except subprocess.CalledProcessError:
-                abort('build-virtualenv failed')
+            check_call(('/opt/deploy/build-virtualenv.py', '-a', self.app,
+                        '--download', '--upload') + self.spade_target(),
+                       abort='build-virtualenv failed')
 
     def upload(self):
         print_banner('Upload')
@@ -204,12 +188,9 @@ class BuildCompat2(Builder):
         with open('meta.json', 'w') as f:
             json.dump(metadata, f, indent=4)
 
-        try:
-            subprocess.check_call(('/opt/deploy/spade.py', 'upload', self.app,
-                                   artifact, '-m', 'meta.json',
-                                  ) + self.spade_target())
-        except subprocess.CalledProcessError:
-            abort('Spade upload failed')
+        check_call(('/opt/deploy/spade.py', 'upload', self.app, artifact,
+                    '-m', 'meta.json') + self.spade_target(),
+                   abort='Spade upload failed')
 
 
 class BuildCompat3(Builder):
@@ -219,17 +200,16 @@ class BuildCompat3(Builder):
                                                     'build_virtualenv'))
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
-            subprocess.check_call((python, build_ve,
-                                   '-a', 'deploy', '--target', self.target,
-                                   '--download', '--upload'),
-                                  cwd='deploy')
+            check_call((python, build_ve, '-a', 'deploy',
+                        '--target', self.target, '--download', '--upload'),
+                       cwd='deploy', abort='build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
             print_banner('Build app virtualenv')
-            subprocess.check_call((python, build_ve,
-                                   '-a', self.app, '--target', self.target,
-                                   '--download', '--upload'))
+            check_call((python, build_ve, '-a', self.app,
+                        '--target', self.target, '--download', '--upload'),
+                       abort='build-virtualenv failed')
 
     def upload(self):
         print_banner('Upload')
@@ -290,6 +270,25 @@ def next_version(app, target, repository, deploy_settings):
     else:
         version[-1] = str(int(version[-1]) + 1)
     return '.'.join(version)
+
+
+def check_call(*args, **kwargs):
+    '''
+    Wrapper around subprocess.check_call, that flushes file file handles first
+    Should the call fail, if `abort` is set to a string, we'll abbort with that
+    message.
+    '''
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    abort_msg = kwargs.pop('abort', None)
+    try:
+        subprocess.check_call(*args, **kwargs)
+    except subprocess.CalledProcessError:
+        if abort_msg:
+            abort(abort_msg)
+        else:
+            raise
 
 
 def check_output(*args, **kwargs):
