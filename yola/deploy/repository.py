@@ -192,7 +192,7 @@ class S3RepositoryStore(object):
         k = self.bucket.new_key(path)
         if metadata:
             k.update_metadata(metadata)
-        k.set_contents_from_stream(fp,
+        k.set_contents_from_file(fp,
                 reduced_redundancy=self.reduced_redundancy,
                 encrypt_key=self.encrypted)
 
