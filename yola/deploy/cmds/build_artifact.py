@@ -30,7 +30,6 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
 
-
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
         settings = self.deploy_settings.build.github
@@ -246,6 +245,9 @@ def parse_args(default_app):
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
                         help='Skip building deploy virtualenvs')
+    parser.add_argument('--prepare-only', action='store_true',
+                        help="Only prepare (e.g. build virtualenvs) don't "
+                             "build")
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yola.deploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -426,8 +428,9 @@ def main():
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs)
     builder.prepare()
-    builder.build(opts.skip_tests)
-    builder.upload()
+    if not opts.prepare_only:
+        builder.build(opts.skip_tests)
+        builder.upload()
     builder.summary()
 
 
