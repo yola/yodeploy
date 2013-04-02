@@ -176,9 +176,11 @@ class S3RepositoryStore(object):
         k = self.bucket.get_key(path)
         if k is None:
             raise KeyError('No such object: %s' % path)
+        k.open()
+        f = RepositoryFile(k.resp)
         if metadata:
-            return RepositoryFile(k.open()), k.metadata
-        return RepositoryFile(k.open())
+            return f, k.metadata
+        return f
 
     def get_metadata(self, path):
         '''
