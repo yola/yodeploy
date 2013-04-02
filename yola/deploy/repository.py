@@ -184,6 +184,8 @@ class S3RepositoryStore(object):
         Retrieve a file's metadata.
         '''
         k = self.bucket.get_key(path)
+        if k is None:
+            raise KeyError('No such object: %s' % path)
         return k.metadata
 
     def put(self, path, fp, metadata=None):
