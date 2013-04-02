@@ -180,12 +180,13 @@ class BuildCompat2(Builder):
         print_banner('Upload')
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
-            'vcs_tag': self.tag,
             'build_number': self.version,
             'commit_msg': self.commit_msg,
             'commit': self.commit,
             'deploy_compat': '2',
         }
+        if self.tag:
+            metadata['vcs_tag'] = self.tag,
 
         with open('meta.json', 'w') as f:
             json.dump(metadata, f, indent=4)
@@ -217,12 +218,13 @@ class BuildCompat3(Builder):
         print_banner('Upload')
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
-            'vcs_tag': self.tag,
             'build_number': self.version,
             'commit_msg': self.commit_msg,
             'commit': self.commit,
             'deploy_compat': '3',
         }
+        if self.tag:
+            metadata['vcs_tag'] = self.tag,
 
         with open(artifact) as f:
             self.repository.put(self.app, self.version, f, metadata,
