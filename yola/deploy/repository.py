@@ -42,9 +42,10 @@ def _register_store(name):
 class RepositoryFile(object):
     '''File object wrapper that has a metadata attraibute'''
 
-    def __init__(self, f, metadata):
+    def __init__(self, f, metadata=None):
         self._f = f
-        self.metadata = metadata
+        if metadata is not None:
+            self.metadata = metadata
 
     def __getattr__(self, name):
         return getattr(self._f, name)
@@ -176,8 +177,8 @@ class S3RepositoryStore(object):
         if k is None:
             raise KeyError('No such object: %s' % path)
         if metadata:
-            return k.open(), k.metadata
-        return k.open()
+            return RepositoryFile(k.open()), k.metadata
+        return RepositoryFile(k.open())
 
     def get_metadata(self, path):
         '''
