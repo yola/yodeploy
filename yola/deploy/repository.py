@@ -173,6 +173,8 @@ class S3RepositoryStore(object):
         If metadata is True, metadata will be returned as well, in a tuple.
         '''
         k = self.bucket.get_key(path)
+        if k is None:
+            raise KeyError('No such object: %s' % path)
         if metadata:
             return k.open(), k.metadata
         return k.open()
