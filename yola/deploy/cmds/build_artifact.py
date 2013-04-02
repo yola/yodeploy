@@ -232,12 +232,12 @@ class BuildCompat3(Builder):
         print 'Uploaded'
 
 
-def parse_args():
+def parse_args(default_app):
     parser = argparse.ArgumentParser(
             description='Build and upload an artifact',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--app', '-a',
-                        default=os.path.basename(os.getcwd()),
+                        default=default_app,
                         help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
                         help="Don't run tests")
@@ -378,7 +378,8 @@ def abort(message):
 
 
 def main():
-    opts = parse_args()
+    default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
+    opts = parse_args(default_app)
 
     compat = 1
     if os.path.exists('deploy/compat'):
