@@ -27,10 +27,11 @@ class SupervisordApp(TemplatedApp):
     def configure_supervisord(self):
         log.debug('Running SupervisordApp deployed hook')
         jobs = [basename(job) for job
-                in glob.glob(self.deploy_path('deploy', 'templates', 'supervisord',
-                                              '*.template'))]
+                in glob.glob(self.deploy_path('deploy', 'templates',
+                                              'supervisord', '*.template'))]
         if not jobs:
-            log.warning('SupervisordApp %s has no supervisord templates', self.app)
+            log.warning('SupervisordApp %s has no supervisord templates',
+                        self.app)
             return
 
         for job in jobs:
