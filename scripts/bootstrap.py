@@ -223,7 +223,7 @@ def main():
                       default=False, action='store_true',
                       help='Increase verbosity')
     parser.add_option('-t', '--target', default=default_target,
-                      help='Get yola.depoly from the spcefied target')
+                      help='Get yola.deploy from the specified target')
     opts, args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if opts.verbose else logging.INFO)
 
