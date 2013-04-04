@@ -1,27 +1,25 @@
 #!/usr/bin/env python
 
-# yola.deploy should normally be bootstrapped with Chef, but if you need to do
-# it by hand, here you go.
 # This downloads the latest builds from S3
+# It's entirely self-contained because we bundle it in a Chef recipe
 
 import base64
 import email.utils
 import hashlib
 import hmac
+import imp
 import logging
 import optparse
 import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import urllib2
 import urlparse
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import yola.deploy.config
-import yola.deploy.util
-from yola.deploy.virtualenv import ve_version, sha224sum
 
+deploy_settings_fn = '/etc/yola/deploy.conf.py'
 deploy_base = '/srv'
 log = logging.getLogger('bootstrap')
 
@@ -59,13 +57,86 @@ class S3Client(object):
                        'AWS %s:%s' % (self.access_key, signature))
 
 
-def deploy_settings_location():
-    '''Figure out where we should put deploy_settings'''
-    paths = yola.deploy.config.deploy_config_paths()
-    for path in paths:
-        if os.path.exists(path):
-            return path
-    return paths[0]
+# stolen from yola.deploy.config
+
+def load_settings(fn):
+    '''
+    Load deploy_settings from the specified filename
+    '''
+    fake_mod = '_deploy_settings'
+    description = ('.py', 'r', imp.PY_SOURCE)
+    with open(fn) as f:
+        m = imp.load_module(fake_mod, f, fn, description)
+    return m.deploy_settings
+
+
+# stolen from yola.deploy.virtualenv
+
+try:
+    import sysconfig
+    hush_pyflakes = sysconfig
+except ImportError:
+    class sysconfig:
+        @classmethod
+        def get_python_version(cls):
+            return '%i.%i' % sys.version_info[:2]
+
+        @classmethod
+        def get_platform(cls):
+            import distutils.util
+            return distutils.util.get_platform()
+
+
+def sha224sum(filename):
+    m = hashlib.sha224()
+    with open(filename) as f:
+        m.update(f.read())
+    return m.hexdigest()
+
+
+def ve_version(req_hash):
+    return '%s-%s-%s' % (sysconfig.get_python_version(),
+                         sysconfig.get_platform(),
+                         req_hash)
+
+
+# stolen from yola.deploy.util
+
+def extract_tar(tarball, root):
+    '''Ensure that tarball only has one root directory.
+    Extract it into the parent directory of root, and rename the extracted
+    directory to root.
+    '''
+    workdir = os.path.dirname(root)
+    tar = tarfile.open(tarball, 'r')
+    try:
+        members = tar.getmembers()
+        for member in members:
+            member.uid = 0
+            member.gid = 0
+            member.uname = 'root'
+            member.gname = 'root'
+        roots = set(member.name.split('/', 1)[0] for member in members)
+        if len(roots) > 1:
+            raise ValueError("Tarball has > 1 top-level directory")
+        tar.extractall(workdir, members)
+    finally:
+        tar.close()
+
+    extracted_root = os.path.join(workdir, list(roots)[0])
+    os.rename(extracted_root, root)
+
+
+# Local functions
+
+def mkdir_and_extract_tar(tarball, destination):
+    '''Extract a tarball to destination'''
+    parent = os.path.dirname(destination)
+    if not os.path.exists(parent):
+        os.makedirs(parent)
+    elif os.path.exists(destination):
+        shutil.rmtree(destination)
+    extract_tar(tarball, destination)
 
 
 def app_path(*args, **kwargs):
@@ -96,16 +167,6 @@ def get_latest(s3, app, target, artifact, destination):
     return version
 
 
-def extract_tar(tarball, destination):
-    '''Extract a tarball to destination'''
-    parent = os.path.dirname(destination)
-    if not os.path.exists(parent):
-        os.makedirs(parent)
-    elif os.path.exists(destination):
-        shutil.rmtree(destination)
-    yola.deploy.util.extract_tar(tarball, destination)
-
-
 def get_app(s3, target):
     '''Grab and unpack the app'''
     log.info('Downloading the app tarball')
@@ -114,7 +175,7 @@ def get_app(s3, target):
                          tarball)
 
     log.info('Extracting the app tarball')
-    extract_tar(tarball, app_path('versions', version))
+    mkdir_and_extract_tar(tarball, app_path('versions', version))
     return version
 
 
@@ -128,7 +189,8 @@ def get_deploy_ve(s3, target, version):
     get_latest(s3, 'deploy', target, tarball_name, tarball)
 
     log.info('Extracting the deploy virtualenv tarball')
-    extract_tar(tarball, app_path('virtualenvs', ve_name, app='deploy'))
+    mkdir_and_extract_tar(tarball, app_path('virtualenvs', ve_name,
+                                            app='deploy'))
     return ve_name
 
 
@@ -139,7 +201,7 @@ def hook(hook_name, version, target, dve_name):
                              app='deploy')
     subprocess.check_call((deploy_python,
                            '-m', 'yola.deploy.__main__',
-                           '--config', deploy_settings_location(),
+                           '--config', deploy_settings_fn,
                            '--app', 'yola.deploy',
                            '--hook', hook_name,
                            '--target', target,
@@ -149,11 +211,10 @@ def hook(hook_name, version, target, dve_name):
 def main():
     global deploy_base
 
-    deploy_settings_fn = deploy_settings_location()
     default_target = 'master'
     deploy_settings = None
     if os.path.exists(deploy_settings_fn):
-        deploy_settings = yola.deploy.config.load_settings(deploy_settings_fn)
+        deploy_settings = load_settings(deploy_settings_fn)
         default_target = deploy_settings.artifacts.target
         deploy_base = deploy_settings.paths.apps
 
@@ -167,7 +228,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG if opts.verbose else logging.INFO)
 
     if deploy_settings is None:
-        log.error("Couldn't find deploy settings")
+        log.error("Couldn't find deploy settings: %s", deploy_settings_fn)
         sys.exit(1)
 
     if os.path.exists(app_path('live')):
