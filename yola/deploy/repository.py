@@ -219,6 +219,9 @@ class S3RepositoryStore(object):
         '''
         if not path:
             path = ''
+        if path and path[-1] != '/':
+            path += '/'
+
         accepted_classes = []
         if files:
             accepted_classes.append(boto.s3.key.Key)
@@ -227,7 +230,7 @@ class S3RepositoryStore(object):
 
         for k in self.bucket.list(prefix=path, delimiter='/'):
             if any(isinstance(k, class_) for class_ in accepted_classes):
-                yield k.name
+                yield k.name.rstrip('/').rsplit('/', 1)[-1]
 
 
 class Repository(object):
