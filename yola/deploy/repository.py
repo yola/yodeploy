@@ -219,6 +219,9 @@ class S3RepositoryStore(object):
         '''
         if not path:
             path = ''
+        if path and path[-1] != '/':
+            path += '/'
+
         accepted_classes = []
         if files:
             accepted_classes.append(boto.s3.key.Key)
