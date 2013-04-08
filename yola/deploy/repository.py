@@ -230,7 +230,7 @@ class S3RepositoryStore(object):
 
         for k in self.bucket.list(prefix=path, delimiter='/'):
             if any(isinstance(k, class_) for class_ in accepted_classes):
-                yield k.name
+                yield k.name.rstrip('/').rsplit('/', 1)[-1]
 
 
 class Repository(object):
