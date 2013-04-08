@@ -101,8 +101,8 @@ def report(app, action, message, deploy_settings):
         service_settings = deploy_settings.report.service_settings.statsd
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         addr = (service_settings.host, service_settings.port)
-        sock.sendto('deploys.%s.%s.%s:1|c' % (environment, hostname, app),
-                    addr)
+        sock.sendto('deploys.%s.%s.%s:1|c'
+                    % (environment, hostname, app.replace('.', '_')), addr)
 
     if 'campfire' in services:
         try:
