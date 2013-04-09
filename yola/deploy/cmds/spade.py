@@ -51,7 +51,7 @@ def parse_args():
     versions_p = subparsers.add_parser('versions',
             help='List the versions of a file in the repository')
     versions_p.add_argument('app', help='The application name')
-    versions_p.add_argument('filename', help='The file to examine')
+    versions_p.add_argument('filename', nargs='?', help='The file to examine')
     versions_p.add_argument('--target', metavar='TARGET',
                             default='master',
                             help='The target to examine')
