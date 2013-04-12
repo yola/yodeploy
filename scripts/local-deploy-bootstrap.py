@@ -219,6 +219,8 @@ def clone(app, yola_src, branch='master'):
             git('remote', 'add', mirror, mirror_url % app)
             git('fetch', '--quiet', mirror, ignore_fail=True)
         git('fetch', '--quiet', 'origin')
+        # Ensure we aren't on the branch we want to -B
+        git('checkout', '--quiet', 'origin/%s' % branch)
         git('checkout', '--quiet', 'origin/%s' % branch, '-B', branch)
 
 
