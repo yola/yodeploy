@@ -197,7 +197,7 @@ def parse_args(default_app):
                         help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
                         help="Don't run tests")
-    parser.add_argument('--target', default='master',
+    parser.add_argument('--target', default=None,
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
@@ -363,10 +363,12 @@ def main():
     commit = os.environ.get('GIT_COMMIT')
     if not commit:
         commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+    target = opts.target
+    if not target:
+        target = os.environ.get('GIT_BRANCH')
     version = os.environ.get('BUILD_NUMBER')
     if not version:
-        version = next_version(opts.app, opts.target, repository,
-                               deploy_settings)
+        version = next_version(opts.app, target, repository, deploy_settings)
     # Other git bits:
     commit_msg = check_output(('git', 'show', '-s', '--format=%s',
                                commit)).strip()
@@ -379,7 +381,7 @@ def main():
         tag = line
         break
 
-    builder = BuilderClass(app=opts.app, target=opts.target, version=version,
+    builder = BuilderClass(app=opts.app, target=target, version=version,
                            commit=commit, commit_msg=commit_msg, tag=tag,
                            deploy_settings=deploy_settings,
                            repository=repository,
