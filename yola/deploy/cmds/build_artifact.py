@@ -152,49 +152,6 @@ class BuildCompat1(Builder):
                    abort='Upload script failed')
 
 
-class BuildCompat2(Builder):
-    """Call the old scripts in /opt/deploy"""
-
-    def spade_target(self):
-        target = ()
-        if self.target != 'master':
-            target = ('--target', self.target)
-        return target
-
-    def prepare(self):
-        if self.build_virtualenvs:
-            print_banner('Build deploy virtualenv')
-            check_call(('/opt/deploy/build-virtualenv.py', '-a', 'deploy',
-                        '--download', '--upload') + self.spade_target(),
-                       cwd='deploy', abort='build-virtualenv failed')
-            shutil.rmtree('deploy/virtualenv')
-            os.unlink('deploy/virtualenv.tar.gz')
-        if os.path.exists('requirements.txt'):
-            print_banner('Build app virtualenv')
-            check_call(('/opt/deploy/build-virtualenv.py', '-a', self.app,
-                        '--download', '--upload') + self.spade_target(),
-                       abort='build-virtualenv failed')
-
-    def upload(self):
-        print_banner('Upload')
-        artifact = 'dist/%s.tar.gz' % self.app
-        metadata = {
-            'build_number': self.version,
-            'commit_msg': self.commit_msg,
-            'commit': self.commit,
-            'deploy_compat': '2',
-        }
-        if self.tag:
-            metadata['vcs_tag'] = self.tag
-
-        with open('meta.json', 'w') as f:
-            json.dump(metadata, f, indent=4)
-
-        check_call(('/opt/deploy/spade.py', 'upload', self.app, artifact,
-                    '-m', 'meta.json') + self.spade_target(),
-                   abort='Spade upload failed')
-
-
 class BuildCompat3(Builder):
     def prepare(self):
         python = os.path.abspath(sys.executable)
@@ -240,7 +197,7 @@ def parse_args(default_app):
                         help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
                         help="Don't run tests")
-    parser.add_argument('--target', default='master',
+    parser.add_argument('--target', default=None,
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
@@ -391,11 +348,11 @@ def main():
     try:
         BuilderClass = {
             1: BuildCompat1,
-            2: BuildCompat2,
             3: BuildCompat3,
         }[compat]
     except KeyError:
-        print >> sys.stderr, 'Only deploy compat >=3 apps are supported'
+        print >> sys.stderr, ('Only legacy and yola.deploy compat >=3 apps '
+                              'are supported')
         sys.exit(1)
 
     deploy_settings = yola.deploy.config.load_settings(opts.config)
@@ -406,10 +363,12 @@ def main():
     commit = os.environ.get('GIT_COMMIT')
     if not commit:
         commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+    target = opts.target
+    if not target:
+        target = os.environ.get('GIT_BRANCH')
     version = os.environ.get('BUILD_NUMBER')
     if not version:
-        version = next_version(opts.app, opts.target, repository,
-                               deploy_settings)
+        version = next_version(opts.app, target, repository, deploy_settings)
     # Other git bits:
     commit_msg = check_output(('git', 'show', '-s', '--format=%s',
                                commit)).strip()
@@ -422,7 +381,7 @@ def main():
         tag = line
         break
 
-    builder = BuilderClass(app=opts.app, target=opts.target, version=version,
+    builder = BuilderClass(app=opts.app, target=target, version=version,
                            commit=commit, commit_msg=commit_msg, tag=tag,
                            deploy_settings=deploy_settings,
                            repository=repository,
