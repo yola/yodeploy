@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument('--version', '-v',
                         help='Use a specific application version')
     parser.add_argument('--target', help='The target to deploy from',
-                        default='master')
+                        default=None)
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Increase verbosity')
     parser.add_argument('-c', '--config', metavar='FILE',
