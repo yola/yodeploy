@@ -372,7 +372,7 @@ def main():
         for rbranch in rbranches.spltlines():
             if ' -> ' in rbranch:
                 continue
-            remote, branch = rbranch.split('/', 1)
+            remote, branch = rbranch.strip().split('/', 1)
             break
 
     version = os.environ.get('BUILD_NUMBER')
