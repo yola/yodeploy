@@ -185,6 +185,9 @@ hooks = Hooks
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
             f.write('yodeploy\n')
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'compat'), 'w') as f:
+            f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
@@ -211,6 +214,9 @@ hooks = Hooks
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
             f.write('yodeploy\n')
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'compat'), 'w') as f:
+            f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
@@ -235,6 +241,7 @@ class Hooks(DeployHook):
 hooks = Hooks
 """,
             'foo/deploy/requirements.txt': 'yodeploy\n',
+            'foo/deploy/compat': '4\n',
         })
         version = '1'
         with open(self.tmppath('test.tar.gz')) as f:
