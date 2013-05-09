@@ -1,1 +1,1 @@
-yodeploy==0.4.0
+yola.deploy==0.3.1
