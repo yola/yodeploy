@@ -83,12 +83,21 @@ class Application(object):
                           'deploy', 'hooks.py')
         if not os.path.isfile(fn):
             return
+
+        with open(os.path.join(self.appdir, 'versions', version, 'deploy',
+                               'compat')) as f:
+            compat = int(f.read())
+        if compat == 3:
+            module = 'yola.deploy.__main__'
+        elif compat == 4:
+            module = 'yodeploy.__main__'
+
         ve = self.deploy_ve(version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
         tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
-               '-m', 'yodeploy.__main__',
+               '-m', module,
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,
@@ -133,7 +142,7 @@ class Application(object):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
         with self.repository.get(self.app, version, self.target) as f1:
-            if f1.metadata.get('deploy_compat') != '3':
+            if f1.metadata.get('deploy_compat') not in ('3', '4'):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
             with open(tarball, 'w') as f2:

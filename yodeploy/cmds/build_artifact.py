@@ -155,6 +155,8 @@ class BuildCompat1(Builder):
 
 
 class BuildCompat3(Builder):
+    compat = 3
+
     def prepare(self):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
@@ -179,7 +181,7 @@ class BuildCompat3(Builder):
             'build_number': self.version,
             'commit_msg': self.commit_msg,
             'commit': self.commit,
-            'deploy_compat': '3',
+            'deploy_compat': str(self.compat),
         }
         if self.tag:
             metadata['vcs_tag'] = self.tag
@@ -188,6 +190,10 @@ class BuildCompat3(Builder):
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
         print 'Uploaded'
+
+
+class BuildCompat4(Builder):
+    compat = 4
 
 
 def parse_args(default_app):
@@ -351,6 +357,7 @@ def main():
         BuilderClass = {
             1: BuildCompat1,
             3: BuildCompat3,
+            4: BuildCompat4,
         }[compat]
     except KeyError:
         print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
