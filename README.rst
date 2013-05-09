@@ -67,7 +67,8 @@ system they were designed for. It is defined in `deploy/compat` in the
 source.
 
 1. Yola's legacy deployment system (Duncan Deploy)
-2. The legacy repository with yodeploy < 0.3.
+2. The legacy repository with yodeploy < 0.3 (back when it was called
+   `yola.deploy`).
 3. yodeploy >= 0.3.
 
 Building and uploading
