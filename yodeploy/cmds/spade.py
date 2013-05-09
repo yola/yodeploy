@@ -7,10 +7,10 @@ import os
 import shutil
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-import yola.deploy.config
-import yola.deploy.repository
+import yodeploy.config
+import yodeploy.repository
 
 # Replaced when configured
 log = logging.getLogger(__name__)
@@ -72,13 +72,13 @@ def parse_args():
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Increase verbosity')
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default=yola.deploy.config.find_deploy_config(False),
+                        default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
     opts = parser.parse_args()
 
     if opts.config is None:
         # Yes, it was a default, but we want to prent the error
-        opts.config = yola.deploy.config.find_deploy_config()
+        opts.config = yodeploy.config.find_deploy_config()
 
     return opts
 
@@ -168,9 +168,9 @@ def main():
     "Dispatch"
     opts = parse_args()
     configure_logging(opts.debug)
-    deploy_settings = yola.deploy.config.load_settings(opts.config)
+    deploy_settings = yodeploy.config.load_settings(opts.config)
 
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    repository = yodeploy.repository.get_repository(deploy_settings)
 
     cmd = globals().get('do_%s' % opts.command.replace('-', '_'))
     if cmd:

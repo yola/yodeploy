@@ -57,7 +57,7 @@ class S3Client(object):
                        'AWS %s:%s' % (self.access_key, signature))
 
 
-# stolen from yola.deploy.config
+# stolen from yodeploy.config
 
 def load_settings(fn):
     '''
@@ -70,7 +70,7 @@ def load_settings(fn):
     return m.deploy_settings
 
 
-# stolen from yola.deploy.virtualenv
+# stolen from yodeploy.virtualenv
 
 try:
     import sysconfig
@@ -100,7 +100,7 @@ def ve_version(req_hash):
                          req_hash)
 
 
-# stolen from yola.deploy.util
+# stolen from yodeploy.util
 
 def extract_tar(tarball, root):
     '''Ensure that tarball only has one root directory.
@@ -140,15 +140,15 @@ def mkdir_and_extract_tar(tarball, destination):
 
 
 def app_path(*args, **kwargs):
-    '''Convenience function for joining paths to /srv/yola.deploy'''
-    app = kwargs.pop('app', 'yola.deploy')
+    '''Convenience function for joining paths to /srv/yodeploy'''
+    app = kwargs.pop('app', 'yodeploy')
     assert not kwargs
     return os.path.join(deploy_base, app, *args)
 
 
 def get_latest(s3, app, target, artifact, destination):
     '''
-    Grab the latest version of an artifact from an S3 yola.deploy repository
+    Grab the latest version of an artifact from an S3 yodeploy repository
     '''
     parent = os.path.dirname(destination)
     if not os.path.exists(parent):
@@ -170,8 +170,8 @@ def get_latest(s3, app, target, artifact, destination):
 def get_app(s3, target):
     '''Grab and unpack the app'''
     log.info('Downloading the app tarball')
-    tarball = app_path('versions', 'unpack', 'yola.deploy.tar.gz')
-    version = get_latest(s3, 'yola.deploy', target, 'yola.deploy.tar.gz',
+    tarball = app_path('versions', 'unpack', 'yodeploy.tar.gz')
+    version = get_latest(s3, 'yodeploy', target, 'yodeploy.tar.gz',
                          tarball)
 
     log.info('Extracting the app tarball')
@@ -200,9 +200,9 @@ def hook(hook_name, version, target, dve_name):
     deploy_python = app_path('virtualenvs', dve_name, 'bin', 'python',
                              app='deploy')
     subprocess.check_call((deploy_python,
-                           '-m', 'yola.deploy.__main__',
+                           '-m', 'yodeploy.__main__',
                            '--config', deploy_settings_fn,
-                           '--app', 'yola.deploy',
+                           '--app', 'yodeploy',
                            '--hook', hook_name,
                            '--target', target,
                            app_path(), version))
@@ -223,7 +223,7 @@ def main():
                       default=False, action='store_true',
                       help='Increase verbosity')
     parser.add_option('-t', '--target', default=default_target,
-                      help='Get yola.deploy from the specified target')
+                      help='Get yodeploy from the specified target')
     opts, args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if opts.verbose else logging.INFO)
 
@@ -244,7 +244,7 @@ def main():
                   deploy_settings.artifacts.store_settings.s3.access_key,
                   deploy_settings.artifacts.store_settings.s3.secret_key)
 
-    log.info('Bootstrapping yola.deploy')
+    log.info('Bootstrapping yodeploy')
     version = get_app(s3, opts.target)
     ve_name = get_deploy_ve(s3, opts.target, version)
     hook('prepare', version, opts.target, ve_name)

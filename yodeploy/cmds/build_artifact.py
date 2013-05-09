@@ -10,10 +10,10 @@ import subprocess
 import sys
 import urllib2
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-import yola.deploy.config
-import yola.deploy.repository
+import yodeploy.config
+import yodeploy.repository
 
 
 class Builder(object):
@@ -155,6 +155,8 @@ class BuildCompat1(Builder):
 
 
 class BuildCompat3(Builder):
+    compat = 3
+
     def prepare(self):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
@@ -179,7 +181,7 @@ class BuildCompat3(Builder):
             'build_number': self.version,
             'commit_msg': self.commit_msg,
             'commit': self.commit,
-            'deploy_compat': '3',
+            'deploy_compat': str(self.compat),
         }
         if self.tag:
             metadata['vcs_tag'] = self.tag
@@ -188,6 +190,10 @@ class BuildCompat3(Builder):
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
         print 'Uploaded'
+
+
+class BuildCompat4(BuildCompat3):
+    compat = 4
 
 
 def parse_args(default_app):
@@ -208,13 +214,13 @@ def parse_args(default_app):
                         help="Only prepare (e.g. build virtualenvs) don't "
                              "build")
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default=yola.deploy.config.find_deploy_config(False),
+                        default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
     opts = parser.parse_args()
 
     if opts.config is None:
         # Yes, it was a default, but we want to detect its non-existence early
-        opts.config = yola.deploy.config.find_deploy_config()
+        opts.config = yodeploy.config.find_deploy_config()
 
     return opts
 
@@ -351,14 +357,15 @@ def main():
         BuilderClass = {
             1: BuildCompat1,
             3: BuildCompat3,
+            4: BuildCompat4,
         }[compat]
     except KeyError:
-        print >> sys.stderr, ('Only legacy and yola.deploy compat >=3 apps '
+        print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
                               'are supported')
         sys.exit(1)
 
-    deploy_settings = yola.deploy.config.load_settings(opts.config)
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    deploy_settings = yodeploy.config.load_settings(opts.config)
+    repository = yodeploy.repository.get_repository(deploy_settings)
 
     # Jenkins exports these environment variables
     # but we have some fallbacks

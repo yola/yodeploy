@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.4.0
+-----
+
+* Renamed to yodeploy.
+* Uses yoconfigurator 0.3.0.
+
 0.3.1-0.3.3
 -----
 
