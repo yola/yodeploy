@@ -31,7 +31,7 @@ def find_deploy_config(exit_if_missing=True):
             return path
     if exit_if_missing:
         print >> sys.stderr, "Deploy settings couldn't be located."
-        print >> sys.stderr, ("Copy yola.deploy's conf/yola.deploy.conf.sample"
+        print >> sys.stderr, ("Copy yodeploy's conf/yodeploy.conf.sample"
                               " to %s" % paths[0])
         sys.exit(1)
 
@@ -39,7 +39,7 @@ def find_deploy_config(exit_if_missing=True):
 def deploy_config_paths():
     '''Return all the potential paths for deploy_settings'''
     paths = []
-    fn = 'yola.deploy.conf.py'
+    fn = 'yodeploy.conf.py'
     if sys.platform.startswith('win'):
         if 'APPDATA' in os.environ:
             paths.append((os.environ['APPDATA'], fn))

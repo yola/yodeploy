@@ -44,13 +44,13 @@ deploy_settings = AttrDict(
     def _create_test_ve(self):
         """
         Bootstrap a deploy virtualenv, for our tests
-        This needs a PYPI that contains yola.deploy
+        This needs a PYPI that contains yodeploy
         """
         pypi = os.environ.get('PYPI')
         if not pypi:
-            import yola.deploy.config
-            deploy_settings = yola.deploy.config.load_settings(
-                    yola.deploy.config.find_deploy_config())
+            import yodeploy.config
+            deploy_settings = yodeploy.config.load_settings(
+                    yodeploy.config.find_deploy_config())
             pypi = deploy_settings.build.pypi
 
         if os.path.exists('test-data/deploy-ve'):
@@ -58,7 +58,7 @@ deploy_settings = AttrDict(
         os.makedirs('test-data/deploy-ve')
         if not os.path.exists('test-data/deploy-ve/requirements.txt'):
             with open('test-data/deploy-ve/requirements.txt', 'w') as f:
-                f.write('yola.deploy\n')
+                f.write('yodeploy\n')
         create_ve('test-data/deploy-ve', pypi)
 
     def test_attributes(self):
@@ -172,7 +172,7 @@ deploy_settings = AttrDict(
                                'hooks.py'), 'w') as f:
             f.write("""import os
 
-from yola.deploy.hooks.base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 class Hooks(DeployHook):
@@ -184,7 +184,10 @@ hooks = Hooks
 """)
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
-            f.write('yola.deploy\n')
+            f.write('yodeploy\n')
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'compat'), 'w') as f:
+            f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
@@ -198,7 +201,7 @@ hooks = Hooks
                                'hooks.py'), 'w') as f:
             f.write("""import os
 
-from yola.deploy.hooks.base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 class Hooks(DeployHook):
@@ -210,7 +213,10 @@ hooks = Hooks
 """)
         with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
                                'requirements.txt'), 'w') as f:
-            f.write('yola.deploy\n')
+            f.write('yodeploy\n')
+        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
+                               'compat'), 'w') as f:
+            f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
@@ -222,7 +228,7 @@ hooks = Hooks
         self.create_tar('test.tar.gz', 'foo/bar', contents={
             'foo/deploy/hooks.py': """import os
 
-from yola.deploy.hooks.base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 class Hooks(DeployHook):
@@ -234,7 +240,8 @@ class Hooks(DeployHook):
 
 hooks = Hooks
 """,
-            'foo/deploy/requirements.txt': 'yola.deploy\n',
+            'foo/deploy/requirements.txt': 'yodeploy\n',
+            'foo/deploy/compat': '4\n',
         })
         version = '1'
         with open(self.tmppath('test.tar.gz')) as f:

@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-from yola.deploy.util import chown_r, touch
+from yodeploy.util import chown_r, touch
 from .configurator import ConfiguratedApp
 from .python import PythonApp
 from .templating import TemplatedApp
