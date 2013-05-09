@@ -3,7 +3,7 @@ import logging
 import os
 import random
 
-from yola.configurator.credentials import seeded_auth_token
+from yoconfigurator.credentials import seeded_auth_token
 from .configurator import ConfiguratedApp
 
 
@@ -23,7 +23,7 @@ class AuthenticatedApp(ConfiguratedApp):
     Users and clients can be specified in the application configuration, for
     example, in `appname/deploy/configuration/appname-default.py`:
 
-        from yola.configurator.dicts import merge_dicts
+        from yoconfigurator.dicts import merge_dicts
 
         def update(config):
 

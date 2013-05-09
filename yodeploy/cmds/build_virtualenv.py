@@ -6,12 +6,12 @@ import os
 import shutil
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-import yola.deploy.config
-import yola.deploy.repository
-import yola.deploy.util
-import yola.deploy.virtualenv
+import yodeploy.config
+import yodeploy.repository
+import yodeploy.util
+import yodeploy.virtualenv
 
 log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
@@ -24,7 +24,7 @@ def main():
                         "unless --force is specified.",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default=yola.deploy.config.find_deploy_config(False),
+                        default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
     parser.add_argument('-a', '--app', metavar='NAME',
                         default=os.path.basename(os.getcwd()),
@@ -56,7 +56,7 @@ def main():
 
     if options.config is None:
         # Yes, it was a default, but we want to prent the error
-        options.config = yola.deploy.config.find_deploy_config()
+        options.config = yodeploy.config.find_deploy_config()
 
     if not options.hash and (options.download or options.upload):
         if not options.app:
@@ -67,11 +67,11 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
-    deploy_settings = yola.deploy.config.load_settings(options.config)
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    deploy_settings = yodeploy.config.load_settings(options.config)
+    repository = yodeploy.repository.get_repository(deploy_settings)
 
-    version = yola.deploy.virtualenv.ve_version(
-            yola.deploy.virtualenv.sha224sum('requirements.txt'))
+    version = yodeploy.virtualenv.ve_version(
+            yodeploy.virtualenv.sha224sum('requirements.txt'))
     if options.hash:
         print version
         return
@@ -91,20 +91,20 @@ def main():
     if options.download:
         downloaded = False
         try:
-            yola.deploy.virtualenv.download_ve(repository, options.app,
-                                               version, options.target)
+            yodeploy.virtualenv.download_ve(repository, options.app,
+                                            version, options.target)
             downloaded = True
         except KeyError:
             log.warn('No existing virtualenv, building...')
         if downloaded:
             options.upload = False
-            yola.deploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
+            yodeploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
-        yola.deploy.virtualenv.create_ve('.', pypi=deploy_settings.build.pypi)
+        yodeploy.virtualenv.create_ve('.', pypi=deploy_settings.build.pypi)
 
     if options.upload:
-        yola.deploy.virtualenv.upload_ve(repository, options.app, version,
+        yodeploy.virtualenv.upload_ve(repository, options.app, version,
                 options.target, overwrite=options.force)
 
 

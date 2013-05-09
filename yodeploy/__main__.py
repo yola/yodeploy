@@ -4,13 +4,13 @@ import logging
 import socket
 import os
 
-import yola.deploy.repository
-import yola.deploy.config
-import yola.deploy.ipc_logging
+import yodeploy.repository
+import yodeploy.config
+import yodeploy.ipc_logging
 
 
 def main():
-    p = argparse.ArgumentParser(prog='yola.deploy',
+    p = argparse.ArgumentParser(prog='yodeploy',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument('-c', '--config', metavar='FILE',
                    default='/opt/deploy/config/deploy.py',
@@ -38,9 +38,9 @@ def main():
     setup_logging(args.log_fd, args.verbose)
 
     app = os.path.basename(os.path.abspath(args.appdir))
-    deploy_settings = yola.deploy.config.load_settings(args.config)
+    deploy_settings = yodeploy.config.load_settings(args.config)
 
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    repository = yodeploy.repository.get_repository(deploy_settings)
 
     if args.hook:
         call_hook(app, args.target, args.appdir, args.version, deploy_settings,
@@ -56,7 +56,7 @@ def setup_logging(log_fd, verbose):
             logger.removeHandler(handler)
 
         sock = socket.fromfd(log_fd, socket.AF_UNIX, socket.SOCK_STREAM)
-        handler = yola.deploy.ipc_logging.ExistingSocketHandler(sock)
+        handler = yodeploy.ipc_logging.ExistingSocketHandler(sock)
         logger.addHandler(handler)
     elif verbose:
         logging.basicConfig(level=logging.DEBUG)

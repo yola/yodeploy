@@ -1,7 +1,7 @@
 import logging
 import os
 
-from yola.deploy.util import chown_r
+from yodeploy.util import chown_r
 from .base import DeployHook
 
 log = logging.getLogger(__name__)

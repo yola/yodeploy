@@ -2,8 +2,8 @@ import logging
 import os
 import shutil
 
-from yola.configurator.base import read_config, write_config
-from yola.configurator.smush import config_sources, smush_config
+from yoconfigurator.base import read_config, write_config
+from yoconfigurator.smush import config_sources, smush_config
 
 from ..util import extract_tar
 from .base import DeployHook

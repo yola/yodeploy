@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-# Prepares your machine for developing on yola.deploy apps
+# Prepares your machine for developing on yodeploy apps
 # Will check out:
-#  yola.deploy:
+#  yodeploy:
 #    - Installs scripts to ~/bin
-#  yola.configurator:
+#  yoconfigurator:
 #    - Installs scripts to ~/bin
 #  deployconfigs
 #    - Configures configs/hostname.py
@@ -25,7 +25,7 @@ import urllib2
 import urlparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import yola.deploy.config
+import yodeploy.config
 
 
 GIT_REPO = 'git@github.com:yola/%s.git'
@@ -226,7 +226,7 @@ def clone(app, yola_src, branch='master'):
 
 def deploy_settings_location():
     '''Figure out where we should put deploy_settings'''
-    paths = yola.deploy.config.deploy_config_paths()
+    paths = yodeploy.config.deploy_config_paths()
     for path in paths:
         if os.path.exists(path):
             return path
@@ -235,7 +235,7 @@ def deploy_settings_location():
 
 def deploy_settings():
     '''Return deploy_settings'''
-    return yola.deploy.config.load_settings(deploy_settings_location())
+    return yodeploy.config.load_settings(deploy_settings_location())
 
 
 def bootstrap_virtualenv(cmd):
@@ -338,7 +338,7 @@ def build_virtualenv():
 
     # Has a virtualenv built by hand
     if call(('virtualenv/bin/python',
-             '-m', 'yola.deploy.cmds.build_virtualenv')) == 0:
+             '-m', 'yodeploy.cmds.build_virtualenv')) == 0:
         return
 
     # Bootstrap a virtualenv with easy_install
@@ -359,7 +359,7 @@ def build_virtualenv():
 
     # Use the bootstrapped virtualenv to build_virtualenv
     check_call(('bootstrap_ve/bin/python', '-m',
-                'yola.deploy.cmds.build_virtualenv'))
+                'yodeploy.cmds.build_virtualenv'))
     shutil.rmtree('bootstrap_ve')
 
 
@@ -383,7 +383,7 @@ def setup_deployconfigs(yola_src):
     if not os.path.exists(hostname_py):
         shutil.copyfile(sample, hostname_py)
 
-    # Create yola.deploy.conf
+    # Create yodeploy.conf
     deploy_settings_fn = deploy_settings_location()
     if not os.path.exists(deploy_settings_fn):
         dir_ = os.path.dirname(deploy_settings_fn)
@@ -391,28 +391,28 @@ def setup_deployconfigs(yola_src):
             os.makedirs(dir_)
 
         shutil.copyfile(os.path.join(yola_src, 'deployconfigs', 'other',
-                                     'yola.deploy.conf.py'),
+                                     'yodeploy.conf.py'),
                         deploy_settings_fn)
 
 
-def setup_yola_deploy(yola_src):
-    '''Configure yola.deploy'''
-    root = os.path.join(yola_src, 'yola.deploy')
+def setup_yodeploy(yola_src):
+    '''Configure yodeploy'''
+    root = os.path.join(yola_src, 'yodeploy')
     with chdir(root):
         build_virtualenv()
 
     # Install wrapper scripts
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')
-    for fn in os.listdir(os.path.join(root, 'yola', 'deploy', 'cmds')):
+    for fn in os.listdir(os.path.join(root, 'yodeploy', 'cmds')):
         if fn.startswith('_') or fn.endswith('.pyc'):
             continue
-        script = os.path.join(root, 'yola', 'deploy', 'cmds', fn)
+        script = os.path.join(root, 'yodeploy', 'cmds', fn)
         write_wrapper(script, ve)
 
 
-def setup_yola_configurator(yola_src):
-    '''Configure yola.configurator'''
-    root = os.path.join(yola_src, 'yola.configurator')
+def setup_yoconfigurator(yola_src):
+    '''Configure yoconfigurator'''
+    root = os.path.join(yola_src, 'yoconfigurator')
     with chdir(root):
         build_virtualenv()
 
@@ -442,7 +442,7 @@ def main():
 
     yola_src = check_environment()
 
-    apps = ('deployconfigs', 'yola.deploy', 'yola.configurator')
+    apps = ('deployconfigs', 'yodeploy', 'yoconfigurator')
     if not opts.skip_clones:
         branches = dict((app, 'master') for app in apps)
         branches.update(dict(opts.branch))
@@ -450,7 +450,7 @@ def main():
             clone(app, yola_src, branches[app])
 
     for app in apps:
-        setup = globals()['setup_%s' % app.replace('.', '_')]
+        setup = globals()['setup_%s' % app]
         setup(yola_src)
 
 

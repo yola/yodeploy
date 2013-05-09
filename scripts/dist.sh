@@ -12,6 +12,6 @@ mkdir dist
 cp -Rf deploy build/
 
 # create distribution tarball
-cp -Rf build dist/yola.deploy
+cp -Rf build dist/yodeploy
 
-cd dist && tar -czf yola.deploy.tar.gz yola.deploy
+cd dist && tar -czf yodeploy.tar.gz yodeploy

@@ -17,13 +17,12 @@ def parse_requirements():
 
 
 setup(
-    name='yola.deploy',
+    name='yodeploy',
     description='Helpers for Deploy hooks',
     author='Stefano Rivera',
     author_email='stefano.rivera@yola.com',
-    url='https://github.com/yola/yola.deploy',
-    version="0.3.3",
-    namespace_packages=['yola'],
+    url='https://github.com/yola/yodeploy',
+    version='0.3.3',
     packages=find_packages(),
     scripts=['bin/test-templates.py'],
     test_suite='nose.collector',

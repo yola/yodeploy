@@ -6,8 +6,8 @@ import os
 import sys
 
 import tempita
-from yola.configurator.smush import (config_sources, local_config_sources,
-                                     smush_config)
+from yoconfigurator.smush import (config_sources, local_config_sources,
+                                  smush_config)
 
 
 log = logging.getLogger('test_templates')

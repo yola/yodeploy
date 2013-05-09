@@ -3,10 +3,10 @@ import os
 import shutil
 import subprocess
 
-import yola.deploy.config
-import yola.deploy.ipc_logging
-import yola.deploy.virtualenv
-from yola.deploy.util import LockFile, LockedException, extract_tar
+import yodeploy.config
+import yodeploy.ipc_logging
+import yodeploy.virtualenv
+from yodeploy.util import LockFile, LockedException, extract_tar
 
 
 log = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class Application(object):
         self.target = target
         self.repository = repository
         self.settings_fn = settings_file
-        self.settings = yola.deploy.config.load_settings(settings_file)
+        self.settings = yodeploy.config.load_settings(settings_file)
         self.appdir = os.path.join(self.settings.paths.apps, app)
         self._lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
 
@@ -56,8 +56,8 @@ class Application(object):
         '''
         deploy_req_fn = os.path.join(self.appdir, 'versions', version,
                                      'deploy', 'requirements.txt')
-        ve_hash = yola.deploy.virtualenv.sha224sum(deploy_req_fn)
-        ve_hash = yola.deploy.virtualenv.ve_version(ve_hash)
+        ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
+        ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
         ve_dir = os.path.join(self.settings.paths.apps, 'deploy',
                               'virtualenvs', ve_hash)
         if os.path.exists(ve_dir):
@@ -69,8 +69,8 @@ class Application(object):
         log.debug('Deploying hook virtualenv %s', ve_hash)
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        yola.deploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
-                                           self.target, tarball)
+        yodeploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
+                                        self.target, tarball)
         extract_tar(tarball, ve_unpack_root)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
@@ -86,9 +86,9 @@ class Application(object):
         ve = self.deploy_ve(version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
-        tlss = yola.deploy.ipc_logging.ThreadedLogStreamServer()
+        tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
-               '-m', 'yola.deploy.__main__',
+               '-m', 'yodeploy.__main__',
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,
