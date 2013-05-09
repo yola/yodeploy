@@ -199,8 +199,16 @@ def hook(hook_name, version, target, dve_name):
     log.info('Calling hook: %s', hook_name)
     deploy_python = app_path('virtualenvs', dve_name, 'bin', 'python',
                              app='deploy')
+
+    with open(app_path('versions', version, 'deploy', 'compat')) as f:
+        compat = int(f.read())
+    if compat == 3:
+        module = 'yola.deploy.__main__'
+    elif compat == 4:
+        module = 'yodeploy.__main__'
+
     subprocess.check_call((deploy_python,
-                           '-m', 'yodeploy.__main__',
+                           '-m', module,
                            '--config', deploy_settings_fn,
                            '--app', 'yodeploy',
                            '--hook', hook_name,
