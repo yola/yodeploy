@@ -94,18 +94,18 @@ def create_ve(app_dir, pypi=None):
 
     # Update to distribute 0.6.13 for
     # https://bitbucket.org/tarek/distribute/issue/163
-    cmd = [os.path.join(ve_dir, 'bin', 'python'),
-           os.path.join(ve_dir, 'bin', 'easy_install'),
+    cmd = [os.path.join('bin', 'python'),
+           os.path.join('bin', 'easy_install'),
           ] + pypi + [
            'distribute==0.6.13']
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, cwd=ve_dir)
 
     if requirements:
-        cmd = [os.path.join(ve_dir, 'bin', 'python'),
-               os.path.join(ve_dir, 'bin', 'easy_install'),
+        cmd = [os.path.join('bin', 'python'),
+               os.path.join('bin', 'easy_install'),
               ] + pypi
         cmd += requirements
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, cwd=ve_dir)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
