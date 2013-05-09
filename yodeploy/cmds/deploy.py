@@ -6,11 +6,11 @@ import os
 import socket
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-import yola.deploy.application
-import yola.deploy.config
-import yola.deploy.repository
+import yodeploy.application
+import yodeploy.config
+import yodeploy.repository
 
 # Replaced when configured
 log = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Increase verbosity')
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default=yola.deploy.config.find_deploy_config(False),
+                        default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
 
     opts = parser.parse_args()
@@ -51,7 +51,7 @@ def parse_args():
 
     if opts.config is None:
         # Yes, it was a default, but we want to prent the error
-        opts.config = yola.deploy.config.find_deploy_config()
+        opts.config = yodeploy.config.find_deploy_config()
 
     return opts
 
@@ -126,7 +126,7 @@ def available_applications(deploy_settings):
     if deploy_settings.apps.limit:
         return deploy_settings.apps.available
 
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    repository = yodeploy.repository.get_repository(deploy_settings)
     return repository.list_apps()
 
 
@@ -150,8 +150,8 @@ def do_deploy(opts, deploy_settings):
                   'list. Please check your deploy config.')
         sys.exit(1)
 
-    repository = yola.deploy.repository.get_repository(deploy_settings)
-    application = yola.deploy.application.Application(
+    repository = yodeploy.repository.get_repository(deploy_settings)
+    application = yodeploy.application.Application(
             opts.app, opts.target, repository, opts.config)
 
     version = opts.version
@@ -166,7 +166,7 @@ def do_deploy(opts, deploy_settings):
 def main():
     "Dispatch"
     opts = parse_args()
-    deploy_settings = yola.deploy.config.load_settings(opts.config)
+    deploy_settings = yodeploy.config.load_settings(opts.config)
     configure_logging(opts.debug, deploy_settings)
     log.debug('Running: %r', sys.argv)
     if opts.target is None:

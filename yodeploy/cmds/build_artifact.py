@@ -10,14 +10,14 @@ import subprocess
 import sys
 import urllib2
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-import yola.deploy.config
-import yola.deploy.repository
+import yodeploy.config
+import yodeploy.repository
 
 
 class Builder(object):
-    def __init__(self, app, target, version, commit, commit_msg, tag,
+    def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, repository, build_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
@@ -25,6 +25,7 @@ class Builder(object):
         self.version = version
         self.commit = commit
         self.commit_msg = commit_msg
+        self.branch = branch
         self.tag = tag
         self.deploy_settings = deploy_settings
         self.repository = repository
@@ -35,7 +36,7 @@ class Builder(object):
         settings = self.deploy_settings.build.github
         if not settings.report:
             return
-        if self.target in settings.except_branches:
+        if self.branch in settings.except_branches:
             return
 
         subst = {
@@ -101,6 +102,7 @@ class Builder(object):
         print 'App: %s' % self.app
         print 'Target: %s' % self.target
         print 'Version: %s' % self.version
+        print 'Branch: %s' % self.branch
         print 'Commit: %s' % self.commit
         print 'Commit message: %s' % self.commit_msg
         jenkins_tag = ''
@@ -153,6 +155,8 @@ class BuildCompat1(Builder):
 
 
 class BuildCompat3(Builder):
+    compat = 3
+
     def prepare(self):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
@@ -177,7 +181,7 @@ class BuildCompat3(Builder):
             'build_number': self.version,
             'commit_msg': self.commit_msg,
             'commit': self.commit,
-            'deploy_compat': '3',
+            'deploy_compat': str(self.compat),
         }
         if self.tag:
             metadata['vcs_tag'] = self.tag
@@ -186,6 +190,10 @@ class BuildCompat3(Builder):
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
         print 'Uploaded'
+
+
+class BuildCompat4(BuildCompat3):
+    compat = 4
 
 
 def parse_args(default_app):
@@ -197,7 +205,7 @@ def parse_args(default_app):
                         help='The application name')
     parser.add_argument('-T', '--skip-tests', action='store_true',
                         help="Don't run tests")
-    parser.add_argument('--target', default=None,
+    parser.add_argument('--target', default='master',
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
@@ -206,13 +214,13 @@ def parse_args(default_app):
                         help="Only prepare (e.g. build virtualenvs) don't "
                              "build")
     parser.add_argument('-c', '--config', metavar='FILE',
-                        default=yola.deploy.config.find_deploy_config(False),
+                        default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
     opts = parser.parse_args()
 
     if opts.config is None:
         # Yes, it was a default, but we want to detect its non-existence early
-        opts.config = yola.deploy.config.find_deploy_config()
+        opts.config = yodeploy.config.find_deploy_config()
 
     return opts
 
@@ -349,26 +357,35 @@ def main():
         BuilderClass = {
             1: BuildCompat1,
             3: BuildCompat3,
+            4: BuildCompat4,
         }[compat]
     except KeyError:
-        print >> sys.stderr, ('Only legacy and yola.deploy compat >=3 apps '
+        print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
                               'are supported')
         sys.exit(1)
 
-    deploy_settings = yola.deploy.config.load_settings(opts.config)
-    repository = yola.deploy.repository.get_repository(deploy_settings)
+    deploy_settings = yodeploy.config.load_settings(opts.config)
+    repository = yodeploy.repository.get_repository(deploy_settings)
 
     # Jenkins exports these environment variables
     # but we have some fallbacks
     commit = os.environ.get('GIT_COMMIT')
     if not commit:
         commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
-    target = opts.target
-    if not target:
-        target = os.environ.get('GIT_BRANCH')
+
+    branch = os.environ.get('GIT_BRANCH')
+    if not branch:
+        rbranches = check_output(('git', 'branch', '-r', '--contains', 'HEAD'))
+        for rbranch in rbranches.spltlines():
+            if ' -> ' in rbranch:
+                continue
+            remote, branch = rbranch.strip().split('/', 1)
+            break
+
     version = os.environ.get('BUILD_NUMBER')
     if not version:
-        version = next_version(opts.app, target, repository, deploy_settings)
+        version = next_version(opts.app, opts.target, repository,
+                               deploy_settings)
     # Other git bits:
     commit_msg = check_output(('git', 'show', '-s', '--format=%s',
                                commit)).strip()
@@ -381,9 +398,9 @@ def main():
         tag = line
         break
 
-    builder = BuilderClass(app=opts.app, target=target, version=version,
-                           commit=commit, commit_msg=commit_msg, tag=tag,
-                           deploy_settings=deploy_settings,
+    builder = BuilderClass(app=opts.app, target=opts.target, version=version,
+                           commit=commit, commit_msg=commit_msg, branch=branch,
+                           tag=tag, deploy_settings=deploy_settings,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs)
     builder.prepare()

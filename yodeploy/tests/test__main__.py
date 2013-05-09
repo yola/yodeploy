@@ -13,7 +13,7 @@ class TestHookery(TmpDirTestCase):
                                'hooks.py'), 'w') as f:
             f.write("""import os
 
-from yola.deploy.hooks.base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 class Hooks(DeployHook):
@@ -43,7 +43,7 @@ deploy_settings = AttrDict(
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
         p = subprocess.Popen((
-                'python', '-m', 'yola.deploy.__main__',
+                'python', '-m', 'yodeploy.__main__',
                 '--config', self.tmppath('config.py'),
                 '--app', 'test',
                 '--hook', 'prepare',

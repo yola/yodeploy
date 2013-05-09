@@ -10,5 +10,5 @@ mkdir build
 
 # copy source to dist
 cp requirements.txt build
-cp -R yola build
+cp -R yodeploy build
 find build -name '*.pyc' -delete

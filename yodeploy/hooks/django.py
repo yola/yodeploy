@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-from yola.deploy.util import chown_r, touch
+from yodeploy.util import chown_r, touch
 from .configurator import ConfiguratedApp
 from .python import PythonApp
 from .templating import TemplatedApp
@@ -42,6 +42,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
             self.template('apache2/vhost.conf.template',
                     os.path.join(self.vhost_path, self.app))
         if self.template_exists('apache2/vhost-snippet.conf.template'):
+            if not os.path.exists(self.vhost_snippet_path):
+                os.makedirs(self.vhost_snippet_path)
             self.template('apache2/vhost-snippet.conf.template',
                     os.path.join(self.vhost_snippet_path, self.app + '.conf'))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
