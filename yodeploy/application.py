@@ -3,10 +3,10 @@ import os
 import shutil
 import subprocess
 
-import yola.deploy.config
-import yola.deploy.ipc_logging
-import yola.deploy.virtualenv
-from yola.deploy.util import LockFile, LockedException, extract_tar
+import yodeploy.config
+import yodeploy.ipc_logging
+import yodeploy.virtualenv
+from yodeploy.util import LockFile, LockedException, extract_tar
 
 
 log = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class Application(object):
         self.target = target
         self.repository = repository
         self.settings_fn = settings_file
-        self.settings = yola.deploy.config.load_settings(settings_file)
+        self.settings = yodeploy.config.load_settings(settings_file)
         self.appdir = os.path.join(self.settings.paths.apps, app)
         self._lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
 
@@ -56,8 +56,8 @@ class Application(object):
         '''
         deploy_req_fn = os.path.join(self.appdir, 'versions', version,
                                      'deploy', 'requirements.txt')
-        ve_hash = yola.deploy.virtualenv.sha224sum(deploy_req_fn)
-        ve_hash = yola.deploy.virtualenv.ve_version(ve_hash)
+        ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
+        ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
         ve_dir = os.path.join(self.settings.paths.apps, 'deploy',
                               'virtualenvs', ve_hash)
         if os.path.exists(ve_dir):
@@ -69,8 +69,8 @@ class Application(object):
         log.debug('Deploying hook virtualenv %s', ve_hash)
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        yola.deploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
-                                           self.target, tarball)
+        yodeploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
+                                        self.target, tarball)
         extract_tar(tarball, ve_unpack_root)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
@@ -83,12 +83,21 @@ class Application(object):
                           'deploy', 'hooks.py')
         if not os.path.isfile(fn):
             return
+
+        with open(os.path.join(self.appdir, 'versions', version, 'deploy',
+                               'compat')) as f:
+            compat = int(f.read())
+        if compat == 3:
+            module = 'yola.deploy.__main__'
+        elif compat == 4:
+            module = 'yodeploy.__main__'
+
         ve = self.deploy_ve(version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
-        tlss = yola.deploy.ipc_logging.ThreadedLogStreamServer()
+        tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
-               '-m', 'yola.deploy.__main__',
+               '-m', module,
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,
@@ -133,7 +142,7 @@ class Application(object):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
         with self.repository.get(self.app, version, self.target) as f1:
-            if f1.metadata.get('deploy_compat') != '3':
+            if f1.metadata.get('deploy_compat') not in ('3', '4'):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
             with open(tarball, 'w') as f2:

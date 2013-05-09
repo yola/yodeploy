@@ -83,12 +83,12 @@ class TestThreadedLogStreamServer(TmpDirTestCase):
 import socket
 import sys
 
-import yola.deploy.ipc_logging
+import yodeploy.ipc_logging
 
 fd = int(sys.argv[1])
 sock = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_STREAM)
 logger = logging.getLogger('test')
-handler = yola.deploy.ipc_logging.ExistingSocketHandler(sock)
+handler = yodeploy.ipc_logging.ExistingSocketHandler(sock)
 logger.addHandler(handler)
 
 logger.warn("Testing 123")

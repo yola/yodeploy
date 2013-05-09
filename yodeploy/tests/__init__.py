@@ -14,7 +14,7 @@ else:
 
 class TmpDirTestCase(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix='yola.deploy-test')
+        self.tmpdir = tempfile.mkdtemp(prefix='yodeploy-test')
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)

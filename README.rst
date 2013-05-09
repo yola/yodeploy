@@ -1,19 +1,19 @@
-yola.deploy
-===========
+yodeploy
+========
 
-Python helpers for yola's Deployment system.
+Python helpers for Yola's Deployment system.
 
 Using the hooks
 ---------------
 
 Hooks are specified in `deploy/hooks.py` in the application, as the
 variable `hook`. It should be a class, implementing the interface
-`yola.deploy.hooks.base.DeployHook`.
+`yodeploy.hooks.base.DeployHook`.
 
-`yola.deploy.hooks` includes a set of more useful hook classes, useful
+`yodeploy.hooks` includes a set of more useful hook classes, useful
 for subclassing or using as-is:
 
-    `yola.deploy.hooks.python.PythonApp`:
+    `yodeploy.hooks.python.PythonApp`:
         All your virtualenv needs. Declare requirements in
         `requirements.txt` in the root of your application.
         A directory named `virtualenv` will be created in the
@@ -67,8 +67,9 @@ system they were designed for. It is defined in `deploy/compat` in the
 source.
 
 1. Yola's legacy deployment system (Duncan Deploy)
-2. The legacy repository with yola.deploy < 0.3.
-3. yola.deploy >= 0.3.
+2. The legacy repository with yola.deploy < 0.3
+3. yola.deploy 0.3.x.
+4. yodeploy >= 0.4 (after the rename).
 
 Building and uploading
 ----------------------

@@ -115,8 +115,8 @@ class TestExtractTar(TmpDirTestCase):
             'fakeroot',
             'python',
             '-c', (
-                'import yola.deploy.util, os; '
-                'yola.deploy.util.extract_tar("%s", "%s"); '
+                'import yodeploy.util, os; '
+                'yodeploy.util.extract_tar("%s", "%s"); '
                 's = os.stat("%s"); '
                 'assert s.st_uid == 0; '
                 'assert s.st_gid == 0'
