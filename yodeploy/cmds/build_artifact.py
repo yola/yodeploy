@@ -192,7 +192,7 @@ class BuildCompat3(Builder):
         print 'Uploaded'
 
 
-class BuildCompat4(Builder):
+class BuildCompat4(BuildCompat3):
     compat = 4
 
 
