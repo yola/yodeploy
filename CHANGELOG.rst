@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.1
+-----
+
+* `AuthenticatedApp`: Get api_seed from `config.common`.
+
 0.4.0
 -----
 
