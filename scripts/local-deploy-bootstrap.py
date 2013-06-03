@@ -92,7 +92,7 @@ def check_environment():
                  "Create it, sourcing .bashrc?"):
         profile = os.path.expanduser('~/.profile')
     if profile:
-        with open(profiles[0], 'a') as f:
+        with open(profile, 'a') as f:
             f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
 
     if 'YOLA_SRC' in os.environ:
