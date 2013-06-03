@@ -79,6 +79,7 @@ def check_environment():
                    "your PATH?"):
             os.mkdir(bin_)
             bashrc_additions.append('export PATH=~/"bin:$PATH"')
+            os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
     profiles = [os.path.expanduser(profile) for profile in
                 ('~/.bash_profile', '~/.bash_login', '~/.profile')
