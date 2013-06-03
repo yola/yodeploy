@@ -110,7 +110,7 @@ def check_environment():
             yola_src = os.path.expanduser(input_)
 
             if confirm('We can export this as YOLA_SRC in your .bashrc for '
-                    'future.\nAdd a line to .bashrc?'):
+                       'future.\nAdd a line to .bashrc?'):
                 # Basic escaping that'll handle spaces and not much else
                 input_ = input_.replace(' ', '" "')
                 bashrc_additions.append('export YOLA_SRC=%s' % input_)
