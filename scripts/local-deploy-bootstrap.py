@@ -81,13 +81,13 @@ def check_environment():
             bashrc_additions.append('export PATH=~/"bin:$PATH"')
             os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    profiles = [os.path.expanduser(profile) for profile in
+    profiles = [profile for profile in
                 ('~/.bash_profile', '~/.bash_login', '~/.profile')
                 if os.path.isfile(os.path.expanduser(profile))]
     profile = None
     if profiles:
         if not confirm("%s exists. Does it source ~/.bashrc?" % profiles[0]):
-            profile = profiles[0]
+            profile = os.path.expanduser(profiles[0])
     elif confirm("You don't seem to have a .profile.\n"
                  "Create it, sourcing .bashrc?"):
         profile = os.path.expanduser('~/.profile')
