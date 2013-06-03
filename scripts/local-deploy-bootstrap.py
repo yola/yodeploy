@@ -80,13 +80,15 @@ def check_environment():
             os.mkdir(bin_)
             bashrc_additions.append('export PATH=~/"bin:$PATH"')
 
-    profile = os.path.expanduser('~/.profile')
-    if not os.path.isfile(profile):
-        if confirm("You don't seem to have a .profile.\n"
-                   "Create it, sourcing .bashrc?"):
-            with open(profile, 'w') as f:
-                f.write("# Created by Yola's local-bootstrap\n"
-                        '. ~/.bashrc\n')
+    profiles = [os.path.expanduser(profile) for profile in
+                ('~/.bash_profile', '~/.bash_login', '~/.profile')
+                if os.path.isfile(os.path.expanduser(profile))]
+    if not profiles and confirm("You don't seem to have a .profile.\n"
+                                "Create it, sourcing .bashrc?"):
+        profiles = [os.path.expanduser('~/.profile')]
+    if profiles:
+        with open(profiles[0], 'w') as f:
+            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
