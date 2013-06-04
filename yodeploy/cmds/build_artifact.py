@@ -376,7 +376,7 @@ def main():
     branch = os.environ.get('GIT_BRANCH')
     if not branch:
         rbranches = check_output(('git', 'branch', '-r', '--contains', 'HEAD'))
-        for rbranch in rbranches.spltlines():
+        for rbranch in rbranches.splitlines():
             if ' -> ' in rbranch:
                 continue
             remote, branch = rbranch.strip().split('/', 1)
