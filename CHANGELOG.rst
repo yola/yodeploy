@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.2
+-----
+
+* Added the Tomcat hook.
+
 0.4.1
 -----
 
