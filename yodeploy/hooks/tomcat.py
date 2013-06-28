@@ -24,7 +24,7 @@ class TomcatServlet(ConfiguratedApp):
             'com.yola.yodeploy.flywaydb.Migrator'))
 
     def deployed(self):
-        super(Hooks, self).deployed()
+        super(TomcatServlet, self).deployed()
         self.restart_tomcat()
 
     def restart_tomcat(self):
