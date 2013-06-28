@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.3
+-----
+
+* Write the Apache vhost in the Tomcat hook.
+
 0.4.2
 -----
 
