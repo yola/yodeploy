@@ -1,20 +1,35 @@
 import logging
+import os
 import platform
 import subprocess
 import sys
 
-from yodeploy.hooks.configurator import ConfiguratedApp
+from .configurator import ConfiguratedApp
+from .templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)
 
-class TomcatServlet(ConfiguratedApp):
+class TomcatServlet(ConfiguratedApp, TemplatedApp):
     migrate_on_deploy = False
+    vhost_snippet_path = '/etc/apache2/yola.d/services'
+    vhost_path = '/etc/apache2/sites-enabled'
 
     def prepare(self):
         super(TomcatServlet, self).prepare()
+        self.prepare_tomcat()
+
+    def prepare_tomcat(self):
         if self.migrate_on_deploy:
             self.migrate()
+        if self.template_exists('apache2/vhost.conf.template'):
+            self.template('apache2/vhost.conf.template',
+                    os.path.join(self.vhost_path, self.app))
+        if self.template_exists('apache2/vhost-snippet.conf.template'):
+            if not os.path.exists(self.vhost_snippet_path):
+                os.makedirs(self.vhost_snippet_path)
+            self.template('apache2/vhost-snippet.conf.template',
+                    os.path.join(self.vhost_snippet_path, self.app + '.conf'))
 
     def migrate(self):
         log.info('Running flyway migrations')
