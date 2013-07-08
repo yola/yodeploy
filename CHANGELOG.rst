@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.4
+-----
+
+* Bug fix for the Tomcat hook.
+
 0.4.3
 -----
 
