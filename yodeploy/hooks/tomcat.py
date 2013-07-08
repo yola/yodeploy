@@ -52,7 +52,8 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
             log.exception('Unable to reload apache2')
             sys.exit(1)
         try:
-            subprocess.check_call(('service', tomcat, 'try-restart'))
+            subprocess.call(('service', tomcat, 'stop'))
+            subprocess.check_call(('service', tomcat, 'start'))
         except subprocess.CalledProcessError:
             log.exception('Unable to reload %s', tomcat)
             sys.exit(1)
