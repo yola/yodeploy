@@ -130,6 +130,21 @@ def report(app, action, old_version, version, deploy_settings):
         except ValueError:
             log.error('Error posting report to campfire')
 
+    if 'webhook' in services:
+        log.info('Sending deploy information to webhook')
+        service_settings = deploy_settings.report.webhook
+        payload = {
+            'app': app,
+            'action': action,
+            'old_version': old_version,
+            'version': version,
+            'user': user,
+            'fqdn': fqdn,
+            'environment': environment,
+        }
+        requests.post(service_settings.url,
+                      headers={'Content-type': 'application/json'},
+                      data=json.dumps(payload))
 
 def available_applications(deploy_settings):
     "Return the applications available for deployment"
