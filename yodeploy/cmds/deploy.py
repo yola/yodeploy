@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import logging
 import os
 import socket
 import sys
+
+import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -106,18 +109,25 @@ def report(app, action, message, deploy_settings):
 
     if 'campfire' in services:
         try:
-            from pinder.campfire import Campfire
-
             log.info('Creating campfire report')
             service_settings = deploy_settings.report.service_settings.campfire
-            room = service_settings.room
-            connection = Campfire(service_settings.subdomain,
-                                  service_settings.token,
-                                  service_settings.ssl)
+            rooms = requests.get('https://%s.campfirenow.com/rooms.json' %
+                                 service_settings.subdomain,
+                                 auth=(service_settings.token, '')).json()
+            room = [r for r in rooms['rooms'] if r['name'] ==
+                    service_settings.room][0]
+
             emoji = ' :collision:' if environment == 'production' else ''
-            connection.find_room_by_name(room).speak(message + emoji)
-        except ImportError:
-            log.error('Unable to import pinder for campfire reporting')
+            requests.post('https://%s.campfirenow.com/room/%s/speak.json' %
+                          (service_settings.subdomain, room['id']),
+                          auth=(service_settings.token, ''),
+                          headers={'Content-type': 'application/json'},
+                          data=json.dumps({'message': {'body': message + emoji,
+                                                       'type': 'TextMessage'}}))
+        except IndexError:
+            log.error('Unknown campfire room', service_settings.room)
+        except ValueError:
+            log.error('Error posting report to campfire')
 
 
 def available_applications(deploy_settings):
