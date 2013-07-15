@@ -87,7 +87,7 @@ def configure_logging(verbose, deploy_settings):
     log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 
-def report(app, action, message, deploy_settings):
+def report(app, action, old_version, version, deploy_settings):
     "Report to the world that we deployed."
 
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
@@ -95,7 +95,8 @@ def report(app, action, message, deploy_settings):
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
-    message = '%s@%s: %s' % (user, fqdn, message)
+    message = '%s@%s: Deployed %s: %s -> %s' % (user, fqdn, app, old_version,
+                                                version)
 
     log.info(message)
     services = deploy_settings.report.services
@@ -164,13 +165,13 @@ def do_deploy(opts, deploy_settings):
     application = yodeploy.application.Application(
             opts.app, opts.target, repository, opts.config)
 
+    old_version = application.live_version
     version = opts.version
     if version is None:
         version = repository.latest_version(opts.app, opts.target)
 
     application.deploy(version)
-    message = 'Deployed %s/%s' % (application.app, version)
-    report(application.app, 'deploy', message, deploy_settings)
+    report(application.app, 'deploy', old_version, version, deploy_settings)
 
 
 def main():
