@@ -142,7 +142,11 @@ def report(app, action, old_version, version, deploy_settings):
             'fqdn': fqdn,
             'environment': environment,
         }
+        auth = None
+        if service_settings.username:
+            auth = (service_settings.username, service_settings.password)
         requests.post(service_settings.url,
+                      auth=auth,
                       headers={'Content-type': 'application/json'},
                       data=json.dumps(payload))
 
