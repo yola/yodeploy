@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.4.5
+-----
+
+* Added the `yoconfigurator.app` key to deployconfigs.
+  (yoconfigurator 0.4.0)
+
 0.4.4
 -----
 
