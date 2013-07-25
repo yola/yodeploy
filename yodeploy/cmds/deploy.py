@@ -133,7 +133,7 @@ def report(app, action, old_version, version, deploy_settings):
 
     if 'webhook' in services:
         log.info('Sending deploy information to webhook')
-        service_settings = deploy_settings.report.webhook
+        service_settings = deploy_settings.report.service_settings.webhook
         payload = {
             'app': app,
             'action': action,
