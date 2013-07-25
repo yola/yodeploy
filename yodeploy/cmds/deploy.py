@@ -8,6 +8,7 @@ import socket
 import sys
 
 import requests
+from requests.exceptions import RequestException
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -145,10 +146,14 @@ def report(app, action, old_version, version, deploy_settings):
         auth = None
         if service_settings.username:
             auth = (service_settings.username, service_settings.password)
-        requests.post(service_settings.url,
-                      auth=auth,
-                      headers={'Content-type': 'application/json'},
-                      data=json.dumps(payload))
+        try:
+            requests.post(service_settings.url,
+                        auth=auth,
+                        headers={'Content-type': 'application/json'},
+                        data=json.dumps(payload))
+        except RequestException as e:
+            log.warning('Could not send post-deploy webhook: %s', e)
+
 
 def available_applications(deploy_settings):
     "Return the applications available for deployment"
