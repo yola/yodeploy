@@ -27,7 +27,7 @@ def parse_args():
                                        help='additional help')
 
     deploy_p = subparsers.add_parser('deploy',
-            help='Deploy an application and configs')
+                                     help='Deploy an application and configs')
     deploy_p.add_argument('app', help='The application name')
 
     subparsers.add_parser('available-apps', help='Show available applications')
@@ -78,7 +78,7 @@ def configure_logging(verbose, deploy_settings):
 
     if 'debug_logfile' in conf:
         handler = logging.handlers.RotatingFileHandler(
-                conf.debug_logfile, backupCount=conf.debug_history)
+            conf.debug_logfile, backupCount=conf.debug_history)
         handler.doRollover()
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
@@ -148,9 +148,9 @@ def report(app, action, old_version, version, deploy_settings):
             auth = (service_settings.username, service_settings.password)
         try:
             requests.post(service_settings.url,
-                        auth=auth,
-                        headers={'Content-type': 'application/json'},
-                        data=json.dumps(payload))
+                          auth=auth,
+                          headers={'Content-type': 'application/json'},
+                          data=json.dumps(payload))
         except RequestException as e:
             log.warning('Could not send post-deploy webhook: %s', e)
 
@@ -187,7 +187,7 @@ def do_deploy(opts, deploy_settings):
 
     repository = yodeploy.repository.get_repository(deploy_settings)
     application = yodeploy.application.Application(
-            opts.app, opts.target, repository, opts.config)
+        opts.app, opts.target, repository, opts.config)
 
     old_version = application.live_version
     version = opts.version
