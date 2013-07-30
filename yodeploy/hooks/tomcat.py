@@ -40,20 +40,25 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
 
     def deployed(self):
         super(TomcatServlet, self).deployed()
-        self.restart_tomcat()
+        self.tomcat_deploy()
 
-    def restart_tomcat(self):
-        # HACK HACK HACK (thanks quicksand)
-        ubuntu_version = platform.linux_distribution()[1]
-        tomcat = 'tomcat7' if ubuntu_version >= '12.04' else 'tomcat6'
+    def tomcat_deploy(self):
         try:
             subprocess.check_call(('service', 'apache2', 'reload'))
         except subprocess.CalledProcessError:
             log.exception('Unable to reload apache2')
             sys.exit(1)
-        try:
-            subprocess.call(('service', tomcat, 'stop'))
-            subprocess.check_call(('service', tomcat, 'start'))
-        except subprocess.CalledProcessError:
-            log.exception('Unable to reload %s', tomcat)
-            sys.exit(1)
+
+        contexts = os.path.join(self.root, 'tomcat-contexts')
+        if not os.path.isdir(contexts):
+            os.mkdir(contexts)
+
+        ubuntu_version = platform.linux_distribution()[1]
+        tomcat = 'tomcat7' if ubuntu_version >= '12.04' else 'tomcat6'
+        if tomcat == 'tomcat6':
+            dest = os.path.join(contexts, 'ROOT')
+            if os.path.exists(dest):
+                os.unlink(dest)
+        else:
+            dest = os.path.join(contexts, 'ROOT##%s' % self.version)
+        os.symlink(self.deploy_path(self.app), dest)
