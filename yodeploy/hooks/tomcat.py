@@ -34,8 +34,8 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
     def migrate(self):
         log.info('Running flyway migrations')
         subprocess.check_call(('java', '-cp',
-            ':'.join((self.deploy_path('siteservice/WEB-INF/classes'),
-                      self.deploy_path('siteservice/WEB-INF/lib/*'))),
+            ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
+                      self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
             'com.yola.yodeploy.flywaydb.Migrator'))
 
     def deployed(self):
