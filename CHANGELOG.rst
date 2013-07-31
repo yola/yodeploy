@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.6
+-----
+
+* Zero-downtime deployment to tomcat.
+
 0.4.5
 -----
 
