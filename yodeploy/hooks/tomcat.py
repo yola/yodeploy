@@ -60,7 +60,12 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
             if os.path.exists(dest):
                 os.unlink(dest)
         else:
-            # Versions aren't strictly numeric
-            version = ('%10s' % self.version).replace(' ', '0')
+            # Tomcat does string comparisons.
+            # Versions aren't strictly numeric, local builds will have a .n
+            # appended. So:
+            # 10   -> 0000000010
+            # 10.1 -> 0000000010.0000000001
+            version = '%10s%s%10s' % self.version.partition('.')
+            version = version.rstrip().replace(' ', '0')
             dest = os.path.join(contexts, 'ROOT##%s' % version)
         os.symlink(self.deploy_path(self.app), dest)
