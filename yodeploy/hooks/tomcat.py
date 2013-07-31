@@ -60,5 +60,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
             if os.path.exists(dest):
                 os.unlink(dest)
         else:
-            dest = os.path.join(contexts, 'ROOT##%s' % self.version)
+            # Versions aren't strictly numeric
+            version = ('%10s' % self.version).replace(' ', '0')
+            dest = os.path.join(contexts, 'ROOT##%s' % version)
         os.symlink(self.deploy_path(self.app), dest)
