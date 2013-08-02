@@ -46,8 +46,8 @@ class LockFile(object):
 
 def chown_r(path, user, group):
     '''recursive chown'''
-    uid = pwd.getpwnam(user).pw_uid
-    gid = grp.getgrnam(group).gr_gid
+    uid = user if isinstance(user, int) else pwd.getpwnam(user).pw_uid
+    gid = group if isinstance(group, int) else grp.getgrnam(group).gr_gid
 
     for root, dirs, files in os.walk(path):
         os.chown(root, uid, gid)
