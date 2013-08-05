@@ -8,12 +8,26 @@ import requests
 from requests.exceptions import RequestException
 
 import yodeploy.application
+import yodeploy.config
 import yodeploy.repository
 
 log = logging.getLogger(__name__)
 
 
-def configure_logging(verbose, deploy_settings):
+def load_defaults(opts):
+    if opts.config is None:
+        opts.config = yodeploy.config.find_deploy_config()
+
+    if opts.deploy_settings is None:
+        opts.deploy_settings = yodeploy.config.load_settings(opts.config)
+
+    if opts.target is None:
+        opts.target = opts.deploy_settings.artifacts.target
+
+    return opts
+
+
+def configure_logging(verbose, conf):
     "Set up logging, return the logger for this script"
     global log
 
@@ -22,8 +36,6 @@ def configure_logging(verbose, deploy_settings):
 
     for handler in root.handlers:
         handler.setLevel(level=logging.DEBUG if verbose else logging.INFO)
-
-    conf = deploy_settings.logging
 
     handler = logging.FileHandler(conf.logfile)
     handler.setLevel(logging.INFO)

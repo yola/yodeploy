@@ -6,7 +6,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yodeploy.deploy import available_applications, configure_logging, deploy
+from yodeploy.deploy import (available_applications, configure_logging, deploy,
+                             load_defaults)
 import yodeploy.config
 
 
@@ -43,17 +44,13 @@ def parse_args():
     if opts.command in shortcuts:
         opts.command = shortcuts[opts.command]
 
-    if opts.config is None:
-        # Yes, it was a default, but we want to prent the error
-        opts.config = yodeploy.config.find_deploy_config()
-
     return opts
 
 
-def do_available_apps(opts, deploy_settings):
+def do_available_apps(opts):
     "List available applications"
 
-    apps = available_applications(deploy_settings)
+    apps = available_applications(opts.deploy_settings)
     if apps:
         print 'Available Applications:'
         for app in apps:
@@ -62,23 +59,22 @@ def do_available_apps(opts, deploy_settings):
         print 'No available applications'
 
 
-def do_deploy(opts, deploy_settings):
+def do_deploy(opts):
     "Deploy an application"
-    deploy(opts.app, opts.target, opts.config, opts.version, deploy_settings)
+    deploy(opts.app, opts.target, opts.config, opts.version,
+           opts.deploy_settings)
 
 
 def main():
     "Dispatch"
     opts = parse_args()
-    deploy_settings = yodeploy.config.load_settings(opts.config)
-    log = configure_logging(opts.debug, deploy_settings)
+    opts = load_defaults(opts)
+    log = configure_logging(opts.debug, opts.deploy_settings.logging)
     log.debug('Running: %r', sys.argv)
-    if opts.target is None:
-        opts.target = deploy_settings.artifacts.target
 
     cmd = globals().get('do_%s' % opts.command.replace('-', '_'))
     if cmd:
-        cmd(opts, deploy_settings)
+        cmd(opts)
     else:
         log.error('Unsupported command: %s', opts.command)
         sys.exit(1)
