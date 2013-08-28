@@ -50,7 +50,7 @@ def configure_logging(verbose, conf):
 
     logging.getLogger('boto').setLevel(logging.WARNING)
 
-    log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
+    log = logging.getLogger('yodeploy')
     return log
 
 
