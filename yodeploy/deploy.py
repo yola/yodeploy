@@ -14,13 +14,13 @@ import yodeploy.repository
 
 def load_defaults(opts):
     "Populate opts with sensible defaults if the settings are missing"
-    if opts.config is None:
+    if not hasattr(opts, 'config'):
         opts.config = yodeploy.config.find_deploy_config()
 
-    if opts.deploy_settings is None:
+    if not hasattr(opts, 'deploy_settings'):
         opts.deploy_settings = yodeploy.config.load_settings(opts.config)
 
-    if opts.target is None:
+    if not hasattr(opts, 'target'):
         opts.target = opts.deploy_settings.artifacts.target
 
     return opts
