@@ -11,6 +11,7 @@ import yodeploy.application
 import yodeploy.config
 import yodeploy.repository
 
+log = logging.getLogger(__name__)
 
 
 def configure_logging(verbose, conf, filename=None):
