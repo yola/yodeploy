@@ -11,8 +11,6 @@ import yodeploy.application
 import yodeploy.config
 import yodeploy.repository
 
-log = logging.getLogger(__name__)
-
 
 def load_defaults(opts):
     if opts.config is None:
@@ -29,8 +27,6 @@ def load_defaults(opts):
 
 def configure_logging(verbose, conf):
     "Set up logging, return the logger for this script"
-    global log
-
     logging.basicConfig(level=logging.DEBUG)
     root = logging.getLogger()
 
@@ -49,9 +45,6 @@ def configure_logging(verbose, conf):
         logging.getLogger().addHandler(handler)
 
     logging.getLogger('boto').setLevel(logging.WARNING)
-
-    log = logging.getLogger('yodeploy')
-    return log
 
 
 def report(app, action, old_version, version, deploy_settings):
