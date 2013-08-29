@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def configure_logging(verbose, conf, filename=None):
-    "Set up logging, return the logger for this script"
+    "Set up logging"
     logging.basicConfig(level=logging.DEBUG, filename=filename)
     root = logging.getLogger()
 
