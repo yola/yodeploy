@@ -13,6 +13,7 @@ import yodeploy.repository
 
 
 def load_defaults(opts):
+    "Populate opts with sensible defaults if the settings are missing"
     if opts.config is None:
         opts.config = yodeploy.config.find_deploy_config()
 
@@ -125,6 +126,7 @@ def available_applications(deploy_settings):
 
 
 def deploy(app, target, config, version, deploy_settings):
+    "Deploy an application"
     if app not in available_applications(deploy_settings):
         log.error('This application is not in the available applications '
                   'list. Please check your deploy config.')
