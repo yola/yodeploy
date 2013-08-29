@@ -25,9 +25,9 @@ def load_defaults(opts):
     return opts
 
 
-def configure_logging(verbose, conf):
+def configure_logging(verbose, conf, filename=None):
     "Set up logging, return the logger for this script"
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, filename=filename)
     root = logging.getLogger()
 
     for handler in root.handlers:
