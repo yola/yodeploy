@@ -12,6 +12,8 @@ import urllib2
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+from yoconfigurator.base import write_config
+from yoconfigurator.smush import config_sources, smush_config
 import yodeploy.config
 import yodeploy.repository
 
@@ -157,6 +159,16 @@ class BuildCompat1(Builder):
 class BuildCompat3(Builder):
     compat = 3
 
+    def configure(self):
+        configs_dirs = [self.deploy_settings.configs_dir]
+        app_conf_dir = os.path.join('deploy', 'configuration')
+        sources = config_sources(self.app, self.deploy_settings.environment,
+                                 self.deploy_settings.cluster,
+                                 configs_dirs, app_conf_dir, build=True)
+        config = smush_config(sources,
+                              initial={'yoconfigurator': {'app': self.app}})
+        write_config(config, '.')
+
     def prepare(self):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
@@ -173,6 +185,7 @@ class BuildCompat3(Builder):
             check_call((python, build_ve, '-a', self.app,
                         '--target', self.target, '--download', '--upload'),
                        abort='build-virtualenv failed')
+        self.configure()
 
     def upload(self):
         print_banner('Upload')
