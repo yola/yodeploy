@@ -6,8 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yodeploy.deploy import (available_applications, configure_logging, deploy,
-                             load_defaults)
+from yodeploy.deploy import available_applications, configure_logging, deploy
 import yodeploy.config
 
 
@@ -43,6 +42,20 @@ def parse_args():
 
     if opts.command in shortcuts:
         opts.command = shortcuts[opts.command]
+
+    return opts
+
+
+def load_defaults(opts):
+    "Populate opts with sensible defaults if the settings are missing"
+    if not hasattr(opts, 'config'):
+        opts.config = yodeploy.config.find_deploy_config()
+
+    if not hasattr(opts, 'deploy_settings'):
+        opts.deploy_settings = yodeploy.config.load_settings(opts.config)
+
+    if not hasattr(opts, 'target'):
+        opts.target = opts.deploy_settings.artifacts.target
 
     return opts
 

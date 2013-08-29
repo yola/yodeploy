@@ -12,19 +12,6 @@ import yodeploy.config
 import yodeploy.repository
 
 
-def load_defaults(opts):
-    "Populate opts with sensible defaults if the settings are missing"
-    if not hasattr(opts, 'config'):
-        opts.config = yodeploy.config.find_deploy_config()
-
-    if not hasattr(opts, 'deploy_settings'):
-        opts.deploy_settings = yodeploy.config.load_settings(opts.config)
-
-    if not hasattr(opts, 'target'):
-        opts.target = opts.deploy_settings.artifacts.target
-
-    return opts
-
 
 def configure_logging(verbose, conf, filename=None):
     "Set up logging, return the logger for this script"
