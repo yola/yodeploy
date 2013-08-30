@@ -164,7 +164,10 @@ class BuildCompat3(Builder):
                                  build_settings.cluster,
                                  configs_dirs, app_conf_dir, build=True)
         config = smush_config(sources,
-                              initial={'yoconfigurator': {'app': self.app}})
+                              initial={'yoconfigurator': {
+                                  'app': self.app,
+                                  'environment': build_settings.environment,
+                             }})
         write_config(config, '.')
 
     def prepare(self):
