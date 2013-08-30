@@ -12,6 +12,8 @@ import urllib2
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+from yoconfigurator.base import write_config
+from yoconfigurator.smush import config_sources, smush_config
 import yodeploy.config
 import yodeploy.repository
 
@@ -55,11 +57,11 @@ class Builder(object):
             'description': description,
         }
         req = urllib2.Request(
-                url=url,
-                data=json.dumps(data),
-                headers={
-                    'Authorization': 'token %s' % settings.oauth_token,
-                })
+            url=url,
+            data=json.dumps(data),
+            headers={
+                'Authorization': 'token %s' % settings.oauth_token,
+            })
         try:
             urllib2.urlopen(req)
         except urllib2.URLError, e:
@@ -128,7 +130,7 @@ class BuildCompat1(Builder):
         # Legacy config
         self.distname = os.environ.get('DISTNAME', self.app)
         self.dcs = os.environ.get('DEPLOYSERVER',
-                self.deploy_settings.build.deploy_content_server)
+                                  self.deploy_settings.build.deploy_content_server)
         self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
                                                    % self.distname)
         print 'Environment:'
@@ -145,17 +147,24 @@ class BuildCompat1(Builder):
 
     def upload(self):
         print_banner('Upload')
-        check_call(' '.join(('./scripts/upload.sh',
-                             '%s-%s' % (self.app, self.dcs_target()),
-                             self.version,
-                             self.artifact,
-                           )),
-                   shell=True, env=self.build_env(),
-                   abort='Upload script failed')
+        check_call(' '.join(('./scripts/upload.sh', '%s-%s' % (self.app,
+                                                               self.dcs_target()),
+                             self.version, self.artifact)),
+                   shell=True, env=self.build_env(), abort='Upload script failed')
 
 
 class BuildCompat3(Builder):
     compat = 3
+
+    def configure(self):
+        configs_dirs = [self.deploy_settings.configs_dir]
+        app_conf_dir = os.path.join('deploy', 'configuration')
+        sources = config_sources(self.app, self.deploy_settings.environment,
+                                 self.deploy_settings.cluster,
+                                 configs_dirs, app_conf_dir, build=True)
+        config = smush_config(sources,
+                              initial={'yoconfigurator': {'app': self.app}})
+        write_config(config, '.')
 
     def prepare(self):
         python = os.path.abspath(sys.executable)
@@ -173,6 +182,7 @@ class BuildCompat3(Builder):
             check_call((python, build_ve, '-a', self.app,
                         '--target', self.target, '--download', '--upload'),
                        abort='build-virtualenv failed')
+        self.configure()
 
     def upload(self):
         print_banner('Upload')
@@ -198,8 +208,8 @@ class BuildCompat4(BuildCompat3):
 
 def parse_args(default_app):
     parser = argparse.ArgumentParser(
-            description='Build and upload an artifact',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description='Build and upload an artifact',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--app', '-a',
                         default=default_app,
                         help='The application name')
