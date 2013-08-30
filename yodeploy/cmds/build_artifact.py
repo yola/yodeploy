@@ -157,10 +157,11 @@ class BuildCompat3(Builder):
     compat = 3
 
     def configure(self):
-        configs_dirs = [self.deploy_settings.configs_dir]
+        build_settings = self.deploy_settings.build
+        configs_dirs = [build_settings.configs_dir]
         app_conf_dir = os.path.join('deploy', 'configuration')
-        sources = config_sources(self.app, self.deploy_settings.environment,
-                                 self.deploy_settings.cluster,
+        sources = config_sources(self.app, build_settings.environment,
+                                 build_settings.cluster,
                                  configs_dirs, app_conf_dir, build=True)
         config = smush_config(sources,
                               initial={'yoconfigurator': {'app': self.app}})
