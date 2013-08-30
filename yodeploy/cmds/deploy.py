@@ -48,7 +48,7 @@ def parse_args():
 
 def load_defaults(opts):
     "Populate opts with sensible defaults if the settings are missing"
-    if not hasattr(opts, 'config'):
+    if not opts.config:
         opts.config = yodeploy.config.find_deploy_config()
 
     if not hasattr(opts, 'deploy_settings'):
