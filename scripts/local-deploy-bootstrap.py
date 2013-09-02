@@ -79,14 +79,21 @@ def check_environment():
                    "your PATH?"):
             os.mkdir(bin_)
             bashrc_additions.append('export PATH=~/"bin:$PATH"')
+            os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    profile = os.path.expanduser('~/.profile')
-    if not os.path.isfile(profile):
-        if confirm("You don't seem to have a .profile.\n"
-                   "Create it, sourcing .bashrc?"):
-            with open(profile, 'w') as f:
-                f.write("# Created by Yola's local-bootstrap\n"
-                        '. ~/.bashrc\n')
+    profiles = [profile for profile in
+                ('~/.bash_profile', '~/.bash_login', '~/.profile')
+                if os.path.isfile(os.path.expanduser(profile))]
+    profile = None
+    if profiles:
+        if not confirm("%s exists. Does it source ~/.bashrc?" % profiles[0]):
+            profile = os.path.expanduser(profiles[0])
+    elif confirm("You don't seem to have a .profile.\n"
+                 "Create it, sourcing .bashrc?"):
+        profile = os.path.expanduser('~/.profile')
+    if profile:
+        with open(profile, 'a') as f:
+            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
@@ -103,7 +110,7 @@ def check_environment():
             yola_src = os.path.expanduser(input_)
 
             if confirm('We can export this as YOLA_SRC in your .bashrc for '
-                    'future.\nAdd a line to .bashrc?'):
+                       'future.\nAdd a line to .bashrc?'):
                 # Basic escaping that'll handle spaces and not much else
                 input_ = input_.replace(' ', '" "')
                 bashrc_additions.append('export YOLA_SRC=%s' % input_)

@@ -56,7 +56,8 @@ class ConfiguratedApp(DeployHook):
         sources = config_sources(self.app, self.settings.artifacts.environment,
                                  self.settings.artifacts.cluster,
                                  configs_dirs, app_conf_dir)
-        config = smush_config(sources)
+        config = smush_config(sources,
+                              initial={'yoconfigurator': {'app': self.app}})
         write_config(config, self.deploy_dir)
 
     def read_config(self):
