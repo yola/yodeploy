@@ -1,6 +1,37 @@
 Change Log
 ==========
 
+0.4.6
+-----
+
+* Zero-downtime deployment to tomcat.
+
+0.4.5
+-----
+
+* Added the `yoconfigurator.app` key to deployconfigs.
+  (yoconfigurator 0.4.0)
+
+0.4.4
+-----
+
+* Bug fix for the Tomcat hook.
+
+0.4.3
+-----
+
+* Write the Apache vhost in the Tomcat hook.
+
+0.4.2
+-----
+
+* Added the Tomcat hook.
+
+0.4.1
+-----
+
+* `AuthenticatedApp`: Get api_seed from `config.common`.
+
 0.4.0
 -----
 

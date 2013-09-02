@@ -1,6 +1,6 @@
 import os
 
-from yola.deploy.hooks.python import PythonApp
+from yodeploy.hooks.python import PythonApp
 
 
 class Hooks(PythonApp):

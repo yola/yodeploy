@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import logging
 import os
 import socket
 import sys
+
+import requests
+from requests.exceptions import RequestException
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -23,7 +27,7 @@ def parse_args():
                                        help='additional help')
 
     deploy_p = subparsers.add_parser('deploy',
-            help='Deploy an application and configs')
+                                     help='Deploy an application and configs')
     deploy_p.add_argument('app', help='The application name')
 
     subparsers.add_parser('available-apps', help='Show available applications')
@@ -74,7 +78,7 @@ def configure_logging(verbose, deploy_settings):
 
     if 'debug_logfile' in conf:
         handler = logging.handlers.RotatingFileHandler(
-                conf.debug_logfile, backupCount=conf.debug_history)
+            conf.debug_logfile, backupCount=conf.debug_history)
         handler.doRollover()
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
@@ -84,7 +88,7 @@ def configure_logging(verbose, deploy_settings):
     log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 
-def report(app, action, message, deploy_settings):
+def report(app, action, old_version, version, deploy_settings):
     "Report to the world that we deployed."
 
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
@@ -92,7 +96,8 @@ def report(app, action, message, deploy_settings):
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
-    message = '%s@%s: %s' % (user, fqdn, message)
+    message = '%s@%s: Deployed %s: %s -> %s' % (user, fqdn, app, old_version,
+                                                version)
 
     log.info(message)
     services = deploy_settings.report.services
@@ -106,18 +111,48 @@ def report(app, action, message, deploy_settings):
 
     if 'campfire' in services:
         try:
-            from pinder.campfire import Campfire
-
             log.info('Creating campfire report')
             service_settings = deploy_settings.report.service_settings.campfire
-            room = service_settings.room
-            connection = Campfire(service_settings.subdomain,
-                                  service_settings.token,
-                                  service_settings.ssl)
+            rooms = requests.get('https://%s.campfirenow.com/rooms.json' %
+                                 service_settings.subdomain,
+                                 auth=(service_settings.token, '')).json()
+            room = [r for r in rooms['rooms'] if r['name'] ==
+                    service_settings.room][0]
+
             emoji = ' :collision:' if environment == 'production' else ''
-            connection.find_room_by_name(room).speak(message + emoji)
-        except ImportError:
-            log.error('Unable to import pinder for campfire reporting')
+            requests.post('https://%s.campfirenow.com/room/%s/speak.json' %
+                          (service_settings.subdomain, room['id']),
+                          auth=(service_settings.token, ''),
+                          headers={'Content-type': 'application/json'},
+                          data=json.dumps({'message': {'body': message + emoji,
+                                                       'type': 'TextMessage'}}))
+        except IndexError:
+            log.error('Unknown campfire room', service_settings.room)
+        except ValueError:
+            log.error('Error posting report to campfire')
+
+    if 'webhook' in services:
+        log.info('Sending deploy information to webhook')
+        service_settings = deploy_settings.report.service_settings.webhook
+        payload = {
+            'app': app,
+            'action': action,
+            'old_version': old_version,
+            'version': version,
+            'user': user,
+            'fqdn': fqdn,
+            'environment': environment,
+        }
+        auth = None
+        if service_settings.username:
+            auth = (service_settings.username, service_settings.password)
+        try:
+            requests.post(service_settings.url,
+                          auth=auth,
+                          headers={'Content-type': 'application/json'},
+                          data=json.dumps(payload))
+        except RequestException as e:
+            log.warning('Could not send post-deploy webhook: %s', e)
 
 
 def available_applications(deploy_settings):
@@ -152,15 +187,15 @@ def do_deploy(opts, deploy_settings):
 
     repository = yodeploy.repository.get_repository(deploy_settings)
     application = yodeploy.application.Application(
-            opts.app, opts.target, repository, opts.config)
+        opts.app, opts.target, repository, opts.config)
 
+    old_version = application.live_version
     version = opts.version
     if version is None:
         version = repository.latest_version(opts.app, opts.target)
 
     application.deploy(version)
-    message = 'Deployed %s/%s' % (application.app, version)
-    report(application.app, 'deploy', message, deploy_settings)
+    report(application.app, 'deploy', old_version, version, deploy_settings)
 
 
 def main():

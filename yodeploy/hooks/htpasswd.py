@@ -80,6 +80,6 @@ class AuthenticatedApp(ConfiguratedApp):
             if 'clients' in aconf.htpasswd:
                 for client in aconf.htpasswd.clients:
                     password = seeded_auth_token(client, self.app,
-                            self.config.common.credential.api_seed)
+                            self.config.common.api_seed)
                     crypted = crypt.crypt(password, salt())
                     f.write('%s:%s\n' % (client, crypted))

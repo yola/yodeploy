@@ -4,7 +4,7 @@ boto==2.2.2
 coverage==3.5.2
 nose==1.2.1
 nosexcover==1.0.7
-pinder==1.0.1
+requests==1.2.3
 unittest2==0.5.1
 virtualenv==1.9.1
-yoconfigurator==0.3.0
+yoconfigurator==0.4.2
