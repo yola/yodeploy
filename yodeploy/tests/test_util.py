@@ -63,6 +63,14 @@ class TestChown_R(TmpDirTestCase):
         my_group = grp.getgrgid(os.getgid())[0]
         chown_r(self.tmppath('foo'), my_user, my_group)
 
+    def test_integer(self):
+        self.mkdir('foo', 'bar')
+        open(self.tmppath('foo', 'baz'), 'w').close()
+        # We probably aren't root...
+        my_user = os.getuid()
+        my_group = -1
+        chown_r(self.tmppath('foo'), my_user, my_group)
+
 
 class TestTouch(TmpDirTestCase):
     def test_simple(self):

@@ -1,8 +1,11 @@
 import logging
 import os
 import platform
+import pwd
+import shutil
 import subprocess
 import sys
+import time
 
 from .configurator import ConfiguratedApp
 from .templating import TemplatedApp
@@ -14,6 +17,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
     migrate_on_deploy = False
     vhost_snippet_path = '/etc/apache2/yola.d/services'
     vhost_path = '/etc/apache2/sites-enabled'
+    parallel_deploy_timeout = 60
 
     def prepare(self):
         super(TomcatServlet, self).prepare()
@@ -59,13 +63,82 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
             dest = os.path.join(contexts, 'ROOT')
             if os.path.exists(dest):
                 os.unlink(dest)
+            os.symlink(self.deploy_path(self.app), dest)
+            return
+
+        # Tomcat does string comparisons.
+        # Versions aren't strictly numeric, local builds will have a .n
+        # appended. So:
+        # 10   -> 0000000010
+        # 10.1 -> 0000000010.0000000001
+        version = '%10s%s%10s' % self.version.partition('.')
+        version = version.rstrip().replace(' ', '0')
+
+        deployed = self._deployed_versions()
+        redeploys = sorted(name for name in deployed
+                           if name.startswith(version))
+        if redeploys:
+            latest = redeploys[-1]
+            if latest == version:
+                redeploy = 0
+            else:
+                redeploy = int(latest.rsplit('.', 1)[1]) + 1
+            version = '%s.%010i' % (version, redeploy)
+
+        dest = os.path.join(contexts, 'ROOT##%s' % version)
+
+        uid = pwd.getpwnam('tomcat7').pw_uid
+
+        # Build a hard linkfarm in the tomcat-contexts directory.
+        # Copy the configuration XML files, so that tomcat sees that they are
+        # inside appBase and can delete them.
+        self._linkfarm(self.deploy_path(self.app), dest, uid,
+                       (self.deploy_path(self.app, 'META-INF'),
+                        self.deploy_path(self.app, 'WEB-INF')))
+
+        # Put configuration.json somewhere where yodeploy-java can find it.
+        os.symlink(self.deploy_path('configuration.json'),
+                   os.path.join(dest, 'configuration.json'))
+
+        # Drop down the XML files last, to trigger the Tomcat deploy
+        for metadir in ('META-INF', 'WEB-INF'):
+            for name in os.listdir(self.deploy_path(self.app, metadir)):
+                if not name.endswith('.xml'):
+                    continue
+                src = self.deploy_path(self.app, metadir, name)
+                dst = os.path.join(dest, metadir, name)
+                shutil.copyfile(src, dst)
+                os.chown(dst, uid, -1)
+
+        log.info('Waiting %is for tomcat to deploy the new version (%s), '
+                 'and clean up an old one...',
+                 self.parallel_deploy_timeout, version)
+        previously_deployed = set(deployed)
+        for i in range(self.parallel_deploy_timeout):
+            deployed = set(self._deployed_versions())
+            if len(previously_deployed - deployed) >= 1:
+                break
+            time.sleep(1)
         else:
-            # Tomcat does string comparisons.
-            # Versions aren't strictly numeric, local builds will have a .n
-            # appended. So:
-            # 10   -> 0000000010
-            # 10.1 -> 0000000010.0000000001
-            version = '%10s%s%10s' % self.version.partition('.')
-            version = version.rstrip().replace(' ', '0')
-            dest = os.path.join(contexts, 'ROOT##%s' % version)
-        os.symlink(self.deploy_path(self.app), dest)
+            raise Exception("Deploy must have failed - "
+                            "tomcat didn't undeploy any old verisons")
+
+    def _deployed_versions(self):
+        contexts = os.path.join(self.root, 'tomcat-contexts')
+        return [name.split('##', 1)[1] for name in os.listdir(contexts)
+                if '##' in name]
+
+    def _linkfarm(self, srcdir, dstdir, uid, metadirs):
+        names = os.listdir(srcdir)
+        os.mkdir(dstdir)
+        os.chown(dstdir, uid, -1)
+        for name in names:
+            if srcdir in metadirs and name.endswith('.xml'):
+                continue
+            src = os.path.join(srcdir, name)
+            dst = os.path.join(dstdir, name)
+            if os.path.isdir(src):
+                self._linkfarm(src, dst, uid, metadirs)
+            else:
+                os.link(src, dst)
+                os.chown(dst, uid, -1)
