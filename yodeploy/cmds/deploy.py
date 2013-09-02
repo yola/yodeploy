@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import sys
 
@@ -82,7 +83,8 @@ def main():
     "Dispatch"
     opts = parse_args()
     opts = load_defaults(opts)
-    log = configure_logging(opts.debug, opts.deploy_settings.logging)
+    configure_logging(opts.debug, opts.deploy_settings.logging)
+    log = logging.getLogger('yodeploy')
     log.debug('Running: %r', sys.argv)
 
     cmd = globals().get('do_%s' % opts.command.replace('-', '_'))
