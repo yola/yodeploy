@@ -52,10 +52,10 @@ def load_defaults(opts):
     if not opts.config:
         opts.config = yodeploy.config.find_deploy_config()
 
-    if not hasattr(opts, 'deploy_settings'):
+    if not getattr(opts, 'deploy_settings', None):
         opts.deploy_settings = yodeploy.config.load_settings(opts.config)
 
-    if not hasattr(opts, 'target'):
+    if not getattr(opts, 'target', None):
         opts.target = opts.deploy_settings.artifacts.target
 
     return opts
