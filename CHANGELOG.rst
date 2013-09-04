@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.4.7
+-----
+
+* Undeploy old versions in Tomcat 7.
+  (On Ubuntu 12.04, requires tomcat7 from the Yola PPA)
+
 0.4.6
 -----
 
