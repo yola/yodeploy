@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.4.7
+0.4.8
 -----
 
 * Undeploy old versions in Tomcat 7.
