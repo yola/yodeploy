@@ -111,10 +111,15 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
                 shutil.copyfile(src, dst)
                 os.chown(dst, uid, -1)
 
+        previously_deployed = set(deployed)
+        if not previously_deployed:
+            log.info('No existing versions, assuming we have successfully '
+                     'deployed')
+            return
+
         log.info('Waiting %is for tomcat to deploy the new version (%s), '
                  'and clean up an old one...',
                  self.parallel_deploy_timeout, version)
-        previously_deployed = set(deployed)
         for i in range(self.parallel_deploy_timeout):
             deployed = set(self._deployed_versions())
             if len(previously_deployed - deployed) >= 1:
