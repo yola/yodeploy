@@ -14,9 +14,9 @@ import yodeploy.repository
 log = logging.getLogger(__name__)
 
 
-def configure_logging(verbose, conf, filename=None):
+def configure_logging(verbose, conf):
     "Set up logging"
-    logging.basicConfig(level=logging.DEBUG, filename=filename)
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     root = logging.getLogger()
 
     for handler in root.handlers:
