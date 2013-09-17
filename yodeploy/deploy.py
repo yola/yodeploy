@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 def configure_logging(verbose, conf, filename=None):
     "Set up logging"
-    logging.basicConfig(level=logging.DEBUG, filename=filename)
+    logging.basicConfig(level=logging.DEBUG, filename=filename, stream=sys.stdout)
     root = logging.getLogger()
 
     for handler in root.handlers:
