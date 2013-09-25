@@ -87,7 +87,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
 
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
-        uid = pwd.getpwnam('tomcat7').pw_uid
+        uid = pwd.getpwnam(tomcat).pw_uid
         os.chown(contexts, uid, -1)
 
         # Build a hard linkfarm in the tomcat-contexts directory.
