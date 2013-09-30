@@ -117,7 +117,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         previously_deployed = set(deployed)
         for i in range(self.parallel_deploy_timeout):
             deployed = set(self._deployed_versions())
-            if len(deployed - previously_deployed) >= 1:
+            if len(previously_deployed - deployed) >= 1:
                 break
             time.sleep(1)
         else:
