@@ -108,6 +108,7 @@ def check_environment():
             if not input_:
                 input_ = '~/src'
             yola_src = os.path.expanduser(input_)
+            os.environ['YOLA_SRC'] = yola_src
 
             if confirm('We can export this as YOLA_SRC in your .bashrc for '
                        'future.\nAdd a line to .bashrc?'):
