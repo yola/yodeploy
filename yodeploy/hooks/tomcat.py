@@ -18,6 +18,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
     vhost_snippet_path = '/etc/apache2/yola.d/services'
     vhost_path = '/etc/apache2/sites-enabled'
     parallel_deploy_timeout = 60
+    database_migration_class = 'com.yola.yodeploy.flywaydb.Migrator'
 
     def prepare(self):
         super(TomcatServlet, self).prepare()
@@ -40,7 +41,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         subprocess.check_call(('java', '-cp',
             ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
                       self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
-            'com.yola.yodeploy.flywaydb.Migrator'))
+            database_migration_class))
 
     def deployed(self):
         super(TomcatServlet, self).deployed()
