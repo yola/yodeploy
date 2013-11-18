@@ -134,7 +134,7 @@ class TestExtractTar(TmpDirTestCase):
         ), env=env)
 
 
-class TestDelete_Dir_Contents(TmpDirTestCase):
+class TestDelete_Dir_Content(TmpDirTestCase):
     def test_simple(self):
         f = self.tmppath('test.txt')
         touch(f)

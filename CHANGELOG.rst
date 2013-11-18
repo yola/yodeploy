@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.10
+-----
+
+* Add util to delete all files and directories under a given path
+
 0.4.8
 -----
 
