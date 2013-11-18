@@ -4,7 +4,7 @@ Change Log
 0.4.10
 -----
 
-* Add util to delete all files and directories under a given path
+* Add `delete_dir_content` to util
 
 0.4.8
 -----
