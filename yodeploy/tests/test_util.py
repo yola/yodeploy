@@ -8,7 +8,7 @@ import sys
 
 from . import unittest, TmpDirTestCase
 from ..util import (LockFile, LockedException, UnlockedException, chown_r,
-                    touch, extract_tar)
+                    touch, extract_tar, delete_dir_content)
 
 
 class LockFileTest(TmpDirTestCase):
@@ -132,3 +132,15 @@ class TestExtractTar(TmpDirTestCase):
             ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
                  self.tmppath('extracted/bar'))
         ), env=env)
+
+
+class TestDelete_Dir_Contents(TmpDirTestCase):
+    def test_simple(self):
+        f = self.tmppath('test.txt')
+        touch(f)
+        d = self.mkdir('foo', 'bar')
+        self.assertTrue(os.path.exists(f))
+        self.assertTrue(os.path.exists(d))
+        delete_dir_content(self.tmppath())
+        self.assertFalse(os.path.exists(f))
+        self.assertFalse(os.path.exists(d))

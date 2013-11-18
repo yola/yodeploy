@@ -3,6 +3,7 @@ import fcntl
 import grp
 import os
 import pwd
+import shutil
 import tarfile
 
 
@@ -91,3 +92,12 @@ def extract_tar(tarball, root):
 
     extracted_root = os.path.join(workdir, list(roots)[0])
     os.rename(extracted_root, root)
+
+
+def delete_dir_content(path):
+    '''Delete all files and directories under given path.'''
+    for root, dirs, files in os.walk(path):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
