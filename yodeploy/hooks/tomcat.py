@@ -75,6 +75,14 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         version = version.rstrip().replace(' ', '0')
 
         deployed = self._deployed_versions()
+
+        previously_deployed = set(deployed)
+        if not previously_deployed:
+            # Give the initial deploy an artificially low version, so it will
+            # be replaced by the first local build in an integration
+            # environment.
+            version = '0' * 10
+
         redeploys = sorted(name for name in deployed
                            if name.startswith(version))
         if redeploys:
@@ -111,7 +119,6 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
                 shutil.copyfile(src, dst)
                 os.chown(dst, uid, -1)
 
-        previously_deployed = set(deployed)
         if not previously_deployed:
             log.info('No existing versions, assuming we have successfully '
                      'deployed')
