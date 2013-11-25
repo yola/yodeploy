@@ -98,6 +98,12 @@ def delete_dir_content(path):
     '''Delete all files and directories under given path.'''
     for root, dirs, files in os.walk(path):
         for f in files:
-            os.unlink(os.path.join(root, f))
+            try:
+                os.unlink(os.path.join(root, f))
+            except OSError:
+                print "Unable to delete %s %s" % (root, f)
         for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
+            try:
+                shutil.rmtree(os.path.join(root, d))
+            except OSError:
+                print "Unable to delete %s %s" % (root, d)

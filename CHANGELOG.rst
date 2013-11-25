@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.12
+-----
+
+* Update `delete_dir_content` to handle missing files
+
 0.4.11
 -----
 
