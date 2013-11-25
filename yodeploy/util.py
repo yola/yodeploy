@@ -1,10 +1,13 @@
 import errno
 import fcntl
 import grp
+import logging
 import os
 import pwd
 import shutil
 import tarfile
+
+log = logging.getLogger(__name__)
 
 
 class LockedException(Exception):
@@ -101,9 +104,9 @@ def delete_dir_content(path):
             try:
                 os.unlink(os.path.join(root, f))
             except OSError:
-                print "Unable to delete %s %s" % (root, f)
+                log.warn("Unable to delete %s %s", root, f)
         for d in dirs:
             try:
                 shutil.rmtree(os.path.join(root, d))
             except OSError:
-                print "Unable to delete %s %s" % (root, d)
+                log.warn("Unable to delete %s %s", root, d)
