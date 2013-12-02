@@ -10,7 +10,7 @@ Change Log
 -----
 
 * Deploy tomcat7 apps for the first time, without breaking.
-* Allowe overriding None in deploy configs (yoconfigurator 0.4.3)
+* Allow overriding None in deploy configs (yoconfigurator 0.4.3)
 
 0.4.10
 -----
