@@ -1,5 +1,14 @@
 Change Log
 ==========
+0.4.14
+-----
+
+* Address the database_migration_class object correctly.
+
+0.4.13
+-----
+
+* BROKEN - Address the database_migration_class object correctly.
 
 0.4.12
 -----
