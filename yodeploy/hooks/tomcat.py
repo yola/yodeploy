@@ -41,7 +41,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         subprocess.check_call(('java', '-cp',
             ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
                       self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
-            database_migration_class))
+            self.database_migration_class))
 
     def deployed(self):
         super(TomcatServlet, self).deployed()
