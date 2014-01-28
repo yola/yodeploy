@@ -1,5 +1,10 @@
 Change Log
 ==========
+0.4.15
+-----
+
+* Support `build-virtualenv -r dev_requirements.txt`
+
 0.4.14
 -----
 
