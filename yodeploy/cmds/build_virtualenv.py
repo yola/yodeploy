@@ -18,11 +18,10 @@ log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 def main():
     parser = argparse.ArgumentParser(
-            description="Prepares virtualenv bundles. "
-                        "If a virtualenv with the right hash already exists "
-                        "in the store, it'll be downloaded and extracted, "
-                        "unless --force is specified.",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description="Prepares virtualenv bundles. If a virtualenv with the "
+        "right hash already exists in the store, it'll be downloaded and "
+        "extracted, unless --force is specified.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -110,8 +109,9 @@ def main():
             req_file=options.requirement)
 
     if options.upload:
-        yodeploy.virtualenv.upload_ve(repository, options.app, version,
-                options.target, overwrite=options.force)
+        yodeploy.virtualenv.upload_ve(
+            repository, options.app, version,
+            options.target, overwrite=options.force)
 
 
 if __name__ == '__main__':
