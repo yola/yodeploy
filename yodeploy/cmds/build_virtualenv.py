@@ -48,7 +48,7 @@ def main():
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         help='Increase verbosity')
-    parser.add_argument('-r', '----requirement', metavar='FILE',
+    parser.add_argument('-r', '--requirement', metavar='FILE',
                         default='requirements.txt',
                         help='Install from the given requirements file.')
 
