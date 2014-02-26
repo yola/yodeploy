@@ -129,3 +129,11 @@ def deploy(app, target, config, version, deploy_settings):
 
     application.deploy(target, repository, version)
     report(application.app, 'deploy', old_version, version, deploy_settings)
+
+
+def gc(max_versions, config, deploy_settings):
+    """Clean up old deploys"""
+    for app in available_applications(deploy_settings):
+        if os.path.isdir(os.path.join(deploy_settings.paths.apps, app)):
+            application = yodeploy.application.Application(app, config)
+            application.gc(max_versions)
