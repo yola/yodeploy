@@ -34,8 +34,7 @@ deploy_settings = AttrDict(
 
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
-        self.app = Application('test', 'master', self.repo,
-                               self.tmppath('config.py'))
+        self.app = Application('test', self.tmppath('config.py'))
         if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
             self._create_test_ve()
         self._deploy_ve_hash = ve_version(sha224sum(
@@ -63,8 +62,6 @@ deploy_settings = AttrDict(
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
-        self.assertEqual(self.app.target, 'master')
-        self.assertTrue(isinstance(self.app.repository, Repository))
         self.assertTrue(isinstance(self.app.settings, dict))
         self.assertEqual(self.app.appdir, self.tmppath('srv', 'test'))
 
@@ -90,7 +87,7 @@ deploy_settings = AttrDict(
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
-        self.app.unpack(version)
+        self.app.unpack('master', self.repo, version)
         self.app.unlock()
 
         self.assertTMPPExists('srv', 'test', 'versions', version)
@@ -104,8 +101,8 @@ deploy_settings = AttrDict(
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.lock()
-        self.app.unpack(version)
-        self.app.unpack(version)
+        self.app.unpack('master', self.repo, version)
+        self.app.unpack('master', self.repo, version)
         self.app.unlock()
 
         self.assertTMPPExists('srv', 'test', 'versions', version)
@@ -124,7 +121,7 @@ deploy_settings = AttrDict(
         self.assertEqual(self.app.live_version, version)
 
         self.app.lock()
-        self.app.unpack(version)
+        self.app.unpack('master', self.repo, version)
         self.app.unlock()
 
     def test_swing_symlink_create(self):
@@ -191,7 +188,7 @@ hooks = Hooks
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
-        self.app.prepare('foo')
+        self.app.prepare('master', self.repo, 'foo')
         self.app.unlock()
         self.assertTMPPExists('srv', 'test', 'hello')
 
@@ -220,7 +217,7 @@ hooks = Hooks
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         self.app.lock()
-        self.app.deployed('foo')
+        self.app.deployed('master', self.repo, 'foo')
         self.app.unlock()
         self.assertTMPPExists('srv', 'test', 'hello')
 
@@ -250,7 +247,7 @@ hooks = Hooks
                   source='test-data/deploy-ve/virtualenv.tar.gz')
         os.unlink(self.tmppath('test.tar.gz'))
 
-        self.app.deploy(version)
+        self.app.deploy('master', self.repo, version)
         self.assertTMPPExists('srv', 'test', 'versions', version, 'bar')
         self.assertTMPPExists('srv', 'test', 'live', 'bar')
         self.assertTMPPExists('srv', 'test', 'hello')

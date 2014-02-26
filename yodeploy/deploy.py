@@ -121,12 +121,11 @@ def deploy(app, target, config, version, deploy_settings):
         sys.exit(1)
 
     repository = yodeploy.repository.get_repository(deploy_settings)
-    application = yodeploy.application.Application(app, target, repository,
-                                                   config)
+    application = yodeploy.application.Application(app, config)
 
     old_version = application.live_version
     if version is None:
         version = repository.latest_version(app, target)
 
-    application.deploy(version)
+    application.deploy(target, repository, version)
     report(application.app, 'deploy', old_version, version, deploy_settings)

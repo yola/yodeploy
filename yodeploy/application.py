@@ -19,10 +19,8 @@ class Application(object):
     will do it all in the right order.
     '''
 
-    def __init__(self, app, target, repository, settings_file):
+    def __init__(self, app, settings_file):
         self.app = app
-        self.target = target
-        self.repository = repository
         self.settings_fn = settings_file
         self.settings = yodeploy.config.load_settings(settings_file)
         self.appdir = os.path.join(self.settings.paths.apps, app)
@@ -50,7 +48,7 @@ class Application(object):
     def unlock(self):
         self._lock.release()
 
-    def deploy_ve(self, version):
+    def deploy_ve(self, target, repository, version):
         '''Unpack a virtualenv for the deploy hooks, and return its location
         on the FS
         '''
@@ -69,15 +67,15 @@ class Application(object):
         log.debug('Deploying hook virtualenv %s', ve_hash)
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        yodeploy.virtualenv.download_ve(self.repository, 'deploy', ve_hash,
-                                        self.target, tarball)
+        yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
+                                        target, tarball)
         extract_tar(tarball, ve_unpack_root)
         if os.path.exists(ve_dir):
             shutil.rmtree(ve_dir)
         os.rename(ve_unpack_root, ve_dir)
         return ve_dir
 
-    def hook(self, hook, version):
+    def hook(self, hook, target, repository, version):
         '''Run hook in the apps hooks'''
         fn = os.path.join(self.appdir, 'versions', version,
                           'deploy', 'hooks.py')
@@ -92,7 +90,7 @@ class Application(object):
         elif compat == 4:
             module = 'yodeploy.__main__'
 
-        ve = self.deploy_ve(version)
+        ve = self.deploy_ve(target, repository, version)
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
         tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
@@ -103,8 +101,8 @@ class Application(object):
                '--hook', hook,
                '--log-fd', str(tlss.remote_socket.fileno()),
         ]
-        if self.target:
-            cmd += ['--target', self.target]
+        if target:
+            cmd += ['--target', target]
         cmd += [self.appdir, version]
         try:
             subprocess.check_call(cmd, env={
@@ -116,19 +114,19 @@ class Application(object):
         finally:
             tlss.shutdown()
 
-    def deploy(self, version):
+    def deploy(self, target, repository, version):
         if version is None:
-            version = self.repository.latest_version(self.app, self.target)
+            version = repository.latest_version(self.app, self.target)
         log.info('Deploying %s/%s', self.app, version)
         self.lock()
-        self.unpack(version)
-        self.prepare(version)
+        self.unpack(target, repository, version)
+        self.prepare(target, repository, version)
         self.swing_symlink(version)
-        self.deployed(version)
+        self.deployed(target, repository, version)
         self.unlock()
         log.info('Deployed %s/%s', self.app, version)
 
-    def unpack(self, version):
+    def unpack(self, target, repository, version):
         '''First stage of deployment'''
         assert self._lock is not None
         log.debug('Unpacking %s/%s', self.app, version)
@@ -141,7 +139,7 @@ class Application(object):
         if not os.path.isdir(unpack_dir):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
-        with self.repository.get(self.app, version, self.target) as f1:
+        with repository.get(self.app, version, target) as f1:
             if f1.metadata.get('deploy_compat') not in ('3', '4'):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
@@ -155,11 +153,11 @@ class Application(object):
         os.rename(os.path.join(self.appdir, 'versions', 'unpack', version),
                   staging)
 
-    def prepare(self, version):
+    def prepare(self, target, repository, version):
         '''Post-unpack, pre-swing hook'''
         assert self._lock is not None
         log.debug('Preparing %s/%s', self.app, version)
-        self.hook('prepare', version)
+        self.hook('prepare', target, repository, version)
 
     def swing_symlink(self, version):
         '''Make version live'''
@@ -173,8 +171,8 @@ class Application(object):
         os.symlink(os.path.join('versions', version), temp_link)
         os.rename(temp_link, link)
 
-    def deployed(self, version):
+    def deployed(self, target, repository, version):
         '''Post-swing hook'''
         assert self._lock is not None
         log.debug('Deployed hook %s/%s', self.app, version)
-        self.hook('deployed', version)
+        self.hook('deployed', target, repository, version)
