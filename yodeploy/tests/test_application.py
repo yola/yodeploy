@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 
 from ..application import Application
 from ..repository import LocalRepositoryStore, Repository
@@ -73,6 +74,12 @@ deploy_settings = AttrDict(
         os.symlink(os.path.join('versions', 'foobar'),
                    self.tmppath('srv', 'test', 'live'))
         self.assertEqual(self.app.live_version, 'foobar')
+
+    def test_deployed_versions(self):
+        self.mkdir('srv', 'test', 'versions', '1')
+        self.mkdir('srv', 'test', 'versions', '2')
+        self.mkdir('srv', 'test', 'versions', 'unpack')
+        self.assertEqual(self.app.deployed_versions, ['1', '2'])
 
     def test_locking(self):
         self.app.lock()
@@ -252,3 +259,37 @@ hooks = Hooks
         self.assertTMPPExists('srv', 'test', 'live', 'bar')
         self.assertTMPPExists('srv', 'test', 'hello')
         self.assertTMPPExists('srv', 'test', 'there')
+
+    def test_gc(self):
+        for version in range(10):
+            self.mkdir('srv', 'test', 'versions', str(version))
+        os.symlink(os.path.join('versions', '3'),
+                   self.tmppath('srv', 'test', 'live'))
+        # Avoid the int-env hack
+        os.utime(self.tmppath('srv', 'test', 'versions', '3'), None)
+        self.app.gc(2)
+        self.assertEqual(self.app.deployed_versions, ['3', '8', '9'])
+
+    def test_gc_bootstrapped_versions(self):
+        self.mkdir('srv', 'test', 'versions', '1')
+        self.mkdir('srv', 'test', 'versions', '1001')
+        os.symlink(os.path.join('versions', '1'),
+                   self.tmppath('srv', 'test', 'live'))
+        earlier = int(time.time()) - 100
+        os.utime(self.tmppath('srv', 'test', 'versions', '1001'),
+                 (earlier, earlier))
+        self.app.gc(1)
+        self.assertEqual(self.app.deployed_versions, ['1'])
+
+    def test_gc_virtualenvs(self):
+        for version in range(10):
+            self.mkdir('srv', 'test', 'versions', str(version))
+            self.mkdir('srv', 'test', 'virtualenvs', str(version))
+            os.symlink(os.path.join('..', 'virtualenvs', str(version)),
+                       self.tmppath('srv', 'test', 'versions', str(version),
+                                    'virtualenv'))
+        self.app.gc(2)
+        self.assertEqual(self.app.deployed_versions, ['8', '9'])
+        self.assertEqual(
+            os.listdir(self.tmppath('srv', 'test', 'virtualenvs')),
+            ['8', '9'])

@@ -1,3 +1,4 @@
+import errno
 import logging
 import os
 import shutil
@@ -6,6 +7,7 @@ import subprocess
 import yodeploy.config
 import yodeploy.ipc_logging
 import yodeploy.virtualenv
+from yodeploy.repository import version_sort_key
 from yodeploy.util import LockFile, LockedException, extract_tar
 
 
@@ -35,6 +37,13 @@ class Application(object):
         dest = os.readlink(live_link).split('/')
         if len(dest) == 2 and dest[0] == 'versions':
             return dest[1]
+
+    @property
+    def deployed_versions(self):
+        version_dir = os.path.join(self.appdir, 'versions')
+        return sorted((version for version in os.listdir(version_dir)
+                       if version != 'unpack'),
+                      key=version_sort_key)
 
     def lock(self):
         '''Take a lock on the application'''
@@ -176,3 +185,43 @@ class Application(object):
         assert self._lock is not None
         log.debug('Deployed hook %s/%s', self.app, version)
         self.hook('deployed', target, repository, version)
+
+    def gc(self, max_versions):
+        '''
+        Remove all deployed versions except the most recent max_versions, and
+        any live verisons.
+        '''
+        self.lock()
+        old_versions = set(self.deployed_versions[:-max_versions])
+        if self.live_version:
+            old_versions.discard(self.live_version)
+
+            # We bootstrap environments that have their own Jenkins, from the
+            # production repository. So there is likely to be 1 (and only 1)
+            # version higher than the local builds, but older.
+            mtime = lambda version: os.stat(
+                os.path.join(self.appdir, 'versions', version)).st_mtime
+            last_version = self.deployed_versions[-1]
+            if (self.live_version != last_version and
+                    mtime(self.live_version) > mtime(last_version)):
+                old_versions.add(last_version)
+
+        for version in old_versions:
+            shutil.rmtree(os.path.join(self.appdir, 'versions', version))
+
+        used_virtualenvs = set()
+        for version in self.deployed_versions:
+            ve = os.path.join(self.appdir, 'versions', version, 'virtualenv')
+            try:
+                used_virtualenvs.add(os.path.basename(os.readlink(ve)))
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+
+        ve_dir = os.path.join(self.appdir, 'virtualenvs')
+        if os.path.isdir(ve_dir):
+            for ve in os.listdir(ve_dir):
+                if ve not in used_virtualenvs:
+                    shutil.rmtree(os.path.join(ve_dir, ve))
+
+        self.unlock()
