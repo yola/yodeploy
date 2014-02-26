@@ -7,7 +7,8 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yodeploy.deploy import available_applications, configure_logging, deploy
+from yodeploy.deploy import (available_applications, configure_logging, deploy,
+                             gc)
 import yodeploy.config
 
 
@@ -22,6 +23,12 @@ def parse_args():
     deploy_p.add_argument('app', help='The application name')
 
     subparsers.add_parser('available-apps', help='Show available applications')
+
+    gc_p = subparsers.add_parser('gc',
+                                 help='Clean up old deploys')
+    gc_p.add_argument('--max-versions', metavar='N',
+                      type=int, default=2,
+                      help='The most versions to leave behind')
 
     # hack in some short aliases:
     shortcuts = {}
@@ -77,6 +84,11 @@ def do_deploy(opts):
     "Deploy an application"
     deploy(opts.app, opts.target, opts.config, opts.version,
            opts.deploy_settings)
+
+
+def do_gc(opts):
+    """Clean up old deploys"""
+    gc(opts.max_versions, opts.config, opts.deploy_settings)
 
 
 def main():

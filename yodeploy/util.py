@@ -39,13 +39,23 @@ class LockFile(object):
         except IOError:
             raise LockedException("Lock unavailable")
 
+    @property
+    def held(self):
+        return self._f is not None
+
     def release(self):
-        if self._f is None:
+        if not self.held:
             raise UnlockedException("We don't hold a lock")
         fcntl.flock(self._f, fcntl.LOCK_UN)
         os.unlink(self.filename)
         os.close(self._f)
         self._f = None
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.release()
 
 
 def chown_r(path, user, group):
