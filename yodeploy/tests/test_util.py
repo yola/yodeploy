@@ -53,6 +53,18 @@ class LockFileTest(TmpDirTestCase):
         lf = LockFile(self.tmppath('foo/lockfile'))
         self.assertRaises(OSError, lf.acquire)
 
+    def test_context_manager(self):
+        lf = LockFile(self.tmppath('lockfile'))
+        self.assertFalse(lf.held)
+        with lf:
+            self.assertTrue(lf.held)
+        self.assertFalse(lf.held)
+
+    def test_nested_context_manager(self):
+        lf = LockFile(self.tmppath('lockfile'))
+        with lf:
+            self.assertRaises(LockedException, lf.acquire)
+
 
 class TestChown_R(TmpDirTestCase):
     def test_simple(self):

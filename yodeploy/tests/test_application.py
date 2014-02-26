@@ -4,6 +4,7 @@ import time
 
 from ..application import Application
 from ..repository import LocalRepositoryStore, Repository
+from ..util import LockedException
 from ..virtualenv import ve_version, sha224sum, create_ve, upload_ve
 
 from . import TmpDirTestCase
@@ -82,9 +83,13 @@ deploy_settings = AttrDict(
         self.assertEqual(self.app.deployed_versions, ['1', '2'])
 
     def test_locking(self):
-        self.app.lock()
-        self.assertRaises(Exception, self.app.lock)
-        self.app.unlock()
+        with self.app.lock:
+            try:
+                with self.app.lock:
+                    raised = False
+            except LockedException:
+                raised = True
+        self.assertTrue(raised)
 
     def test_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
@@ -93,9 +98,8 @@ deploy_settings = AttrDict(
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
-        self.app.lock()
-        self.app.unpack('master', self.repo, version)
-        self.app.unlock()
+        with self.app.lock:
+            self.app.unpack('master', self.repo, version)
 
         self.assertTMPPExists('srv', 'test', 'versions', version)
         self.assertTMPPExists('srv', 'test', 'versions', version, 'bar')
@@ -107,10 +111,9 @@ deploy_settings = AttrDict(
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
-        self.app.lock()
-        self.app.unpack('master', self.repo, version)
-        self.app.unpack('master', self.repo, version)
-        self.app.unlock()
+        with self.app.lock:
+            self.app.unpack('master', self.repo, version)
+            self.app.unpack('master', self.repo, version)
 
         self.assertTMPPExists('srv', 'test', 'versions', version)
         self.assertTMPPExists('srv', 'test', 'versions', version, 'bar')
@@ -127,16 +130,14 @@ deploy_settings = AttrDict(
                    self.tmppath('srv', 'test', 'live'))
         self.assertEqual(self.app.live_version, version)
 
-        self.app.lock()
-        self.app.unpack('master', self.repo, version)
-        self.app.unlock()
+        with self.app.lock:
+            self.app.unpack('master', self.repo, version)
 
     def test_swing_symlink_create(self):
         os.makedirs(self.tmppath('srv', 'test', 'versions', 'foobar'))
 
-        self.app.lock()
-        self.app.swing_symlink('foobar')
-        self.app.unlock()
+        with self.app.lock:
+            self.app.swing_symlink('foobar')
 
         self.assertTMPPExists('srv', 'test', 'live')
         self.assertEqual(self.app.live_version, 'foobar')
@@ -149,9 +150,8 @@ deploy_settings = AttrDict(
 
         self.assertEqual(self.app.live_version, 'foo')
 
-        self.app.lock()
-        self.app.swing_symlink('bar')
-        self.app.unlock()
+        with self.app.lock:
+            self.app.swing_symlink('bar')
 
         self.assertTMPPExists('srv', 'test', 'live')
         self.assertEqual(self.app.live_version, 'bar')
@@ -162,9 +162,8 @@ deploy_settings = AttrDict(
         os.symlink(os.path.join('versions', 'foo'),
                    self.tmppath('srv', 'test', 'live.new'))
 
-        self.app.lock()
-        self.app.swing_symlink('bar')
-        self.app.unlock()
+        with self.app.lock:
+            self.app.swing_symlink('bar')
 
         self.assertTMPPExists('srv', 'test', 'live')
         self.assertNotTMPPExists('srv', 'test', 'live.new')
@@ -194,9 +193,8 @@ hooks = Hooks
             f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
-        self.app.lock()
-        self.app.prepare('master', self.repo, 'foo')
-        self.app.unlock()
+        with self.app.lock:
+            self.app.prepare('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'hello')
 
     def test_deployed(self):
@@ -223,9 +221,8 @@ hooks = Hooks
             f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')
-        self.app.lock()
-        self.app.deployed('master', self.repo, 'foo')
-        self.app.unlock()
+        with self.app.lock:
+            self.app.deployed('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'hello')
 
     def test_deploy(self):
