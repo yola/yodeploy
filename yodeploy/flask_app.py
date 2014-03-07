@@ -1,6 +1,7 @@
 import os
 
 from flask import abort, Flask, jsonify, make_response, request
+from OpenSSL import SSL
 from yoconfigurator.base import read_config
 
 from yodeploy.application import Application
@@ -18,6 +19,9 @@ repository = get_repository(deploy_settings)
 
 QA = True if deploy_settings.build.environment == 'qa' else False
 config = read_config(os.path.join('.')) if QA else read_config(os.path.join('', 'srv', 'yodeploy', 'live'))
+
+context = SSL.Context(SSL.SSLv23_METHOD)
+context.use_certificate_file(config.common.ca_bundle)
 
 
 @flask_app.errorhandler(404)
@@ -55,4 +59,4 @@ def get_all_deploy_versions():
 
 
 if __name__ == '__main__':
-    flask_app.run(port=10000)
+    flask_app.run(port=10000, ssl_context=context)
