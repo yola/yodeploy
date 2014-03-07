@@ -1,0 +1,17 @@
+# flask - run the flask app for deploying apps through yodeploy endpoints
+
+description "yodeploy flask server"
+
+env YODEPLOY_HOME={{conf.deploy.root}}/yodeploy/live
+env PYTHONPATH={{conf.deploy.root}}/yodeploy/live
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+# http://superuser.com/a/234541
+exec su -s /bin/sh -c 'exec "$0" "$@"' nobody -- \
+    $YODEPLOY_HOME/virtualenv/bin/python \
+    $YODEPLOY_HOME/yodeploy/flask_app
+
+respawn
+respawn limit 10 5
