@@ -21,7 +21,8 @@ QA = True if deploy_settings.build.environment == 'qa' else False
 config = read_config(os.path.join('.')) if QA else read_config(os.path.join('', 'srv', 'yodeploy', 'live'))
 
 context = SSL.Context(SSL.SSLv23_METHOD)
-context.use_certificate_file(config.common.ca_bundle)
+context.use_certificate_file(config.common.wild_ssl_certs.services.cert)
+context.use_certificate_file(config.common.wild_ssl_certs.services.key)
 
 
 @flask_app.errorhandler(404)
