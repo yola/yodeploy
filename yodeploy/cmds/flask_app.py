@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import abort, Flask, jsonify, make_response, request
 from OpenSSL import SSL
@@ -9,19 +9,17 @@ from yoconfigurator.base import read_config
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
-from yodeploy.flask_auth import requires_auth
+from yodeploy.cmds.flask_auth import requires_auth
 from yodeploy.deploy import available_applications, deploy
 from yodeploy.repository import get_repository
 
 flask_app = Flask(__name__)
 
 # Set defaults
-config = find_deploy_config(False)
-deploy_settings = load_settings(config)
+deploy_settings = load_settings(find_deploy_config(False))
 repository = get_repository(deploy_settings)
-
-QA = True if deploy_settings.build.environment == 'qa' else False
-config = read_config(os.path.join('.')) if QA else read_config(os.path.join('', 'srv', 'yodeploy', 'live'))
+config = read_config(os.path.join('.'))
+yodeploy_config = config.yodeply
 
 
 @flask_app.errorhandler(404)
@@ -30,7 +28,7 @@ def not_found(error):
 
 
 @flask_app.route('/deploy/<app>/', methods=['GET', 'POST'])
-@requires_auth
+@requires_auth(config)
 def deploy_app(app, version=None, target='master'):
     if app not in available_applications(deploy_settings):
         abort(404)
@@ -44,8 +42,8 @@ def deploy_app(app, version=None, target='master'):
 
 
 @flask_app.route('/deploy/', methods=['GET'])
-@requires_auth
-def get_all_deploy_versions():
+@requires_auth(config)
+def get_all_deployed_versions():
     result = []
     apps = available_applications(deploy_settings)
     for app in apps:
@@ -59,10 +57,8 @@ def get_all_deploy_versions():
 
 
 if __name__ == '__main__':
-    flask_app.ssl_context = 'adhoc'
-    if not QA:
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_certificate_file(config.common.wild_ssl_certs.services.cert)
-        context.use_certificate_file(config.common.wild_ssl_certs.services.key)
-        flask_app.ssl_context = context
-    flask_app.run(port=10000)
+    context = SSL.Context(SSL.TLSv1_2_METHOD)
+    context.use_certificate_file(yodeploy_config.cert)
+    context.use_certificate_file(yodeploy_config.key)
+    flask_app.ssl_context = context
+    flask_app.run(yodeploy_config.port)
