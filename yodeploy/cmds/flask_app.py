@@ -9,7 +9,7 @@ from yoconfigurator.base import read_config
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
-from yodeploy.cmds.flask_auth import requires_auth
+from yodeploy.flask_auth import requires_auth
 from yodeploy.deploy import available_applications, deploy
 from yodeploy.repository import get_repository
 
