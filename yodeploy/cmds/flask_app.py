@@ -35,7 +35,7 @@ def deploy_app(app):
         target = request.form.get('target', 'master')
         version = request.form.get('version')
         deploy(app, target, config, version, deploy_settings)
-    application = Application(app, target, repository, config)
+    application = Application(app, config)
     version = application.live_version
     return jsonify({'application': {'name': app, 'version': version}})
 
