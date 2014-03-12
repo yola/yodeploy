@@ -9,7 +9,7 @@ from yoconfigurator.base import read_config
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
-from yodeploy.flask_auth import requires_auth
+from yodeploy.flask_auth import auth_decorator
 from yodeploy.deploy import available_applications, deploy
 from yodeploy.repository import get_repository
 
@@ -27,12 +27,12 @@ def not_found(error):
 
 
 @flask_app.route('/deploy/<app>/', methods=['GET', 'POST'])
-@requires_auth(config)
-def deploy_app(app, version=None, target='master'):
+@auth_decorator(deploy_settings)
+def deploy_app(app):
     if app not in available_applications(deploy_settings):
         abort(404)
     if request.method == 'POST':
-        target = request.form.get('target')
+        target = request.form.get('target', 'master')
         version = request.form.get('version')
         deploy(app, target, config, version, deploy_settings)
     application = Application(app, target, repository, config)
@@ -41,7 +41,7 @@ def deploy_app(app, version=None, target='master'):
 
 
 @flask_app.route('/deploy/', methods=['GET'])
-@requires_auth(config)
+@auth_decorator(deploy_settings)
 def get_all_deployed_versions():
     result = []
     apps = available_applications(deploy_settings)
