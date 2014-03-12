@@ -69,6 +69,12 @@ def parse_args():
                               default='master',
                               help='The target to examine')
 
+    gc_p = subparsers.add_parser('gc',
+                                 help='Remove old artifacts')
+    gc_p.add_argument('--max-versions', metavar='N',
+                      type=int, default=2,
+                      help='The most versions to leave behind')
+
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Increase verbosity')
     parser.add_argument('-c', '--config', metavar='FILE',
@@ -162,6 +168,12 @@ def do_list_files(opts, repository):
     else:
         print >> sys.stderr, 'No files found'
         sys.exit(1)
+
+
+def do_gc(opts, repository):
+    """Clean up the repository"""
+
+    repository.gc(max_versions=opts.max_versions)
 
 
 def main():
