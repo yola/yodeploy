@@ -1,14 +1,13 @@
 from functools import wraps
 
 from flask import request, Response
-from yoconfigurator.credentials import seeded_auth_token
 
 
 def check_auth(config, username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    return password == seeded_auth_token(username, 'yodeploy', config.common.api_seed)
+    return password == config.server.password
 
 
 def authenticate():

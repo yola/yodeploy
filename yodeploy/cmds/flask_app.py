@@ -19,7 +19,6 @@ flask_app = Flask(__name__)
 deploy_settings = load_settings(find_deploy_config(False))
 repository = get_repository(deploy_settings)
 config = read_config(os.path.join('.'))
-yodeploy_config = config.yodeply
 
 
 @flask_app.errorhandler(404)
@@ -58,7 +57,7 @@ def get_all_deployed_versions():
 
 if __name__ == '__main__':
     context = SSL.Context(SSL.TLSv1_2_METHOD)
-    context.use_certificate_file(yodeploy_config.cert)
-    context.use_certificate_file(yodeploy_config.key)
+    context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
+    context.use_privatekey_file(deploy_settings.server.ssl.key)
     flask_app.ssl_context = context
-    flask_app.run(yodeploy_config.port)
+    flask_app.run(deploy_settings.server.port)
