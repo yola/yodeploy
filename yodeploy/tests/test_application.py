@@ -286,7 +286,7 @@ hooks = Hooks
                        self.tmppath('srv', 'test', 'versions', str(version),
                                     'virtualenv'))
         self.app.gc(2)
-        self.assertEqual(self.app.deployed_versions, ['8', '9'])
+        self.assertEqual(sorted(self.app.deployed_versions), ['8', '9'])
         self.assertEqual(
-            os.listdir(self.tmppath('srv', 'test', 'virtualenvs')),
+            sorted(os.listdir(self.tmppath('srv', 'test', 'virtualenvs'))),
             ['8', '9'])
