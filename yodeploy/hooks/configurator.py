@@ -36,7 +36,7 @@ class ConfiguratedApp(DeployHook):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
-        with LockFile(os.path.join(conf_root, 'deploy.lock')):
+        with LockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
             conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
             try:
                 with self.repository.get('configs', target='master') as f1:

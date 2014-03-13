@@ -63,7 +63,7 @@ class Application(object):
         ve_working = os.path.join(ves_dir, 'unpack')
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        with LockFile(os.path.join(ves_dir, 'deploy.lock')):
+        with LockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
             ve_unpack_root = os.path.join(ve_working, 'virtualenv')
             tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
             log.debug('Deploying hook virtualenv %s', ve_hash)
