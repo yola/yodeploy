@@ -55,24 +55,25 @@ class Application(object):
                                      'deploy', 'requirements.txt')
         ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
         ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
-        ve_dir = os.path.join(self.settings.paths.apps, 'deploy',
-                              'virtualenvs', ve_hash)
+        ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
+                               'virtualenvs')
+        ve_dir = os.path.join(ves_dir, ve_hash)
         if os.path.exists(ve_dir):
             return ve_dir
-        ve_working = os.path.join(self.settings.paths.apps, 'deploy',
-                                  'virtualenvs', 'unpack')
-        ve_unpack_root = os.path.join(ve_working, 'virtualenv')
-        tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
-        log.debug('Deploying hook virtualenv %s', ve_hash)
+        ve_working = os.path.join(ves_dir, 'unpack')
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
-                                        target, tarball)
-        extract_tar(tarball, ve_unpack_root)
-        if os.path.exists(ve_dir):
-            shutil.rmtree(ve_dir)
-        os.rename(ve_unpack_root, ve_dir)
-        return ve_dir
+        with LockFile(os.path.join(ves_dir, 'deploy.lock')):
+            ve_unpack_root = os.path.join(ve_working, 'virtualenv')
+            tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
+            log.debug('Deploying hook virtualenv %s', ve_hash)
+            yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
+                                            target, tarball)
+            extract_tar(tarball, ve_unpack_root)
+            if os.path.exists(ve_dir):
+                shutil.rmtree(ve_dir)
+            os.rename(ve_unpack_root, ve_dir)
+            return ve_dir
 
     def hook(self, hook, target, repository, version):
         '''Run hook in the apps hooks'''
