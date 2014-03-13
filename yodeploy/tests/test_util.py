@@ -5,6 +5,7 @@ import pwd
 import stat
 import subprocess
 import sys
+import threading
 
 from . import unittest, TmpDirTestCase
 from ..util import (LockFile, LockedException, UnlockedException, chown_r,
@@ -64,6 +65,24 @@ class LockFileTest(TmpDirTestCase):
         lf = LockFile(self.tmppath('lockfile'))
         with lf:
             self.assertRaises(LockedException, lf.acquire)
+
+    def test_retries(self):
+        lf1 = LockFile(self.tmppath('lockfile'))
+        lf1.acquire()
+        threading.Timer(0.2, lf1.release).start()
+
+        lf2 = LockFile(self.tmppath('lockfile'))
+        self.assertRaises(LockedException, lf2.acquire)
+
+        lf3 = LockFile(self.tmppath('lockfile'), timeout=0.5)
+        lf3.acquire()
+
+    def test_times_out(self):
+        lf1 = LockFile(self.tmppath('lockfile'))
+        lf1.acquire()
+
+        lf2 = LockFile(self.tmppath('lockfile'), timeout=0.2)
+        self.assertRaises(LockedException, lf2.acquire)
 
 
 class TestChown_R(TmpDirTestCase):

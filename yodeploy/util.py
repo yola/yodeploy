@@ -5,6 +5,7 @@ import logging
 import os
 import pwd
 import shutil
+import time
 import tarfile
 
 log = logging.getLogger(__name__)
@@ -21,12 +22,29 @@ class UnlockedException(Exception):
 class LockFile(object):
     """A simple on-disk Unix lock file.
     Automatically cleans up stale lock files.
+
+    Wait up to timeout seconds, unless timeout is None.
     """
-    def __init__(self, filename):
+    def __init__(self, filename, timeout=None):
         self.filename = filename
+        self.timeout = timeout
         self._f = None
 
     def acquire(self):
+        if not self.timeout:
+            if not self.try_acquire():
+                raise LockedException("Lock unavailable")
+            return
+        start_time = time.time()
+        while time.time() - start_time < self.timeout:
+            if self.try_acquire():
+                break
+            log.debug("Lock unavialible, sleeping...")
+            time.sleep(0.1)
+        else:
+            raise LockedException("Lock unavailable")
+
+    def try_acquire(self):
         try:
             self._f = os.open(self.filename,
                               os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
@@ -37,7 +55,8 @@ class LockFile(object):
         try:
             fcntl.flock(self._f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
-            raise LockedException("Lock unavailable")
+            return False
+        return True
 
     @property
     def held(self):
