@@ -5,7 +5,7 @@ import shutil
 from yoconfigurator.base import read_config, write_config
 from yoconfigurator.smush import config_sources, smush_config
 
-from ..util import LockFile, extract_tar
+from ..util import SpinLockFile, extract_tar
 from .base import DeployHook
 
 log = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class ConfiguratedApp(DeployHook):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
-        with LockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
+        with SpinLockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
             conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
             try:
                 with self.repository.get('configs', target='master') as f1:

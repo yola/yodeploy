@@ -22,29 +22,19 @@ class UnlockedException(Exception):
 class LockFile(object):
     """A simple on-disk Unix lock file.
     Automatically cleans up stale lock files.
-
-    Wait up to timeout seconds, unless timeout is None.
     """
-    def __init__(self, filename, timeout=None):
+    def __init__(self, filename):
         self.filename = filename
-        self.timeout = timeout
         self._f = None
 
     def acquire(self):
-        if not self.timeout:
-            if not self.try_acquire():
-                raise LockedException("Lock unavailable")
-            return
-        start_time = time.time()
-        while time.time() - start_time < self.timeout:
-            if self.try_acquire():
-                break
-            log.debug("Lock unavialible, sleeping...")
-            time.sleep(0.1)
-        else:
+        if not self.try_acquire():
             raise LockedException("Lock unavailable")
 
     def try_acquire(self):
+        """
+        Attempt to acquire the lock. Returns boolean result
+        """
         try:
             self._f = os.open(self.filename,
                               os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
@@ -75,6 +65,29 @@ class LockFile(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.release()
+
+
+class SpinLockFile(LockFile):
+    """
+    A LockFile that will spin up to timeout seconds
+    """
+    def __init__(self, filename, timeout):
+        self.timeout = timeout
+        super(SpinLockFile, self).__init__(filename)
+
+    def acquire(self):
+        start_time = time.time()
+        logged = False
+        while time.time() - start_time < self.timeout:
+            if self.try_acquire():
+                break
+            if not logged:
+                log.debug("Lock unavialible, retrying for %i seconds...",
+                          self.timeout)
+                logged = True
+            time.sleep(0.1)
+        else:
+            raise LockedException("Lock unavailable. Timed out waiting.")
 
 
 def chown_r(path, user, group):

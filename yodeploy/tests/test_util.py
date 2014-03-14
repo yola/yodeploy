@@ -8,8 +8,8 @@ import sys
 import threading
 
 from . import unittest, TmpDirTestCase
-from ..util import (LockFile, LockedException, UnlockedException, chown_r,
-                    touch, extract_tar, delete_dir_content)
+from ..util import (LockFile, SpinLockFile, LockedException, UnlockedException,
+                    chown_r, touch, extract_tar, delete_dir_content)
 
 
 class LockFileTest(TmpDirTestCase):
@@ -66,23 +66,25 @@ class LockFileTest(TmpDirTestCase):
         with lf:
             self.assertRaises(LockedException, lf.acquire)
 
+
+class SpinLockFileTest(TmpDirTestCase):
     def test_retries(self):
-        lf1 = LockFile(self.tmppath('lockfile'))
-        lf1.acquire()
-        threading.Timer(0.2, lf1.release).start()
+        lf = LockFile(self.tmppath('lockfile'))
+        lf.acquire()
+        threading.Timer(0.2, lf.release).start()
 
-        lf2 = LockFile(self.tmppath('lockfile'))
-        self.assertRaises(LockedException, lf2.acquire)
+        slf = SpinLockFile(self.tmppath('lockfile'), timeout=0.5)
 
-        lf3 = LockFile(self.tmppath('lockfile'), timeout=0.5)
-        lf3.acquire()
+        self.assertTrue(lf.held)
+        slf.acquire()
+        self.assertFalse(lf.held)
 
     def test_times_out(self):
-        lf1 = LockFile(self.tmppath('lockfile'))
-        lf1.acquire()
+        lf = LockFile(self.tmppath('lockfile'))
+        lf.acquire()
 
-        lf2 = LockFile(self.tmppath('lockfile'), timeout=0.2)
-        self.assertRaises(LockedException, lf2.acquire)
+        slf = SpinLockFile(self.tmppath('lockfile'), timeout=0.2)
+        self.assertRaises(LockedException, slf.acquire)
 
 
 class TestChown_R(TmpDirTestCase):

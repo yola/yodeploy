@@ -8,7 +8,7 @@ import yodeploy.config
 import yodeploy.ipc_logging
 import yodeploy.virtualenv
 from yodeploy.repository import version_sort_key
-from yodeploy.util import LockFile, extract_tar
+from yodeploy.util import LockFile, SpinLockFile, extract_tar
 
 
 log = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class Application(object):
         ve_working = os.path.join(ves_dir, 'unpack')
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
-        with LockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
+        with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
             ve_unpack_root = os.path.join(ve_working, 'virtualenv')
             tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
             log.debug('Deploying hook virtualenv %s', ve_hash)
