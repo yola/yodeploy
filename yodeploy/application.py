@@ -7,8 +7,9 @@ import subprocess
 import yodeploy.config
 import yodeploy.ipc_logging
 import yodeploy.virtualenv
+from yodeploy.locking import LockFile, SpinLockFile
 from yodeploy.repository import version_sort_key
-from yodeploy.util import LockFile, SpinLockFile, extract_tar
+from yodeploy.util import extract_tar
 
 
 log = logging.getLogger(__name__)

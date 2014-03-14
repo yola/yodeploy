@@ -5,7 +5,8 @@ import shutil
 from yoconfigurator.base import read_config, write_config
 from yoconfigurator.smush import config_sources, smush_config
 
-from ..util import SpinLockFile, extract_tar
+from ..locking import SpinLockFile
+from ..util import extract_tar
 from .base import DeployHook
 
 log = logging.getLogger(__name__)

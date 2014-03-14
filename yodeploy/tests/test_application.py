@@ -3,8 +3,8 @@ import shutil
 import time
 
 from ..application import Application
+from ..locking import LockedException
 from ..repository import LocalRepositoryStore, Repository
-from ..util import LockedException
 from ..virtualenv import ve_version, sha224sum, create_ve, upload_ve
 
 from . import TmpDirTestCase
