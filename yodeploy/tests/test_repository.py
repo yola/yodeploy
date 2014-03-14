@@ -1,8 +1,8 @@
 from StringIO import StringIO
 
-from ..repository import (version_sort_key, RepositoryFile, Repository,
-                          LocalRepositoryStore)
-from . import unittest, TmpDirTestCase
+from yodeploy.repository import (version_sort_key, RepositoryFile, Repository,
+                                 LocalRepositoryStore)
+from yodeploy.tests import unittest, TmpDirTestCase
 
 
 class TestVersionSortKey(unittest.TestCase):

@@ -1,8 +1,8 @@
 import threading
 
-from . import TmpDirTestCase
-from ..locking import (LockFile, LockedException, SpinLockFile,
-                       UnlockedException)
+from yodeploy.tests import TmpDirTestCase
+from yodeploy.locking import (LockFile, LockedException, SpinLockFile,
+                              UnlockedException)
 
 
 class LockFileTest(TmpDirTestCase):

@@ -1,9 +1,9 @@
 import logging
 import os
 
-from .base import DeployHook
-from ..util import extract_tar
-from ..virtualenv import ve_version, sha224sum, download_ve
+from yodeploy.hooks.base import DeployHook
+from yodeploy.util import extract_tar
+from yodeploy.virtualenv import ve_version, sha224sum, download_ve
 
 log = logging.getLogger(__name__)
 

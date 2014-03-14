@@ -7,8 +7,8 @@ import subprocess
 import sys
 import time
 
-from .configurator import ConfiguratedApp
-from .templating import TemplatedApp
+from yodeploy.hooks.configurator import ConfiguratedApp
+from yodeploy.hooks.templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)

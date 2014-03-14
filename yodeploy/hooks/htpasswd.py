@@ -4,7 +4,8 @@ import os
 import random
 
 from yoconfigurator.credentials import seeded_auth_token
-from .configurator import ConfiguratedApp
+
+from yodeploy.hooks.configurator import ConfiguratedApp
 
 
 log = logging.getLogger(__name__)
