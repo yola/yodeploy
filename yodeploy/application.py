@@ -64,9 +64,9 @@ class Application(object):
         ve_working = os.path.join(ves_dir, 'unpack')
         if not os.path.exists(ve_working):
             os.makedirs(ve_working)
+        ve_unpack_root = os.path.join(ve_working, 'virtualenv')
+        tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
         with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
-            ve_unpack_root = os.path.join(ve_working, 'virtualenv')
-            tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
             log.debug('Deploying hook virtualenv %s', ve_hash)
             yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
                                             target, tarball)
@@ -74,7 +74,7 @@ class Application(object):
             if os.path.exists(ve_dir):
                 shutil.rmtree(ve_dir)
             os.rename(ve_unpack_root, ve_dir)
-            return ve_dir
+        return ve_dir
 
     def hook(self, hook, target, repository, version):
         '''Run hook in the apps hooks'''

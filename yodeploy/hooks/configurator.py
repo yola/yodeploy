@@ -37,8 +37,8 @@ class ConfiguratedApp(DeployHook):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
+        conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
         with SpinLockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
-            conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
             try:
                 with self.repository.get('configs', target='master') as f1:
                     with open(conf_tarball, 'w') as f2:
@@ -61,7 +61,7 @@ class ConfiguratedApp(DeployHook):
                                      configs_dirs, app_conf_dir)
             config = smush_config(
                 sources, initial={'yoconfigurator': {'app': self.app}})
-            write_config(config, self.deploy_dir)
+        write_config(config, self.deploy_dir)
 
     def read_config(self):
         return read_config(self.deploy_dir)
