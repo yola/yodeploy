@@ -6,8 +6,8 @@ import stat
 import subprocess
 import sys
 
-from . import unittest, TmpDirTestCase
-from ..util import chown_r, touch, extract_tar, delete_dir_content
+from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.util import chown_r, touch, extract_tar, delete_dir_content
 
 
 class TestChown_R(TmpDirTestCase):

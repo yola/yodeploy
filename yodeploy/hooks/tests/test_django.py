@@ -1,5 +1,5 @@
 import unittest
-from ..django import DjangoApp
+from yodeploy.hooks.django import DjangoApp
 
 
 class TestDjangoHook(unittest.TestCase):

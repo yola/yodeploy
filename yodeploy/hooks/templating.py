@@ -3,7 +3,7 @@ import os
 
 import tempita
 
-from .base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 log = logging.getLogger(__name__)

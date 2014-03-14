@@ -1,6 +1,6 @@
 import unittest
 
-from ..base import DeployHook
+from yodeploy.hooks.base import DeployHook
 
 
 class TestDeployHook(unittest.TestCase):
