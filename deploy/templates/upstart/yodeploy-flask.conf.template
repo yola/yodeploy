@@ -8,7 +8,7 @@ stop on runlevel [!2345]
 # http://superuser.com/a/234541
 exec su -s /bin/sh -c 'exec "$0" "$@"' nobody -- \
     {{conf.deploy.root}}/yodeploy/live/virtualenv/bin/python \
-    {{conf.deploy.root}}/yodeploy/live/yodeploy/cmds/flask_app
+    {{conf.deploy.root}}/yodeploy/live/yodeploy/cmds/yodeploy_server
 
 respawn
 respawn limit 10 5
