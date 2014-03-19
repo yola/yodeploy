@@ -59,5 +59,5 @@ if __name__ == '__main__':
     context = SSL.Context(SSL.TLSv1_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
-    flask_app.ssl_context = context
-    flask_app.run(host='0.0.0.0', port=deploy_settings.server.port)
+    flask_app.run(host='0.0.0.0', port=deploy_settings.server.port,
+                  ssl_context=context)
