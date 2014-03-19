@@ -5,7 +5,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import abort, Flask, jsonify, make_response, request
 from OpenSSL import SSL
-from yoconfigurator.base import read_config
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
