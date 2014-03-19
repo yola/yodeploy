@@ -2,12 +2,11 @@ import os
 import shutil
 import time
 
-from ..application import Application
-from ..repository import LocalRepositoryStore, Repository
-from ..util import LockedException
-from ..virtualenv import ve_version, sha224sum, create_ve, upload_ve
-
-from . import TmpDirTestCase
+from yodeploy.application import Application
+from yodeploy.locking import LockedException
+from yodeploy.repository import LocalRepositoryStore, Repository
+from yodeploy.tests import TmpDirTestCase
+from yodeploy.virtualenv import create_ve, sha224sum, upload_ve, ve_version
 
 
 class ApplicationTest(TmpDirTestCase):
@@ -288,5 +287,5 @@ hooks = Hooks
         self.app.gc(2)
         self.assertEqual(self.app.deployed_versions, ['8', '9'])
         self.assertEqual(
-            os.listdir(self.tmppath('srv', 'test', 'virtualenvs')),
+            sorted(os.listdir(self.tmppath('srv', 'test', 'virtualenvs'))),
             ['8', '9'])

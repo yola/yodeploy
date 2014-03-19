@@ -1,5 +1,3 @@
-import errno
-import fcntl
 import grp
 import logging
 import os
@@ -8,54 +6,6 @@ import shutil
 import tarfile
 
 log = logging.getLogger(__name__)
-
-
-class LockedException(Exception):
-    pass
-
-
-class UnlockedException(Exception):
-    pass
-
-
-class LockFile(object):
-    """A simple on-disk Unix lock file.
-    Automatically cleans up stale lock files.
-    """
-    def __init__(self, filename):
-        self.filename = filename
-        self._f = None
-
-    def acquire(self):
-        try:
-            self._f = os.open(self.filename,
-                              os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                raise
-            self._f = os.open(self.filename, os.O_WRONLY)
-        try:
-            fcntl.flock(self._f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError:
-            raise LockedException("Lock unavailable")
-
-    @property
-    def held(self):
-        return self._f is not None
-
-    def release(self):
-        if not self.held:
-            raise UnlockedException("We don't hold a lock")
-        fcntl.flock(self._f, fcntl.LOCK_UN)
-        os.unlink(self.filename)
-        os.close(self._f)
-        self._f = None
-
-    def __enter__(self):
-        self.acquire()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.release()
 
 
 def chown_r(path, user, group):

@@ -5,8 +5,9 @@ import shutil
 from yoconfigurator.base import read_config, write_config
 from yoconfigurator.smush import config_sources, smush_config
 
-from ..util import extract_tar
-from .base import DeployHook
+from yodeploy.hooks.base import DeployHook
+from yodeploy.locking import SpinLockFile
+from yodeploy.util import extract_tar
 
 log = logging.getLogger(__name__)
 
@@ -37,27 +38,29 @@ class ConfiguratedApp(DeployHook):
         if not os.path.exists(conf_root):
             os.mkdir(conf_root)
         conf_tarball = os.path.join(conf_root, 'configs.tar.gz')
-        try:
-            with self.repository.get('configs', target='master') as f1:
-                with open(conf_tarball, 'w') as f2:
-                    shutil.copyfileobj(f1, f2)
-        except KeyError:
-            raise Exception("No configs in artifacts repository")
+        with SpinLockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
+            try:
+                with self.repository.get('configs', target='master') as f1:
+                    with open(conf_tarball, 'w') as f2:
+                        shutil.copyfileobj(f1, f2)
+            except KeyError:
+                raise Exception("No configs in artifacts repository")
 
-        configs = os.path.join(conf_root, 'configs')
-        if os.path.exists(configs):
-            shutil.rmtree(configs)
+            configs = os.path.join(conf_root, 'configs')
+            if os.path.exists(configs):
+                shutil.rmtree(configs)
 
-        extract_tar(conf_tarball, configs)
-        os.unlink(conf_tarball)
+            extract_tar(conf_tarball, configs)
+            os.unlink(conf_tarball)
 
-        configs_dirs = [configs] + self.settings.deployconfigs.overrides
-        app_conf_dir = self.deploy_path('deploy', 'configuration')
-        sources = config_sources(self.app, self.settings.artifacts.environment,
-                                 self.settings.artifacts.cluster,
-                                 configs_dirs, app_conf_dir)
-        config = smush_config(sources,
-                              initial={'yoconfigurator': {'app': self.app}})
+            configs_dirs = [configs] + self.settings.deployconfigs.overrides
+            app_conf_dir = self.deploy_path('deploy', 'configuration')
+            sources = config_sources(self.app,
+                                     self.settings.artifacts.environment,
+                                     self.settings.artifacts.cluster,
+                                     configs_dirs, app_conf_dir)
+            config = smush_config(
+                sources, initial={'yoconfigurator': {'app': self.app}})
         write_config(config, self.deploy_dir)
 
     def read_config(self):
