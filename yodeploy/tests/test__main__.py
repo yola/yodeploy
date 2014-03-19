@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-from . import TmpDirTestCase
+from yodeploy.tests import TmpDirTestCase
 
 
 class TestHookery(TmpDirTestCase):

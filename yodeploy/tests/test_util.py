@@ -6,52 +6,8 @@ import stat
 import subprocess
 import sys
 
-from . import unittest, TmpDirTestCase
-from ..util import (LockFile, LockedException, UnlockedException, chown_r,
-                    touch, extract_tar)
-
-
-class LockFileTest(TmpDirTestCase):
-    def test_creation_deletion(self):
-        lf = LockFile(self.tmppath('lockfile'))
-        lf.acquire()
-        self.assertTMPPExists('lockfile')
-        lf.release()
-        self.assertNotTMPPExists('lockfile')
-
-    def test_stale_lock(self):
-        lf = LockFile(self.tmppath('lockfile'))
-        open(self.tmppath('lockfile'), 'w').close()
-        lf.acquire()
-        lf.release()
-        self.assertNotTMPPExists('lockfile')
-
-    def test_already_acquired(self):
-        lf = LockFile(self.tmppath('lockfile'))
-        lf.acquire()
-        self.assertRaises(LockedException, lf.acquire)
-        lf.release()
-
-    def test_already_released(self):
-        lf = LockFile(self.tmppath('lockfile'))
-        self.assertRaises(UnlockedException, lf.release)
-        lf.acquire()
-        lf.release()
-        self.assertRaises(UnlockedException, lf.release)
-
-    def test_duelling(self):
-        lf1 = LockFile(self.tmppath('lockfile'))
-        lf2 = LockFile(self.tmppath('lockfile'))
-        lf1.acquire()
-        self.assertRaises(LockedException, lf2.acquire)
-        lf1.release()
-        lf2.acquire()
-        self.assertRaises(LockedException, lf1.acquire)
-        lf2.release()
-
-    def test_uprooted(self):
-        lf = LockFile(self.tmppath('foo/lockfile'))
-        self.assertRaises(OSError, lf.acquire)
+from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.util import chown_r, touch, extract_tar, delete_dir_content
 
 
 class TestChown_R(TmpDirTestCase):
@@ -111,6 +67,7 @@ class TestExtractTar(TmpDirTestCase):
     @unittest.skipIf('fakeroot' not in itertools.chain.from_iterable(
             os.listdir(component)
             for component in os.environ['PATH'].split(os.pathsep)
+            if os.path.isdir(component)
         ), "Test requires fakeroot")
     def test_permission_squash(self):
         self.create_tar('test.tar.gz', 'foo/bar')
@@ -131,3 +88,15 @@ class TestExtractTar(TmpDirTestCase):
             ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
                  self.tmppath('extracted/bar'))
         ), env=env)
+
+
+class TestDelete_Dir_Content(TmpDirTestCase):
+    def test_simple(self):
+        f = self.tmppath('test.txt')
+        touch(f)
+        d = self.mkdir('foo', 'bar')
+        self.assertTrue(os.path.exists(f))
+        self.assertTrue(os.path.exists(d))
+        delete_dir_content(self.tmppath())
+        self.assertFalse(os.path.exists(f))
+        self.assertFalse(os.path.exists(d))

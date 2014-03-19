@@ -58,7 +58,6 @@ class ThreadedLogStreamServer(SocketServer.ThreadingMixIn,
         self.socket, self.remote_socket = socket.socketpair(socket.AF_UNIX,
                                                             socket.SOCK_STREAM)
         self.RequestHandlerClass = LoggingSocketRequestHandler
-        self.daemon_threads = True
         self.process_request(self.socket, None)
 
     def shutdown(self):

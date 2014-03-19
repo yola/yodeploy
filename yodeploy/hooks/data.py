@@ -1,8 +1,8 @@
 import logging
 import os
 
+from yodeploy.hooks.base import DeployHook
 from yodeploy.util import chown_r
-from .base import DeployHook
 
 log = logging.getLogger(__name__)
 

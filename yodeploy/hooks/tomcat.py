@@ -7,8 +7,8 @@ import subprocess
 import sys
 import time
 
-from .configurator import ConfiguratedApp
-from .templating import TemplatedApp
+from yodeploy.hooks.configurator import ConfiguratedApp
+from yodeploy.hooks.templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
     vhost_snippet_path = '/etc/apache2/yola.d/services'
     vhost_path = '/etc/apache2/sites-enabled'
     parallel_deploy_timeout = 60
+    database_migration_class = 'com.yola.yodeploy.flywaydb.Migrator'
 
     def prepare(self):
         super(TomcatServlet, self).prepare()
@@ -40,7 +41,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         subprocess.check_call(('java', '-cp',
             ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
                       self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
-            'com.yola.yodeploy.flywaydb.Migrator'))
+            self.database_migration_class))
 
     def deployed(self):
         super(TomcatServlet, self).deployed()
@@ -75,6 +76,14 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         version = version.rstrip().replace(' ', '0')
 
         deployed = self._deployed_versions()
+
+        previously_deployed = set(deployed)
+        if not previously_deployed:
+            # Give the initial deploy an artificially low version, so it will
+            # be replaced by the first local build in an integration
+            # environment.
+            version = '0' * 10
+
         redeploys = sorted(name for name in deployed
                            if name.startswith(version))
         if redeploys:
@@ -88,6 +97,7 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
         uid = pwd.getpwnam('tomcat7').pw_uid
+        os.chown(contexts, uid, -1)
 
         # Build a hard linkfarm in the tomcat-contexts directory.
         # Copy the configuration XML files, so that tomcat sees that they are
@@ -110,10 +120,14 @@ class TomcatServlet(ConfiguratedApp, TemplatedApp):
                 shutil.copyfile(src, dst)
                 os.chown(dst, uid, -1)
 
+        if not previously_deployed:
+            log.info('No existing versions, assuming we have successfully '
+                     'deployed')
+            return
+
         log.info('Waiting %is for tomcat to deploy the new version (%s), '
                  'and clean up an old one...',
                  self.parallel_deploy_timeout, version)
-        previously_deployed = set(deployed)
         for i in range(self.parallel_deploy_timeout):
             deployed = set(self._deployed_versions())
             if len(previously_deployed - deployed) >= 1:

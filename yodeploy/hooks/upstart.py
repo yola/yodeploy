@@ -3,7 +3,7 @@ import glob
 import logging
 import subprocess
 
-from .templating import TemplatedApp
+from yodeploy.hooks.templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)

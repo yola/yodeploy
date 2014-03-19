@@ -3,10 +3,10 @@ import os
 import subprocess
 import sys
 
+from yodeploy.hooks.configurator import ConfiguratedApp
+from yodeploy.hooks.python import PythonApp
+from yodeploy.hooks.templating import TemplatedApp
 from yodeploy.util import chown_r, touch
-from .configurator import ConfiguratedApp
-from .python import PythonApp
-from .templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)

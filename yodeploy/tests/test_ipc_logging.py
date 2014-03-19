@@ -7,9 +7,10 @@ import struct
 import subprocess
 import sys
 
-from . import unittest, TmpDirTestCase
-from ..ipc_logging import (ExistingSocketHandler, LoggingSocketRequestHandler,
-                           ThreadedLogStreamServer)
+from yodeploy.ipc_logging import (
+    ExistingSocketHandler, LoggingSocketRequestHandler,
+    ThreadedLogStreamServer)
+from yodeploy.tests import unittest, TmpDirTestCase
 
 
 class TestExistingSocketHandler(unittest.TestCase):

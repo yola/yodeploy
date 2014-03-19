@@ -18,11 +18,10 @@ log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 def main():
     parser = argparse.ArgumentParser(
-            description="Prepares virtualenv bundles. "
-                        "If a virtualenv with the right hash already exists "
-                        "in the store, it'll be downloaded and extracted, "
-                        "unless --force is specified.",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description="Prepares virtualenv bundles. If a virtualenv with the "
+        "right hash already exists in the store, it'll be downloaded and "
+        "extracted, unless --force is specified.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -49,10 +48,13 @@ def main():
     parser.add_argument('-v', '--verbose',
                         action='store_true',
                         help='Increase verbosity')
+    parser.add_argument('-r', '--requirement', metavar='FILE',
+                        default='requirements.txt',
+                        help='Install from the given requirements file.')
 
     options = parser.parse_args()
-    if not os.path.isfile('requirements.txt'):
-        parser.error('requirements.txt does not exist')
+    if not os.path.isfile(options.requirement):
+        parser.error('%s does not exist' % options.requirement)
 
     if options.config is None:
         # Yes, it was a default, but we want to prent the error
@@ -71,7 +73,7 @@ def main():
     repository = yodeploy.repository.get_repository(deploy_settings)
 
     version = yodeploy.virtualenv.ve_version(
-            yodeploy.virtualenv.sha224sum('requirements.txt'))
+        yodeploy.virtualenv.sha224sum(options.requirement))
     if options.hash:
         print version
         return
@@ -101,11 +103,15 @@ def main():
             yodeploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
-        yodeploy.virtualenv.create_ve('.', pypi=deploy_settings.build.pypi)
+        yodeploy.virtualenv.create_ve(
+            '.',
+            pypi=deploy_settings.build.pypi,
+            req_file=options.requirement)
 
     if options.upload:
-        yodeploy.virtualenv.upload_ve(repository, options.app, version,
-                options.target, overwrite=options.force)
+        yodeploy.virtualenv.upload_ve(
+            repository, options.app, version,
+            options.target, overwrite=options.force)
 
 
 if __name__ == '__main__':

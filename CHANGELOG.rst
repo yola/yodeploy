@@ -1,6 +1,45 @@
 Change Log
 ==========
 
+0.4.15
+-----
+
+* Support `build-virtualenv -r dev_requirements.txt`
+* Add `gc` actions to `spade` and `deploy`.
+* Lock shared directories during deploy.
+
+0.4.14
+-----
+
+* Address the database_migration_class object correctly.
+
+0.4.13
+-----
+
+* BROKEN - Address the database_migration_class object correctly.
+
+0.4.12
+-----
+
+* Update `delete_dir_content` to handle missing files
+
+0.4.11
+-----
+
+* Deploy tomcat7 apps for the first time, without breaking.
+* Allow overriding None in deploy configs (yoconfigurator 0.4.3)
+
+0.4.10
+-----
+
+* Add `delete_dir_content` to util
+
+0.4.8
+-----
+
+* Undeploy old versions in Tomcat 7.
+  (On Ubuntu 12.04, requires tomcat7 from the Yola PPA)
+
 0.4.6
 -----
 
