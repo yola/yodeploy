@@ -16,9 +16,9 @@ from yodeploy.repository import get_repository
 flask_app = Flask(__name__)
 
 # Set defaults
-deploy_settings = load_settings(find_deploy_config(False))
+deploy_settings_fn = find_deploy_config(False)
+deploy_settings = load_settings(deploy_settings_fn)
 repository = get_repository(deploy_settings)
-config = read_config(os.path.join('.'))
 
 
 @flask_app.errorhandler(404)
@@ -34,8 +34,8 @@ def deploy_app(app):
     if request.method == 'POST':
         target = request.form.get('target', 'master')
         version = request.form.get('version')
-        deploy(app, target, config, version, deploy_settings)
-    application = Application(app, config)
+        deploy(app, target, deploy_settings_fn, version, deploy_settings)
+    application = Application(app, deploy_settings_fn)
     version = application.live_version
     return jsonify({'application': {'name': app, 'version': version}})
 
@@ -46,7 +46,7 @@ def get_all_deployed_versions():
     result = []
     apps = available_applications(deploy_settings)
     for app in apps:
-        application = Application(app=app, target='master', repository=repository, settings_file=config)
+        application = Application(app, deploy_settings_fn)
         version = application.live_version
         result.append({
             'name': app,
