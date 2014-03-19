@@ -1,9 +1,12 @@
 Change Log
 ==========
+
 0.4.15
 -----
 
 * Support `build-virtualenv -r dev_requirements.txt`
+* Add `gc` actions to `spade` and `deploy`.
+* Lock shared directories during deploy.
 
 0.4.14
 -----
