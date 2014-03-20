@@ -9,7 +9,7 @@ from OpenSSL import SSL
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
 from yodeploy.flask_auth import auth_decorator
-from yodeploy.deploy import available_applications
+from yodeploy.deploy import available_applications, deploy
 from yodeploy.repository import get_repository
 
 flask_app = Flask(__name__)
@@ -30,12 +30,11 @@ def not_found(error):
 def deploy_app(app):
     if app not in available_applications(deploy_settings):
         abort(404)
-    application = Application(app, deploy_settings_fn)
     if request.method == 'POST':
         target = request.form.get('target', 'master')
         version = request.form.get('version')
-        repository = get_repository(deploy_settings)
-        application.deploy(target, repository, version)
+        deploy(app, target, deploy_settings_fn, version, deploy_settings)
+    application = Application(app, deploy_settings_fn)
     version = application.live_version
     return jsonify({'application': {'name': app, 'version': version}})
 
