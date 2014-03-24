@@ -33,9 +33,13 @@ def deploy_app(app):
     if app not in available_applications(deploy_settings):
         abort(404)
     if request.method == 'POST':
+        log.debug('Request to deploy %s', app)
+        if request.form:
+            log.debug('Extra arguments: %s', request.form)
         target = request.form.get('target', 'master')
         version = request.form.get('version')
         deploy(app, target, deploy_settings_fn, version, deploy_settings)
+        log.info('Version %s of %s successfully deployed', version, app)
     application = Application(app, deploy_settings_fn)
     version = application.live_version
     return jsonify({'application': {'name': app, 'version': version}})
@@ -44,6 +48,7 @@ def deploy_app(app):
 @flask_app.route('/deploy/', methods=['GET'])
 @auth_decorator(deploy_settings)
 def get_all_deployed_versions():
+    log.debug('Preparing available applications')
     result = []
     apps = available_applications(deploy_settings)
     for app in apps:
@@ -53,6 +58,7 @@ def get_all_deployed_versions():
             'name': app,
             'version': version
         })
+    log.debug('%s applications available for deploying', len(result))
     return jsonify({'applications': result})
 
 
@@ -62,5 +68,6 @@ if __name__ == '__main__':
     context = SSL.Context(SSL.TLSv1_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
+    log.debug('Starting yodeploy server')
     flask_app.run(host='0.0.0.0', port=deploy_settings.server.port,
                   ssl_context=context)
