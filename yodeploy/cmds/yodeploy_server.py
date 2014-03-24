@@ -3,13 +3,15 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+import logging
+
 from flask import abort, Flask, jsonify, make_response, request
 from OpenSSL import SSL
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
 from yodeploy.flask_auth import auth_decorator
-from yodeploy.deploy import available_applications, deploy
+from yodeploy.deploy import available_applications, deploy, configure_logging
 from yodeploy.repository import get_repository
 
 flask_app = Flask(__name__)
@@ -55,6 +57,8 @@ def get_all_deployed_versions():
 
 
 if __name__ == '__main__':
+    configure_logging(False, deploy_settings.logging)
+    log = logging.getLogger('yodeploy')
     context = SSL.Context(SSL.TLSv1_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
