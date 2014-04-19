@@ -47,7 +47,6 @@ def deploy_app(app):
 @flask_app.route('/deploy/', methods=['GET'])
 @auth_decorator(deploy_settings)
 def get_all_deployed_versions():
-    log.debug('Preparing available applications')
     result = []
     apps = available_applications(deploy_settings)
     for app in apps:
@@ -57,7 +56,6 @@ def get_all_deployed_versions():
             'name': app,
             'version': version
         })
-    log.debug('%s applications available for deploying', len(result))
     return jsonify({'applications': result})
 
 
