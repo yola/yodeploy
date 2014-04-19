@@ -16,8 +16,7 @@ from yodeploy.repository import get_repository
 
 flask_app = Flask(__name__)
 
-# Set defaults
-deploy_settings_fn = find_deploy_config(False)
+deploy_settings_fn = find_deploy_config()
 deploy_settings = load_settings(deploy_settings_fn)
 repository = get_repository(deploy_settings)
 
