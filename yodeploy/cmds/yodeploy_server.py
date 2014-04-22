@@ -74,7 +74,8 @@ def parse_args():
                         default='0.0.0.0')
     parser.add_argument('--port', '-p', type=int,
                         default=deploy_settings.server.port,
-                        help='Set port for Flask server.')
+                        help='Port to listen on (default: %s)' %
+                             deploy_settings.server.port)
     parser.add_argument('--debug', '-d', action='store_true',
                         help='Increase verbosity')
 
