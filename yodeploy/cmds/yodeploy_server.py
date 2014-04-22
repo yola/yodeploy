@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import sys
@@ -66,12 +67,29 @@ def get_all_deployed_versions():
     return jsonify({'applications': result})
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Yodeploy server")
+
+    parser.add_argument('--host', '-h', help='The target to deploy from',
+                        default='0.0.0.0')
+    parser.add_argument('--port', '-p', type=int,
+                        default=deploy_settings.server.port,
+                        help='Set port for Flask server.')
+    parser.add_argument('--debug', '-d', action='store_true',
+                        help='Increase verbosity')
+
+    opts = parser.parse_args()
+
+    return opts
+
+
 if __name__ == '__main__':
-    configure_logging(False, deploy_settings.logging)
+    opts = parse_args()
+    configure_logging(opts.debug, deploy_settings.logging)
     log = logging.getLogger('yodeploy')
     context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
     log.debug('Starting yodeploy server')
-    flask_app.run(host='0.0.0.0', port=deploy_settings.server.port,
+    flask_app.run(host=opts.host, port=opts.port,
                   ssl_context=context)
