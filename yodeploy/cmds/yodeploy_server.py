@@ -69,7 +69,7 @@ def get_all_deployed_versions():
 if __name__ == '__main__':
     configure_logging(False, deploy_settings.logging)
     log = logging.getLogger('yodeploy')
-    context = SSL.Context(SSL.TLSv1_METHOD)
+    context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
     log.debug('Starting yodeploy server')
