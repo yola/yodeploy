@@ -50,12 +50,19 @@ def get_all_deployed_versions():
     result = []
     apps = available_applications(deploy_settings)
     for app in apps:
-        application = Application(app, deploy_settings_fn)
-        version = application.live_version
-        result.append({
-            'name': app,
-            'version': version
-        })
+        appdir = os.path.join(deploy_settings.paths.apps, app)
+        if os.path.isdir(appdir):
+            application = Application(app, deploy_settings_fn)
+            version = application.live_version
+            result.append({
+                'name': app,
+                'version': version
+            })
+        else:
+            result.append({
+                'name': app,
+                'version': 0
+            })
     return jsonify({'applications': result})
 
 
