@@ -7,7 +7,7 @@ def check_auth(config, username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    return password == config.server.password
+    return username == 'fieldhq' and password == config.server.password
 
 
 def authenticate():
