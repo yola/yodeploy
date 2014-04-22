@@ -70,7 +70,7 @@ def get_all_deployed_versions():
 def parse_args():
     parser = argparse.ArgumentParser(description="Yodeploy server")
 
-    parser.add_argument('--host', '-h', help='The target to deploy from',
+    parser.add_argument('--listen', '-l', help='Bind to this IP address',
                         default='0.0.0.0')
     parser.add_argument('--port', '-p', type=int,
                         default=deploy_settings.server.port,
