@@ -5,6 +5,7 @@ Change Log
 -----
 
 * Add a data_dir @property to the DataDirApp hook so it can be used elsewhere
+* Update yoconfigurator to 0.4.4
 
 0.4.15
 -----
