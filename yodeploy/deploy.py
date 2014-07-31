@@ -94,7 +94,7 @@ def report(app, action, old_version, version, deploy_settings):
                                   headers={'x-api-key': service_settings.api_key})
 
         except requests.exceptions.HTTPError:
-            log.error('Error posting report to campfire')
+            log.error('Error posting report to newrelic')
 
     if 'webhook' in services:
         log.info('Sending deploy information to webhook')
