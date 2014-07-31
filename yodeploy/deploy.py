@@ -90,11 +90,13 @@ def report(app, action, old_version, version, deploy_settings):
             }
 
             response = requests.post(service_settings.deploy_url,
-                                  data=deployment_data,
-                                  headers={'x-api-key': service_settings.api_key})
+                                     data=deployment_data,
+                                     headers={
+                                         'x-api-key': service_settings.api_key
+                                     })
 
-        except requests.exceptions.HTTPError:
-            log.error('Error posting report to newrelic')
+        except RequestException as e:
+            log.error('Error posting report to newrelic: %s', e)
 
     if 'webhook' in services:
         log.info('Sending deploy information to webhook')
