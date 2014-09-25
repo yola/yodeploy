@@ -16,11 +16,7 @@ def chown_r(path, user, group):
     for root, dirs, files in os.walk(path):
         os.chown(root, uid, gid)
         for fn in files:
-            path = os.path.join(root, fn)
-            try:
-                os.chown(path, uid, gid)
-            except OSError:
-                log.warn("Unable to chown %s" % path)
+            os.chown(os.path.join(root, fn), uid, gid)
 
 
 def touch(path, user=None, group=None, perm=None):
