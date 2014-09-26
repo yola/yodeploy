@@ -24,12 +24,14 @@ class DataDirApp(DeployHook):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        data_dir = os.path.join(self.root, 'data')
-        if not os.path.exists(data_dir):
-            os.mkdir(data_dir)
-        chown_r(data_dir, 'www-data', 'www-data')
+        if not os.path.exists(self.data_dir):
+            os.mkdir(self.data_dir)
+        chown_r(self.data_dir, 'www-data', 'www-data')
 
     def datadir_deployed(self):
-        data_dir = os.path.join(self.root, 'data')
-        if os.path.exists(data_dir):
-            chown_r(data_dir, 'www-data', 'www-data')
+        if os.path.exists(self.data_dir):
+            chown_r(self.data_dir, 'www-data', 'www-data')
+
+    @property
+    def data_dir(self):
+        return os.path.join(self.root, 'data')

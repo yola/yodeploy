@@ -89,7 +89,7 @@ class Builder(object):
             try:
                 check_call('scripts/test.sh', env=env)
             except subprocess.CalledProcessError:
-                self.set_commit_status('failed', 'Tests did not pass')
+                self.set_commit_status('failure', 'Tests did not pass')
                 abort('Tests failed')
             self.set_commit_status('success', 'Tests passed')
 
