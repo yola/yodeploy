@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.17
+-----
+
+* Stop chown_r breaking on dangling symlinks
+
 0.4.16
 -----
 

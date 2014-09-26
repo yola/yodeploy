@@ -22,7 +22,7 @@ setup(
     author='Stefano Rivera',
     author_email='stefano.rivera@yola.com',
     url='https://github.com/yola/yodeploy',
-    version='0.4.16',
+    version='0.4.17',
     packages=find_packages(),
     scripts=['bin/test-templates.py'],
     test_suite='nose.collector',
