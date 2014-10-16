@@ -99,6 +99,6 @@ class AuthenticatedApp(ConfiguratedApp):
                 with open(file_name, 'w') as f:
                     self._write_credentials_to_file(f, credentials)
 
-    def _write_credentials_to_file(self, fh, users):
-        for user, password in users.iteritems():
-            fh.write('%s:%s\n' % (user, crypt.crypt(password, salt())))
+    def _write_credentials_to_file(self, fh, credentials):
+        for user, password in credentials.iteritems():
+            fh.write('{0}:{1}\n'.format(user, crypt.crypt(password, salt())))
