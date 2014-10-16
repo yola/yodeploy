@@ -30,9 +30,10 @@ class AuthenticatedApp(ConfiguratedApp):
 
             appname_config = {
                 'appname': {
-                    'htpassword': {
+                    'htpasswd': {
                         'clients': ['myyola', 'sitebuilder', 'yolacom'],
                         'users': {'yoladmin': 'password'},
+                        'groupname_users': {'user1': 'password'},
                     }
                 }
             }
@@ -55,7 +56,13 @@ class AuthenticatedApp(ConfiguratedApp):
                 Require valid-user
             </Location>
         </VirtualHost>
+
+    To create a separate htpasswd file for certain group of users one can
+    include '<GROUP_NAME>_users' in application's 'htpasswd' configuration.
+    This will result in /etc/yola/httpasswd/appname_<GROUP_NAME> file creation.
     """
+
+    HTPASSWD_DIR = '/etc/yola/htpasswd'
 
     def __init__(self, *args, **kwargs):
         super(AuthenticatedApp, self).__init__(*args, **kwargs)
@@ -69,18 +76,29 @@ class AuthenticatedApp(ConfiguratedApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        if not os.path.exists('/etc/yola/htpasswd'):
-            os.makedirs('/etc/yola/htpasswd')
-        htpasswd_fn = os.path.join('/etc/yola/htpasswd', self.app)
+        if not os.path.exists(self.HTPASSWD_DIR):
+            os.makedirs(self.HTPASSWD_DIR)
+
+        htpasswd_fn = os.path.join(self.HTPASSWD_DIR, self.app)
         aconf = self.config.get(self.app)
         with open(htpasswd_fn, 'w') as f:
             if 'users' in aconf.htpasswd:
-                for user, password in aconf.htpasswd.users.iteritems():
-                    f.write('%s:%s\n' % (user, crypt.crypt(password, salt())))
+                self._write_credentials_to_file(f, aconf.htpasswd.users)
 
             if 'clients' in aconf.htpasswd:
                 for client in aconf.htpasswd.clients:
-                    password = seeded_auth_token(client, self.app,
-                            self.config.common.api_seed)
+                    password = seeded_auth_token(
+                        client, self.app, self.config.common.api_seed)
                     crypted = crypt.crypt(password, salt())
                     f.write('%s:%s\n' % (client, crypted))
+
+        for section_name, credentials in aconf.htpasswd.iteritems():
+            if section_name.endswith('_users'):
+                group_name = section_name.rsplit('_', 1)[0]
+                file_name = '{0}_{1}'.format(htpasswd_fn, group_name)
+                with open(file_name, 'w') as f:
+                    self._write_credentials_to_file(f, credentials)
+
+    def _write_credentials_to_file(self, fh, users):
+        for user, password in users.iteritems():
+            fh.write('%s:%s\n' % (user, crypt.crypt(password, salt())))
