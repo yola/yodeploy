@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.18
+-----
+
+* Add support of htpasswd groups with seeded passwords
+
 0.4.17
 -----
 

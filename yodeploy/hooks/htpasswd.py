@@ -30,9 +30,10 @@ class AuthenticatedApp(ConfiguratedApp):
 
             appname_config = {
                 'appname': {
-                    'htpassword': {
+                    'htpasswd': {
                         'clients': ['myyola', 'sitebuilder', 'yolacom'],
                         'users': {'yoladmin': 'password'},
+                        'groups': {'group1': ['client1', 'client2']},
                     }
                 }
             }
@@ -55,7 +56,13 @@ class AuthenticatedApp(ConfiguratedApp):
                 Require valid-user
             </Location>
         </VirtualHost>
+
+    To create a separate htpasswd file for certain group of clients one can
+    include it in 'groups' in application's 'htpasswd' configuration.
+    This will result in /etc/yola/httpasswd/appname_<GROUP_NAME> file creation.
     """
+
+    HTPASSWD_DIR = '/etc/yola/htpasswd'
 
     def __init__(self, *args, **kwargs):
         super(AuthenticatedApp, self).__init__(*args, **kwargs)
@@ -69,18 +76,27 @@ class AuthenticatedApp(ConfiguratedApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        if not os.path.exists('/etc/yola/htpasswd'):
-            os.makedirs('/etc/yola/htpasswd')
-        htpasswd_fn = os.path.join('/etc/yola/htpasswd', self.app)
-        aconf = self.config.get(self.app)
-        with open(htpasswd_fn, 'w') as f:
-            if 'users' in aconf.htpasswd:
-                for user, password in aconf.htpasswd.users.iteritems():
-                    f.write('%s:%s\n' % (user, crypt.crypt(password, salt())))
+        if not os.path.exists(self.HTPASSWD_DIR):
+            os.makedirs(self.HTPASSWD_DIR)
 
-            if 'clients' in aconf.htpasswd:
-                for client in aconf.htpasswd.clients:
-                    password = seeded_auth_token(client, self.app,
-                            self.config.common.api_seed)
-                    crypted = crypt.crypt(password, salt())
-                    f.write('%s:%s\n' % (client, crypted))
+        htpasswd_fn = os.path.join(self.HTPASSWD_DIR, self.app)
+        htpasswd_conf = self.config.get(self.app).htpasswd
+        with open(htpasswd_fn, 'w') as f:
+            for user, password in htpasswd_conf.get('users', {}).iteritems():
+                f.write('{0}:{1}\n'.format(
+                    user, crypt.crypt(password, salt())))
+
+            for client_name in htpasswd_conf.get('clients', []):
+                self._write_seeded_htpasswd_entry(f, client_name)
+
+        for group_name, clients in htpasswd_conf.get('groups', {}).iteritems():
+            file_name = '{0}_{1}'.format(htpasswd_fn, group_name)
+            with open(file_name, 'w') as f:
+                for client_name in clients:
+                    self._write_seeded_htpasswd_entry(f, client_name)
+
+    def _write_seeded_htpasswd_entry(self, fh, client_name):
+        password = seeded_auth_token(
+            client_name, self.app, self.config.common.api_seed)
+        crypted = crypt.crypt(password, salt())
+        fh.write('{0}:{1}\n'.format(client_name, crypted))
