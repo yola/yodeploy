@@ -87,15 +87,15 @@ class AuthenticatedApp(ConfiguratedApp):
                     user, crypt.crypt(password, salt())))
 
             for client_name in htpasswd_conf.get('clients', []):
-                self._generate_and_save_client_credentials(f, client_name)
+                self._write_seeded_htpasswd_entry(f, client_name)
 
         for group_name, clients in htpasswd_conf.get('groups', {}).iteritems():
             file_name = '{0}_{1}'.format(htpasswd_fn, group_name)
             with open(file_name, 'w') as f:
                 for client_name in clients:
-                    self._generate_and_save_client_credentials(f, client_name)
+                    self._write_seeded_htpasswd_entry(f, client_name)
 
-    def _generate_and_save_client_credentials(self, fh, client_name):
+    def _write_seeded_htpasswd_entry(self, fh, client_name):
         password = seeded_auth_token(
             client_name, self.app, self.config.common.api_seed)
         crypted = crypt.crypt(password, salt())
