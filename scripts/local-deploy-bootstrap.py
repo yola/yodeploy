@@ -338,11 +338,18 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     return expected_name
 
 
-def build_virtualenv():
+def build_virtualenv(bootstrap=False):
     '''Build a virtualenv for CWD, bootstrapping if necessary'''
+
+    if not binary_available('build-virtualenv') and not bootstrap:
+        raise Exception("build-virtualenv can't be found on PATH")
+
     # Already bootstrapped
     if call(('build-virtualenv',)) == 0:
         return
+
+    if not bootstrap:
+        raise Exception('build-virtualenv failed')
 
     # Has a virtualenv built by hand
     if call(('virtualenv/bin/python',
@@ -407,7 +414,7 @@ def setup_yodeploy(yola_src):
     '''Configure yodeploy'''
     root = os.path.join(yola_src, 'yodeploy')
     with chdir(root):
-        build_virtualenv()
+        build_virtualenv(bootstrap=True)
 
     # Install wrapper scripts
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')
