@@ -20,7 +20,8 @@ def auth_decorator(config):
         @wraps(f)
         def decorated(*args, **kwargs):
             auth = request.authorization
-            if not auth or not check_auth(config, auth.username, auth.password):
+            if not auth or not check_auth(
+                    config, auth.username, auth.password):
                 return authenticate()
             return f(*args, **kwargs)
         return decorated
