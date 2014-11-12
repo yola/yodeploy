@@ -4,14 +4,12 @@ from flask import request, Response
 
 
 def check_auth(config, username, password):
-    """This function is called to check if a username /
-    password combination is valid.
-    """
+    """Check if a username / password combination is valid."""
     return username == 'fieldhq' and password == config.server.password
 
 
 def authenticate():
-    """Sends a 401 response that enables basic auth"""
+    """Send a 401 response that enables basic auth."""
     return Response('Could not verify your access level for that URL.\n'
                     'You have to login with proper credentials', 401,
                     {'WWW-Authenticate': 'Basic realm="Login Required"'})
