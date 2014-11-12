@@ -62,7 +62,7 @@ def get_all_deployed_versions():
         else:
             result.append({
                 'name': app,
-                'version': 0
+                'version': None
             })
     return jsonify({'applications': result})
 
