@@ -37,7 +37,7 @@ log = logging.getLogger('local-bootstrap')
 
 
 def confirm(message):
-    '''Display a Y/n question prompt, and return a boolean'''
+    """Display a Y/n question prompt, and return a boolean"""
     while True:
         print
         input_ = raw_input('%s [Y/n] ' % message)
@@ -50,13 +50,13 @@ def confirm(message):
 
 
 def abort(message):
-    '''Pretty much what the tin says'''
+    """Pretty much what the tin says"""
     log.error(message)
     sys.exit(1)
 
 
 def binary_available(name):
-    '''Check if a program is available in PATH'''
+    """Check if a program is available in PATH"""
     for dir_ in os.environ.get('PATH', '').split(':'):
         if os.access(os.path.join(dir_, name), os.X_OK):
             return True
@@ -64,10 +64,10 @@ def binary_available(name):
 
 
 def check_environment():
-    '''
+    """
     Check that our basic tools exist
     Return YOLA_SRC
-    '''
+    """
     if not binary_available('git'):
         abort('We require git to be installed')
 
@@ -131,16 +131,16 @@ def check_environment():
 
 
 def check_call(cmd, *args, **kwargs):
-    '''Logging wrapper around subprocess.check_call'''
+    """Logging wrapper around subprocess.check_call"""
     log.debug('Calling %s', ' '.join(cmd))
     return subprocess.check_call(cmd, *args, **kwargs)
 
 
 def call(cmd, *args, **kwargs):
-    '''
+    """
     Logging wrapper around subprocess.call
     Additionally, it eats ENOENT, and rephrases it as returning 127
-    '''
+    """
     log.debug('Calling %s', ' '.join(cmd))
     try:
         return subprocess.call(cmd, *args, **kwargs)
@@ -151,7 +151,7 @@ def call(cmd, *args, **kwargs):
 
 
 def git(*cmds, **kwargs):
-    '''Call git'''
+    """Call git"""
     ignore_fail = kwargs.pop('ignore_fail', False)
     cmd = ('git',) + cmds
     if ignore_fail:
@@ -161,7 +161,7 @@ def git(*cmds, **kwargs):
 
 
 def git_mirror_available():
-    '''See if any git mirrors are available'''
+    """See if any git mirrors are available"""
     try:
         our_netrc = netrc.netrc()
     except IOError:
@@ -194,7 +194,7 @@ def git_mirror_available():
 
 @contextlib.contextmanager
 def chdir(directory):
-    '''with chdir: ...'''
+    """with chdir: ..."""
     pwd = os.getcwd()
     os.chdir(directory)
     try:
@@ -204,7 +204,7 @@ def chdir(directory):
 
 
 def clone(app, yola_src, branch='master'):
-    '''Clone a Yola git repository'''
+    """Clone a Yola git repository"""
     appdir = os.path.join(yola_src, app)
 
     if (os.path.isdir(appdir)
@@ -233,7 +233,7 @@ def clone(app, yola_src, branch='master'):
 
 
 def deploy_settings_location():
-    '''Figure out where we should put deploy_settings'''
+    """Figure out where we should put deploy_settings"""
     paths = yodeploy.config.deploy_config_paths()
     for path in paths:
         if os.path.exists(path):
@@ -242,15 +242,15 @@ def deploy_settings_location():
 
 
 def deploy_settings():
-    '''Return deploy_settings'''
+    """Return deploy_settings"""
     return yodeploy.config.load_settings(deploy_settings_location())
 
 
 def bootstrap_virtualenv(cmd):
-    '''
+    """
     Bootstrap a virtualenv
     cmd specifies the location of virtualenv.py
-    '''
+    """
     check_call((cmd, 'bootstrap_ve'))
 
     packages = []
@@ -268,7 +268,7 @@ def bootstrap_virtualenv(cmd):
 
 
 def find_required_version(package):
-    '''See what version of packages was requested in requirements.txt'''
+    """See what version of packages was requested in requirements.txt"""
     with open('requirements.txt') as f:
         for line in f:
             line = line.strip()
@@ -278,11 +278,11 @@ def find_required_version(package):
 
 
 def urlopener_with_auth(url):
-    '''
+    """
     Given a URL, return the URL with auth stripped, and a urlopener that can
     open it.
     Uses urllib2, so SSL certs aren't verified.
-    '''
+    """
     opener = urllib2.build_opener()
     parsed = urlparse.urlparse(url)
     if parsed.username and parsed.password:
@@ -302,10 +302,10 @@ def urlopener_with_auth(url):
 
 
 def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
-    '''
+    """
     Really simple PyPI client.
     Downloads to CWD.
-    '''
+    """
     expected_name = '%s-%s.tar.gz' % (app, version)
     if os.path.isfile(expected_name):
         return expected_name
@@ -338,11 +338,17 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     return expected_name
 
 
-def build_virtualenv():
-    '''Build a virtualenv for CWD, bootstrapping if necessary'''
+def build_virtualenv(bootstrap=False):
+    """Build a virtualenv for CWD, bootstrapping if necessary"""
+    if not binary_available('build-virtualenv') and not bootstrap:
+        raise Exception("build-virtualenv can't be found on PATH")
+
     # Already bootstrapped
     if call(('build-virtualenv',)) == 0:
         return
+
+    if not bootstrap:
+        raise Exception('build-virtualenv failed')
 
     # Has a virtualenv built by hand
     if call(('virtualenv/bin/python',
@@ -372,7 +378,7 @@ def build_virtualenv():
 
 
 def write_wrapper(script, ve, args=None):
-    '''Install a wrapper for script in ~/bin'''
+    """Install a wrapper for script in ~/bin"""
     name = os.path.basename(script).rsplit('.', 1)[0].replace('_', '-')
     wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
     if args:
@@ -383,7 +389,7 @@ def write_wrapper(script, ve, args=None):
 
 
 def setup_deployconfigs(yola_src):
-    '''Configure deployconfigs'''
+    """Configure deployconfigs"""
     # Create hostname.py
     configs = os.path.join(yola_src, 'deployconfigs', 'configs')
     hostname_py = os.path.join(configs, 'hostname.py')
@@ -404,10 +410,10 @@ def setup_deployconfigs(yola_src):
 
 
 def setup_yodeploy(yola_src):
-    '''Configure yodeploy'''
+    """Configure yodeploy"""
     root = os.path.join(yola_src, 'yodeploy')
     with chdir(root):
-        build_virtualenv()
+        build_virtualenv(bootstrap=True)
 
     # Install wrapper scripts
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')
@@ -419,7 +425,7 @@ def setup_yodeploy(yola_src):
 
 
 def setup_yoconfigurator(yola_src):
-    '''Configure yoconfigurator'''
+    """Configure yoconfigurator"""
     root = os.path.join(yola_src, 'yoconfigurator')
     with chdir(root):
         build_virtualenv()
