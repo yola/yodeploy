@@ -79,6 +79,25 @@ def report(app, action, old_version, version, deploy_settings):
         except ValueError:
             log.error('Error posting report to campfire')
 
+    if 'newrelic' in services:
+        try:
+            log.info('Creating newrelic report')
+            service_settings = deploy_settings.report.service_settings.newrelic
+            deployment_data = {
+                'deployment[user]': user,
+                'deployment[app_name]': '%s (%s)' % (app, environment),
+                'deployment[description]': message
+            }
+
+            response = requests.post(service_settings.deploy_url,
+                                     data=deployment_data,
+                                     headers={
+                                         'x-api-key': service_settings.api_key
+                                     })
+
+        except RequestException as e:
+            log.error('Error posting report to newrelic: %s', e)
+
     if 'webhook' in services:
         log.info('Sending deploy information to webhook')
         service_settings = deploy_settings.report.service_settings.webhook
