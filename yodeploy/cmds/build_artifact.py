@@ -220,7 +220,7 @@ def parse_args(default_app):
     group.add_argument('-T', '--skip-tests', action='store_true',
                        help="Don't run tests")
     group.add_argument('--test-only', action='store_true',
-                       help="Only test (e.g. build virtualenv and  run "
+                       help="Only test (e.g. build virtualenv and run "
                             "test.sh) don't build/upload")
     parser.add_argument('--target', default='master',
                         help='The target to upload to')
