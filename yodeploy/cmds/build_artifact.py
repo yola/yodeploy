@@ -216,8 +216,12 @@ def parse_args(default_app):
     parser.add_argument('--app', '-a',
                         default=default_app,
                         help='The application name')
-    parser.add_argument('-T', '--skip-tests', action='store_true',
-                        help="Don't run tests")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-T', '--skip-tests', action='store_true',
+                       help="Don't run tests")
+    group.add_argument('--test-only', action='store_true',
+                       help="Only test (e.g. build virtualenv and  run "
+                            "test.sh) don't build/upload")
     parser.add_argument('--target', default='master',
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
@@ -226,9 +230,6 @@ def parse_args(default_app):
     parser.add_argument('--prepare-only', action='store_true',
                         help="Only prepare (e.g. build virtualenvs) don't "
                              "build")
-    parser.add_argument('--test-only', action='store_true',
-                        help="Only test (e.g. build virtualenv and  run "
-                             "test.sh) don't build/upload")
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -363,9 +364,6 @@ def abort(message):
 def main():
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
-
-    if opts.skip_tests and opts.test_only:
-        abort('Trying to run tests while skipping tests')
 
     compat = 1
     if os.path.exists('deploy/compat'):
