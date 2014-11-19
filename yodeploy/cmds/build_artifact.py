@@ -229,7 +229,6 @@ def parse_args(default_app):
     parser.add_argument('--test-only', action='store_true',
                         help="Only test (e.g. build virtualenv and  run "
                              "test.sh) don't build/upload")
-
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -420,7 +419,6 @@ def main():
                            tag=tag, deploy_settings=deploy_settings,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs)
-
     builder.prepare()
     if not opts.prepare_only:
         if not opts.skip_tests:
