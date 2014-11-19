@@ -364,6 +364,9 @@ def main():
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
 
+    if opts.skip_tests and opts.test_only:
+        abort('Trying to run tests while skipping tests')
+
     compat = 1
     if os.path.exists('deploy/compat'):
         with open('deploy/compat') as f:
