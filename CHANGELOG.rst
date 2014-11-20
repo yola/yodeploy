@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.19
+------
+
+* Update `deploy` to not tell campfire
+
 0.4.18
 ------
 
