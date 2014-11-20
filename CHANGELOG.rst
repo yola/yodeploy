@@ -2,51 +2,51 @@ Change Log
 ==========
 
 0.4.18
------
+------
 
 * Add support of htpasswd groups with seeded passwords
 
 0.4.17
------
+------
 
 * Stop chown_r breaking on dangling symlinks
 
 0.4.16
------
+------
 
 * Add a data_dir @property to the DataDirApp hook so it can be used elsewhere
 * Update yoconfigurator to 0.4.4
 
 0.4.15
------
+------
 
 * Support `build-virtualenv -r dev_requirements.txt`
 * Add `gc` actions to `spade` and `deploy`.
 * Lock shared directories during deploy.
 
 0.4.14
------
+------
 
 * Address the database_migration_class object correctly.
 
 0.4.13
------
+------
 
 * BROKEN - Address the database_migration_class object correctly.
 
 0.4.12
------
+------
 
 * Update `delete_dir_content` to handle missing files
 
 0.4.11
------
+------
 
 * Deploy tomcat7 apps for the first time, without breaking.
 * Allow overriding None in deploy configs (yoconfigurator 0.4.3)
 
 0.4.10
------
+------
 
 * Add `delete_dir_content` to util
 
@@ -94,7 +94,7 @@ Change Log
 * Uses yoconfigurator 0.3.0.
 
 0.3.1-0.3.3
------
+-----------
 
 * Bug fixes.
 
@@ -110,7 +110,7 @@ Change Log
 * Added supervisord hook.
 
 0.2.5-0.2.6
-------------
+-----------
 
 * Only bug fixes.
 
