@@ -422,10 +422,11 @@ def main():
                            build_virtualenvs=opts.build_virtualenvs)
     builder.prepare()
     if not opts.prepare_only:
+        if not opts.test_only:
+            builder.build()
         if not opts.skip_tests:
             builder.test()
         if not opts.test_only:
-            builder.build()
             builder.upload()
     builder.summary()
 
