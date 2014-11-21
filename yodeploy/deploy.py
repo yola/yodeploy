@@ -57,28 +57,6 @@ def report(app, action, old_version, version, deploy_settings):
         sock.sendto('deploys.%s.%s.%s:1|c'
                     % (environment, hostname, app.replace('.', '_')), addr)
 
-    if 'campfire' in services:
-        try:
-            log.info('Creating campfire report')
-            service_settings = deploy_settings.report.service_settings.campfire
-            rooms = requests.get('https://%s.campfirenow.com/rooms.json' %
-                                 service_settings.subdomain,
-                                 auth=(service_settings.token, '')).json()
-            room = [r for r in rooms['rooms'] if r['name'] ==
-                    service_settings.room][0]
-
-            emoji = ' :collision:' if environment == 'production' else ''
-            requests.post('https://%s.campfirenow.com/room/%s/speak.json' %
-                          (service_settings.subdomain, room['id']),
-                          auth=(service_settings.token, ''),
-                          headers={'Content-type': 'application/json'},
-                          data=json.dumps({'message': {'body': message + emoji,
-                                                       'type': 'TextMessage'}}))
-        except IndexError:
-            log.error('Unknown campfire room', service_settings.room)
-        except ValueError:
-            log.error('Error posting report to campfire')
-
     if 'webhook' in services:
         log.info('Sending deploy information to webhook')
         service_settings = deploy_settings.report.service_settings.webhook

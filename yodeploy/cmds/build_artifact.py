@@ -77,24 +77,23 @@ class Builder(object):
         env['APPNAME'] = self.app
         return env
 
-    def build(self, skip_tests=False):
+    def build(self):
         print_banner('Build')
         env = self.build_env()
         check_call('scripts/build.sh', env=env, abort='Build script failed')
-        print_banner('Test')
-        if skip_tests:
-            print 'Tests skipped'
-        else:
-            self.set_commit_status('pending', 'Tests Running')
-            try:
-                check_call('scripts/test.sh', env=env)
-            except subprocess.CalledProcessError:
-                self.set_commit_status('failure', 'Tests did not pass')
-                abort('Tests failed')
-            self.set_commit_status('success', 'Tests passed')
-
         print_banner('Package')
         check_call('scripts/dist.sh', env=env, abort='Dist script failed')
+
+    def test(self):
+        print_banner('Test')
+        env = self.build_env()
+        self.set_commit_status('pending', 'Tests Running')
+        try:
+            check_call('scripts/test.sh', env=env)
+        except subprocess.CalledProcessError:
+            self.set_commit_status('failure', 'Tests did not pass')
+            abort('Tests failed')
+        self.set_commit_status('success', 'Tests passed')
 
     def upload(self):
         raise NotImplemented()
@@ -217,8 +216,12 @@ def parse_args(default_app):
     parser.add_argument('--app', '-a',
                         default=default_app,
                         help='The application name')
-    parser.add_argument('-T', '--skip-tests', action='store_true',
-                        help="Don't run tests")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-T', '--skip-tests', action='store_true',
+                       help="Don't run tests")
+    group.add_argument('--test-only', action='store_true',
+                       help="Only test (e.g. build virtualenv and run "
+                            "test.sh) don't build/upload")
     parser.add_argument('--target', default='master',
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
@@ -419,8 +422,12 @@ def main():
                            build_virtualenvs=opts.build_virtualenvs)
     builder.prepare()
     if not opts.prepare_only:
-        builder.build(opts.skip_tests)
-        builder.upload()
+        if not opts.test_only:
+            builder.build()
+        if not opts.skip_tests:
+            builder.test()
+        if not opts.test_only:
+            builder.upload()
     builder.summary()
 
 
