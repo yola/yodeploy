@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.20
+------
+
+* Ensure that the log file directory exists before creating the log file
+
 0.4.19
 ------
 
