@@ -69,6 +69,8 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         logfile = self.config.get(self.app, {}).get('path', {}).get('log',
                                                                     None)
         if logfile:
+            if not os.path.isdir(os.path.dirname(logfile)):
+                os.mkdir(os.path.dirname(logfile))
             touch(logfile, 'www-data', 'adm', 0640)
 
         if self.has_static:
