@@ -1,3 +1,4 @@
+import errno
 import logging
 import os
 import subprocess
@@ -69,8 +70,12 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         logfile = self.config.get(self.app, {}).get('path', {}).get('log',
                                                                     None)
         if logfile:
-            if not os.path.isdir(os.path.dirname(logfile)):
-                os.mkdir(os.path.dirname(logfile))
+           try:
+               os.mkdir(os.path.dirname(logfile))
+           except OSError as e:
+               if e.errno != errno.EEXIST:
+                   raise
+
             touch(logfile, 'www-data', 'adm', 0640)
 
         if self.has_static:
