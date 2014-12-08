@@ -70,11 +70,11 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         logfile = self.config.get(self.app, {}).get('path', {}).get('log',
                                                                     None)
         if logfile:
-           try:
-               os.mkdir(os.path.dirname(logfile))
-           except OSError as e:
-               if e.errno != errno.EEXIST:
-                   raise
+            try:
+                os.mkdir(os.path.dirname(logfile))
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
 
             touch(logfile, 'www-data', 'adm', 0640)
 
