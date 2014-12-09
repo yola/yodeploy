@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.4.21
+------
+
+* Migrate writes out to a log file, ensure that the log file exists before
+  trying to migrate
+
 0.4.20
 ------
 
