@@ -64,9 +64,6 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                 os.mkdir(media_dir)
             chown_r(data_dir, 'www-data', 'www-data')
 
-        if self.migrate_on_deploy:
-            self.migrate()
-
         logfile = self.config.get(self.app, {}).get('path', {}).get('log',
                                                                     None)
         if logfile:
@@ -77,6 +74,9 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
                     raise
 
             touch(logfile, 'www-data', 'adm', 0640)
+
+        if self.migrate_on_deploy:
+            self.migrate()
 
         if self.has_static:
             self.manage_py('collectstatic', '--noinput')
