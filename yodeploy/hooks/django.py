@@ -1,3 +1,4 @@
+import errno
 import logging
 import os
 import subprocess
@@ -40,12 +41,13 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
 
         if self.template_exists('apache2/vhost.conf.template'):
             self.template('apache2/vhost.conf.template',
-                    os.path.join(self.vhost_path, self.app))
+                          os.path.join(self.vhost_path, self.app))
         if self.template_exists('apache2/vhost-snippet.conf.template'):
             if not os.path.exists(self.vhost_snippet_path):
                 os.makedirs(self.vhost_snippet_path)
             self.template('apache2/vhost-snippet.conf.template',
-                    os.path.join(self.vhost_snippet_path, self.app + '.conf'))
+                          os.path.join(self.vhost_snippet_path,
+                                       self.app + '.conf'))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
             self.template('apache2/wsgi-handler.wsgi.template',
                           self.deploy_path(self.app + '.wsgi'))
@@ -68,6 +70,12 @@ class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
         logfile = self.config.get(self.app, {}).get('path', {}).get('log',
                                                                     None)
         if logfile:
+            try:
+                os.mkdir(os.path.dirname(logfile))
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
             touch(logfile, 'www-data', 'adm', 0640)
 
         if self.has_static:
