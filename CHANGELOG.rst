@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.4.23
+------
+
+* Update build_artifact and deploy configurator to write a public configuration
+
 0.4.22
 ------
 
