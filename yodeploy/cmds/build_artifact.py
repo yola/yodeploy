@@ -174,8 +174,7 @@ class BuildCompat3(Builder):
         public_filter_pathname = os.path.join(configs_dirs, 'public-data.py')
         public_config = filter_config(config, public_filter_pathname)
         if public_config:
-            write_config(
-                public_config, options.app_dir, 'configuration_public.json')
+            write_config(public_config, '.', 'configuration_public.json')
 
     def prepare(self):
         python = os.path.abspath(sys.executable)
