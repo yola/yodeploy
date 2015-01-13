@@ -3,6 +3,7 @@ import os
 import shutil
 
 from yoconfigurator.base import read_config, write_config
+from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 
 from yodeploy.hooks.base import DeployHook
@@ -61,7 +62,14 @@ class ConfiguratedApp(DeployHook):
                                      configs_dirs, app_conf_dir)
             config = smush_config(
                 sources, initial={'yoconfigurator': {'app': self.app}})
+
+            public_filter_pn = os.path.join(app_conf_dir, 'public-data.py')
+            public_config = filter_config(config, public_filter_pn)
+
         write_config(config, self.deploy_dir)
+        if public_config:
+            write_config(
+                public_config, self.deploy_dir, 'configuration_public.json')
 
     def read_config(self):
         return read_config(self.deploy_dir)

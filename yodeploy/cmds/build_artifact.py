@@ -13,6 +13,7 @@ import urllib2
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from yoconfigurator.base import write_config
+from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 import yodeploy.config
 import yodeploy.repository
@@ -168,6 +169,13 @@ class BuildCompat3(Builder):
                                   'environment': build_settings.environment,
                              }})
         write_config(config, '.')
+
+        # public configuration
+        public_filter_pathname = os.path.join(configs_dirs, 'public-data.py')
+        public_config = filter_config(config, public_filter_pathname)
+        if public_config:
+            write_config(
+                public_config, options.app_dir, 'configuration_public.json')
 
     def prepare(self):
         python = os.path.abspath(sys.executable)
