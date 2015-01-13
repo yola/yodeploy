@@ -3,6 +3,7 @@ import os
 import shutil
 
 from yoconfigurator.base import read_config, write_config
+from yoconfigurator.dicts import DotDict
 from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 
@@ -33,6 +34,7 @@ class ConfiguratedApp(DeployHook):
 
     def configurator_deployed(self):
         self.config = self.read_config()
+        self.pub_config = self.read_pub_config()
 
     def write_config(self):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
@@ -73,3 +75,10 @@ class ConfiguratedApp(DeployHook):
 
     def read_config(self):
         return read_config(self.deploy_dir)
+
+    def read_pub_config(self):
+        path = os.path.join(self.deploy_dir, 'configuration_public.json')
+        if not os.path.isfile(path):
+            return DotDict()
+        with open(path, 'r') as f:
+            return DotDict(json.load(f))
