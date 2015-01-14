@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+0.4.23
+------
+
+* Update build_artifact and deploy configurator to write a public configuration
+
+0.4.22
+------
+
+* Update yoconfigurator to 0.4.6, getting whitespace cleanup and support
+  for public configuration.
+
 0.4.21
 ------
 

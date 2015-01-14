@@ -1,8 +1,11 @@
+import json
 import logging
 import os
 import shutil
 
 from yoconfigurator.base import read_config, write_config
+from yoconfigurator.dicts import DotDict
+from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 
 from yodeploy.hooks.base import DeployHook
@@ -32,6 +35,7 @@ class ConfiguratedApp(DeployHook):
 
     def configurator_deployed(self):
         self.config = self.read_config()
+        self.pub_config = self.read_pub_config()
 
     def write_config(self):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
@@ -61,7 +65,21 @@ class ConfiguratedApp(DeployHook):
                                      configs_dirs, app_conf_dir)
             config = smush_config(
                 sources, initial={'yoconfigurator': {'app': self.app}})
+
+            public_filter_pn = os.path.join(app_conf_dir, 'public-data.py')
+            public_config = filter_config(config, public_filter_pn)
+
         write_config(config, self.deploy_dir)
+        if public_config:
+            write_config(
+                public_config, self.deploy_dir, 'configuration_public.json')
 
     def read_config(self):
         return read_config(self.deploy_dir)
+
+    def read_pub_config(self):
+        path = os.path.join(self.deploy_dir, 'configuration_public.json')
+        if not os.path.isfile(path):
+            return DotDict()
+        with open(path, 'r') as f:
+            return DotDict(json.load(f))
