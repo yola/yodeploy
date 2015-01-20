@@ -30,7 +30,6 @@ import yodeploy.config
 
 GIT_REPO = 'git@github.com:yola/%s.git'
 GIT_MIRRORS = (
-    ('ctmirror', 'http://git.ct.yola.net/git/yola/%s.git'),
 )
 
 log = logging.getLogger('local-bootstrap')
