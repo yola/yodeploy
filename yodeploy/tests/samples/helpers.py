@@ -29,7 +29,7 @@ def clear(app_name):
 
 
 def build_sample(app_name, version='1'):
-    """Calls build_artifact in the sample app."""
+    """Call build_artifact in the sample app."""
     script_path = os.path.join(bin_dir, 'build_artifact.py')
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     env = {
@@ -52,7 +52,7 @@ def build_sample(app_name, version='1'):
 
 
 def deploy_sample(app_name, version="1"):
-    """Deploys the sample app to tests/filesys/deployed/app_name/."""
+    """Deploy the sample app to tests/filesys/deployed/app_name/."""
     args = {
         'app': app_name,
         'target': 'master',
