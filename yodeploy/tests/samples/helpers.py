@@ -1,13 +1,16 @@
 import errno
 import os
+import mock
 import subprocess
 import shutil
 import sys
 
+from distutils.sysconfig import get_python_lib
 from os.path import join
 
 from yodeploy.deploy import deploy
 from yodeploy.tests import deployconf
+from yodeploy.application import Application
 
 tests_dir = os.path.join(os.path.dirname(__file__), '..')
 bin_dir = os.path.join(tests_dir, '..', 'cmds')
@@ -28,6 +31,28 @@ def clear(app_name):
     rmdir(join(deployconf.deploy_settings.paths.apps, app_name))
 
 
+def getprefix(*args):
+    """
+    Return the directory that houses the python bin.
+
+    Must be relative to the pylib to ensure success with venvs.
+    `sys.real_prefix` returns the base install, not the venv.
+    """
+    return os.path.join(get_python_lib(), '..', '..', '..')
+
+
+def patch_deploy_venv(patch_with=None):
+    """Patch the Application virtual env deploy.
+
+    Tests do not have pre-built envs to download. Tell Application to use
+    the same env being used to run the tests.
+    """
+    original_fun = Application.deploy_ve
+    patch_with = patch_with or getprefix
+    Application.deploy_ve = patch_with
+    return original_fun
+
+
 def build_sample(app_name, version='1'):
     """Call build_artifact in the sample app."""
     script_path = os.path.join(bin_dir, 'build_artifact.py')
@@ -44,12 +69,13 @@ def build_sample(app_name, version='1'):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
-    assert err == ""
-    assert p.wait() == 0
+    if err or p.wait() is not 0:
+        raise Exception(out + err)
 
 
 def deploy_sample(app_name, version="1"):
     """Deploy the sample app to tests/filesys/deployed/app_name/."""
+    orig_deploy_ve_fun = patch_deploy_venv()
     args = {
         'app': app_name,
         'target': 'master',
@@ -58,3 +84,4 @@ def deploy_sample(app_name, version="1"):
         'deploy_settings': deployconf.deploy_settings
     }
     deploy(**args)
+    patch_deploy_venv(orig_deploy_ve_fun)
