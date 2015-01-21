@@ -44,9 +44,6 @@ def build_sample(app_name, version='1'):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
-    if err:
-        print out
-        print err
     assert err == ""
     assert p.wait() == 0
 
