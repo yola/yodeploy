@@ -5,5 +5,9 @@
 /build
 /dist
 /test-data
+/yodeploy/tests/filesys/*
+/yodeploy/tests/samples/*/configuration.json
+/yodeploy/tests/samples/*/build
+/yodeploy/tests/samples/*/dist
 /virtualenv
 /virtualenv.tar.gz

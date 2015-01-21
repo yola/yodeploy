@@ -88,3 +88,8 @@ downgrade any installed packages:
     Removing suds 0.4.1-htj.yola1   <-- oh no, removing yola specific release
     Adding suds 0.3.9
 
+
+Testing
+-------
+
+Run `nosetests`
