@@ -93,5 +93,4 @@ if __name__ == '__main__':
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
     context.use_privatekey_file(deploy_settings.server.ssl.key)
     log.debug('Starting yodeploy server')
-    flask_app.run(host=opts.host, port=opts.port,
-                  ssl_context=context)
+    flask_app.run(host=opts.listen, port=opts.port, ssl_context=context)
