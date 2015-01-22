@@ -6,6 +6,8 @@ import sys
 
 from os.path import join
 
+from nose.plugins.skip import SkipTest
+
 from yodeploy.deploy import deploy
 from yodeploy.tests import deployconf
 from yodeploy.application import Application
@@ -31,6 +33,8 @@ def clear(app_name):
 
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
+    if not hasattr(sys, 'real_prefix'):
+        raise SkipTest
     return join(os.path.dirname(sys.executable), '..')
 
 
