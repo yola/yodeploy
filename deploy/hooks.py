@@ -1,9 +1,10 @@
 import os
 
 from yodeploy.hooks.python import PythonApp
+from yodeploy.hooks.upstart import UpstartApp
 
 
-class Hooks(PythonApp):
+class Hooks(PythonApp, UpstartApp):
     def prepare(self):
         super(Hooks, self).prepare()
 
