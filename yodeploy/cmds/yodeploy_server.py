@@ -29,7 +29,7 @@ def server_error(error):
 
 @flask_app.errorhandler(404)
 def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
+    return jsonify({'error': 'Not found'}), 404
 
 
 @flask_app.route('/deploy/<app>/', methods=['GET', 'POST'])
