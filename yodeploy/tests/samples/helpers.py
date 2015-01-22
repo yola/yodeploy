@@ -6,10 +6,9 @@ import sys
 
 from os.path import join
 
-from nose.plugins.skip import SkipTest
 
 from yodeploy.deploy import deploy
-from yodeploy.tests import deployconf
+from yodeploy.tests import deployconf, unittest
 from yodeploy.application import Application
 
 tests_dir = os.path.join(os.path.dirname(__file__), '..')
@@ -34,7 +33,7 @@ def clear(app_name):
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
     if not hasattr(sys, 'real_prefix'):
-        raise SkipTest("Test requires a virtual environment.")
+        raise unittest.SkipTest("Test requires a virtual environment.")
     return join(os.path.dirname(sys.executable), '..')
 
 
