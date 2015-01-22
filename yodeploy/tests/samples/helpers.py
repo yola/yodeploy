@@ -34,7 +34,7 @@ def clear(app_name):
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
     if not hasattr(sys, 'real_prefix'):
-        raise SkipTest
+        raise SkipTest("Test requires a virtual environment.")
     return join(os.path.dirname(sys.executable), '..')
 
 
