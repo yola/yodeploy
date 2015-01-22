@@ -1,5 +1,3 @@
-import sys
-
 from yoconfigurator.dicts import merge_dicts
 
 

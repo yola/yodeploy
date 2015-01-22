@@ -1,6 +1,5 @@
 import errno
 import os
-import mock
 import subprocess
 import shutil
 import sys
