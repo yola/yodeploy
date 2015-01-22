@@ -4,7 +4,6 @@ import subprocess
 import shutil
 import sys
 
-from distutils.sysconfig import get_python_lib
 from os.path import join
 
 from yodeploy.deploy import deploy
@@ -30,14 +29,9 @@ def clear(app_name):
     rmdir(join(deployconf.deploy_settings.paths.apps, app_name))
 
 
-def getprefix(*args):
-    """
-    Return the directory that houses the python bin.
-
-    Must be relative to the pylib to ensure success with venvs.
-    `sys.real_prefix` returns the base install, not the venv.
-    """
-    return os.path.join(get_python_lib(), '..', '..', '..')
+def mock_using_current_venv(*args):
+    """Return the directory that houses the python bin."""
+    return join(os.path.dirname(sys.executable), '..')
 
 
 def patch_deploy_venv(patch_with=None):
@@ -47,7 +41,7 @@ def patch_deploy_venv(patch_with=None):
     the same env being used to run the tests.
     """
     original_fun = Application.deploy_ve
-    patch_with = patch_with or getprefix
+    patch_with = patch_with or mock_using_current_venv
     Application.deploy_ve = patch_with
     return original_fun
 
