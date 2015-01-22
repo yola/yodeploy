@@ -62,7 +62,7 @@ def build_sample(app_name, version='1'):
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
-    if err or p.wait() is not 0:
+    if err or p.wait() != 0:
         raise Exception(out + err)
 
 
