@@ -87,7 +87,7 @@ def parse_args():
 
 if __name__ == '__main__':
     opts = parse_args()
-    configure_logging(opts.debug, deploy_settings.logging)
+    configure_logging(opts.debug, deploy_settings.server.logging)
     log = logging.getLogger('yodeploy')
     context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
