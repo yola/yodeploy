@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import request, Response
+from flask import Response, jsonify, request
 
 
 def check_auth(config, username, password):
@@ -10,9 +10,11 @@ def check_auth(config, username, password):
 
 def authenticate():
     """Send a 401 response that enables basic auth."""
-    return Response('Could not verify your access level for that URL.\n'
-                    'You have to login with proper credentials', 401,
-                    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+    return (
+        jsonify({'error': 'Could not verify your access level for that URL.\n'
+                          'You have to login with proper credentials'}),
+        401,
+        [{'WWW-Authenticate': 'Basic realm="Login Required"'}])
 
 
 def auth_decorator(config):
