@@ -13,6 +13,7 @@ deploy_settings = AttrDict(
     ),
 
     artifacts=AttrDict(
+        cluster='',
         store="local",
         store_settings=AttrDict(
             local=AttrDict(
@@ -30,6 +31,10 @@ deploy_settings = AttrDict(
             report=False,
         ),
         configs_dir='',
+    ),
+
+    deployconfigs=AttrDict(
+        overrides=[],
     ),
 
     paths=AttrDict(
