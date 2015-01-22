@@ -22,6 +22,11 @@ deploy_settings = load_settings(deploy_settings_fn)
 repository = get_repository(deploy_settings)
 
 
+@flask_app.errorhandler(500)
+def server_error(error):
+    return jsonify({'error': 'Server error'}), 500
+
+
 @flask_app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
