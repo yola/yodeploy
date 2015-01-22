@@ -5,6 +5,7 @@ coverage==3.5.2
 mock==1.0.1
 nose==1.2.1
 nosexcover==1.0.7
+pinocchio==0.4.1
 requests==1.2.3
 unittest2==0.5.1
 virtualenv==1.9.1
