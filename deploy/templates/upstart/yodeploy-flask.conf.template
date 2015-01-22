@@ -5,9 +5,7 @@ description "yodeploy flask server"
 start on runlevel [2345]
 stop on runlevel [!2345]
 
-# http://superuser.com/a/234541
-exec su -s /bin/sh -c 'exec "$0" "$@"' root -- \
-    /usr/local/bin/yodeploy-server
+exec /usr/local/bin/yodeploy-server
 
 respawn
 respawn limit 10 5
