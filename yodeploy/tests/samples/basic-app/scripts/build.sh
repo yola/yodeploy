@@ -4,4 +4,4 @@ cd "$(dirname "$0")/.."
 
 rm -Rf build
 mkdir build
-cp hello_world.txt build
+cp hello-world.txt build
