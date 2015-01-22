@@ -5,7 +5,8 @@ from flask import jsonify, request
 
 def check_auth(config, username, password):
     """Check if a username / password combination is valid."""
-    return username == 'fieldhq' and password == config.server.password
+    return (username == config.server.username
+            and password == config.server.password)
 
 
 def authenticate():
