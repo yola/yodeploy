@@ -6,13 +6,13 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
-from flask import abort, Flask, jsonify, make_response, request
+from flask import Flask, abort, jsonify, request
 from OpenSSL import SSL
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
 from yodeploy.flask_auth import auth_decorator
-from yodeploy.deploy import available_applications, deploy, configure_logging
+from yodeploy.deploy import available_applications, configure_logging, deploy
 from yodeploy.repository import get_repository
 
 flask_app = Flask(__name__)

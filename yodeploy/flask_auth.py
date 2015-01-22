@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import Response, jsonify, request
+from flask import jsonify, request
 
 
 def check_auth(config, username, password):
