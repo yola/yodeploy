@@ -8,14 +8,14 @@ from yoconfigurator.dicts import DotDict
 from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 
-from yodeploy.hooks.base import DeployHook
+from yodeploy.hooks.templating import TemplatedApp
 from yodeploy.locking import SpinLockFile
 from yodeploy.util import extract_tar
 
 log = logging.getLogger(__name__)
 
 
-class ConfiguratedApp(DeployHook):
+class ConfiguratedApp(TemplatedApp):
     def __init__(self, *args, **kwargs):
         super(ConfiguratedApp, self).__init__(*args, **kwargs)
         self.config = None

@@ -6,14 +6,13 @@ import sys
 
 from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.python import PythonApp
-from yodeploy.hooks.templating import TemplatedApp
 from yodeploy.util import chown_r, touch
 
 
 log = logging.getLogger(__name__)
 
 
-class DjangoApp(ConfiguratedApp, PythonApp, TemplatedApp):
+class DjangoApp(ConfiguratedApp, PythonApp):
     migrate_on_deploy = False
     uses_south = False
     has_media = False
