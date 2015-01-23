@@ -8,10 +8,10 @@ import sys
 import time
 
 from yodeploy.hooks.configurator import ConfiguratedApp
-from yodeploy.hooks.templating import TemplatedApp
 
 
 log = logging.getLogger(__name__)
+
 
 class TomcatServlet(ConfiguratedApp):
     migrate_on_deploy = False
