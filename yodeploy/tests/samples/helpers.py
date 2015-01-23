@@ -50,7 +50,8 @@ def patch_deploy_venv(patch_with=None):
 
 
 def build_sample(app_name, version='1'):
-    """Call build_artifact in the sample app."""
+    """Remove previous builds and call build_artifact in the sample app."""
+    clear(app_name)
     script_path = os.path.join(bin_dir, 'build_artifact.py')
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     env = {

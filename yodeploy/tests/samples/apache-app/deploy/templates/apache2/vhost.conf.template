@@ -1,0 +1,5 @@
+<VirtualHost>
+  ServerName {{aconf.domain}}
+</VirtualHost>
+
+Include /etc/apache2/yola.d/apache-app/*

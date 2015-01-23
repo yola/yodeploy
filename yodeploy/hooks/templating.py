@@ -28,3 +28,17 @@ class TemplatedApp(DeployHook):
             f.write(output)
 
         os.chmod(destination, perm)
+
+    def templates(self, path, dest):
+        """Write all templates in the path to the destination.
+
+        Returns the number of templates processed.
+        """
+        count = 0
+        if not self.template_exists(path):
+            return count
+        template_path = self.template_filename(path)
+        for tmpl in os.listdir(template_path):
+            self.template(os.path.join(path, tmpl), os.path.join(dest, tmpl))
+            count += 1
+        return count
