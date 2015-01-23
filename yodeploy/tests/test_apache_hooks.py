@@ -5,7 +5,7 @@ from yoconfigurator.tests import unittest
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.templating import TemplatedApp
-from yodeploy.tests.samples.helpers import rmdir, build_sample, deploy_sample
+from yodeploy.tests.samples.helpers import build_sample, deploy_sample, rmdir
 
 
 class TestApacheHostedApp(unittest.TestCase):
