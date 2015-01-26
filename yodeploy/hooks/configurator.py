@@ -35,11 +35,12 @@ class ConfiguratedApp(TemplatedApp):
         log.debug('Running ConfiguratedApp prepare hook')
         self.write_config()
         self.config = self.read_config()
+        self.pub_config = self.read_pub_config()
+        self.inject_public_config()
 
     def configurator_deployed(self):
         self.config = self.read_config()
         self.pub_config = self.read_pub_config()
-        self.inject_public_config()
 
     def write_config(self):
         conf_root = os.path.join(self.settings.paths.apps, 'configs')
