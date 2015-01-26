@@ -94,7 +94,8 @@ class ConfiguratedApp(TemplatedApp):
             return
         path = self.deploy_path(self.public_config_path)
         pub_conf_json = json.dumps(self.pub_config)
-        with open(path, 'r+') as f:
-            content = f.read().replace('<%= config %>', pub_conf_json)
-            f.seek(0)
+        with open(path, 'r') as f:
+            content = f.read()
+        content = content.replace('<%= config %>', pub_conf_json)
+        with open(path, 'w') as f:
             f.write(content)
