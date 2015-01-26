@@ -51,8 +51,8 @@ class ApacheHostedApp(TemplatedApp, ConfiguratedApp):
             raise Exception(
                 "The ApacheHostedApp is missing a template for the vhost.")
 
-        self.template(
-            'apache2/vhost.conf.template', join(self.vhost_path, self.app))
+        dest = join(self.vhost_path, "%s.conf" % self.app)
+        self.template('apache2/vhost.conf.template', dest)
 
     def place_includes(self):
         """Place all snippits in Apache's yola.d.

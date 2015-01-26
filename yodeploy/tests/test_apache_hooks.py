@@ -50,7 +50,7 @@ class TestApacheHostedAppDeployment(ApacheTestCase):
         deploy_sample('apache-app')
 
     def test_places_a_vhost(self):
-        self.assertDeployed('etc/apache2/sites-enabled/apache-app')
+        self.assertDeployed('etc/apache2/sites-enabled/apache-app.conf')
 
     def test_places_includes(self):
         self.assertDeployed('etc/apache2/yola.d/apache-app/redirects')
