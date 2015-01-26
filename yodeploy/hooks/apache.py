@@ -63,7 +63,7 @@ class ApacheHostedApp(TemplatedApp, ConfiguratedApp):
         if not os.path.exists(yolad_app_path):
             os.makedirs(yolad_app_path)
         tmpls_dir = join('apache2', 'yola.d', self.app)
-        self.templates(tmpls_dir, yolad_app_path)
+        self.template_all(tmpls_dir, yolad_app_path)
 
     def apache_hosted_deployed(self):
         self.apache.reload()
@@ -84,7 +84,7 @@ class ApacheMultiSiteApp(ApacheHostedApp):
 
     def place_vhosts(self):
         tmpl_dir = join('apache2', 'sites')
-        count = self.templates(tmpl_dir, self.vhost_path)
+        count = self.template_all(tmpl_dir, self.vhost_path)
         if count < 1:
             raise Exception(
                 "The ApacheMultiSiteApp is missing vhost templates.")

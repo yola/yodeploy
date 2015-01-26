@@ -29,7 +29,7 @@ class TemplatedApp(DeployHook):
 
         os.chmod(destination, perm)
 
-    def templates(self, path, dest):
+    def template_all(self, path, dest):
         """Write all templates in the path to the destination.
 
         Returns the number of templates processed.
