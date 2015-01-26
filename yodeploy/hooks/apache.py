@@ -13,7 +13,7 @@ from yodeploy.hooks.templating import TemplatedApp
 log = logging.getLogger(__name__)
 
 
-class Apache():
+class Apache(object):
 
     @staticmethod
     def reload():
@@ -55,18 +55,15 @@ class ApacheHostedApp(TemplatedApp, ConfiguratedApp):
             'apache2/vhost.conf.template', join(self.vhost_path, self.app))
 
     def place_includes(self):
-        tmpls_dir = join('apache2', 'yola.d', self.app)
-        self.templates(tmpls_dir, self.get_app_includes_path())
+        """Place all snippits in Apache's yola.d.
 
-    def get_app_includes_path(self):
-        """Return an app's include path located in apache's yola.d.
-
-        Create the directory if needed.
+        Create an appname sub-folder to house the snippits.
         """
         yolad_app_path = join(self.includes_path, self.app)
         if not os.path.exists(yolad_app_path):
             os.makedirs(yolad_app_path)
-        return yolad_app_path
+        tmpls_dir = join('apache2', 'yola.d', self.app)
+        self.templates(tmpls_dir, yolad_app_path)
 
     def apache_hosted_deployed(self):
         self.apache.reload()
