@@ -89,7 +89,10 @@ class ConfiguratedApp(TemplatedApp):
             return DotDict(json.load(f))
 
     def inject_public_config(self):
-        """Replace the config token with serialized public config."""
+        """Replace the config token with JSON serialized public config.
+
+        The config token is '<%= config %>'.
+        """
         if not self.public_config_path:
             return
         path = self.deploy_path(self.public_config_path)
