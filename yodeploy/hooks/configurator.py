@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 class ConfiguratedApp(TemplatedApp):
 
-    public_config_path = None
+    public_config_js_path = None
 
     def __init__(self, *args, **kwargs):
         super(ConfiguratedApp, self).__init__(*args, **kwargs)
@@ -36,7 +36,7 @@ class ConfiguratedApp(TemplatedApp):
         self.write_config()
         self.config = self.read_config()
         self.pub_config = self.read_pub_config()
-        self.inject_public_config()
+        self.write_config_js()
 
     def configurator_deployed(self):
         self.config = self.read_config()
@@ -89,14 +89,14 @@ class ConfiguratedApp(TemplatedApp):
         with open(path, 'r') as f:
             return DotDict(json.load(f))
 
-    def inject_public_config(self):
+    def write_config_js(self):
         """Replace the config token with JSON serialized public config.
 
         The config token is '<%= config %>'.
         """
-        if not self.public_config_path:
+        if not self.public_config_js_path:
             return
-        path = self.deploy_path(self.public_config_path)
+        path = self.deploy_path(self.public_config_js_path)
         pub_conf_json = json.dumps(self.pub_config)
         with open(path, 'r') as f:
             content = f.read()
