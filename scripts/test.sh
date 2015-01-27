@@ -8,6 +8,8 @@ rm -rf reports
 mkdir reports
 
 virtualenv/bin/python setup.py nosetests --with-xunit \
+                                         --with-spec \
+                                         --spec-color \
                                          --xunit-file=reports/TEST-nose.xml \
                                          --cover-html \
                                          --cover-html-dir=reports \
