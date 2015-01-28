@@ -8,7 +8,8 @@ from os.path import join
 
 
 from yodeploy.deploy import deploy
-from yodeploy.tests import deployconf, unittest
+from yodeploy.tests import unittest
+from yodeploy.test_integration import deployconf
 from yodeploy.application import Application
 
 tests_dir = os.path.join(os.path.dirname(__file__), '..')
@@ -70,7 +71,7 @@ def build_sample(app_name, version='1'):
 
 
 def deploy_sample(app_name, version="1"):
-    """Deploy the sample app to tests/filesys/deployed/app_name/."""
+    """Deploy the sample app to test_integration/filesys/deployed/app_name/."""
     orig_deploy_ve_fun = patch_deploy_venv()
     args = {
         'app': app_name,
