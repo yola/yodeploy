@@ -2,14 +2,12 @@ import os
 
 from yoconfigurator.tests import unittest
 
-from yodeploy.test_integration.helpers import (
-    build_sample, clear, deploy_sample)
+from yodeploy.test_integration.helpers import build_sample, deploy_sample
 
 
 class TestConfiguredAppWithConfigTemplate(unittest.TestCase):
 
     def setUp(self):
-        clear('config-template')
         build_sample('configs')
         build_sample('config-template')
         deploy_sample('config-template')
@@ -31,7 +29,6 @@ class TestConfiguredAppWithConfigTemplate(unittest.TestCase):
 class TestConfiguredAppWithConfigTemplateToken(unittest.TestCase):
 
     def setUp(self):
-        clear('config-template-token')
         build_sample('configs')
         build_sample('config-template-token')
         deploy_sample('config-template-token')
