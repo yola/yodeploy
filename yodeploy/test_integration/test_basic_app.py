@@ -2,7 +2,8 @@ import os
 
 from yoconfigurator.tests import unittest
 
-from yodeploy.test_integration.helpers import build_sample, clear, deploy_sample
+from yodeploy.test_integration.helpers import (
+    build_sample, clear, deploy_sample)
 
 
 class TestBasicAppDeploy(unittest.TestCase):
