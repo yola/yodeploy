@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 class ConfiguratedApp(TemplatedApp):
 
     public_config_js_path = None
+    public_config_token = "<%= config %>"
 
     def __init__(self, *args, **kwargs):
         super(ConfiguratedApp, self).__init__(*args, **kwargs)
@@ -92,7 +93,7 @@ class ConfiguratedApp(TemplatedApp):
     def write_config_js(self):
         """Replace the config token with JSON serialized public config.
 
-        The config token is '<%= config %>'.
+        The default config token is '<%= config %>'.
         """
         if not self.public_config_js_path:
             return
@@ -100,6 +101,6 @@ class ConfiguratedApp(TemplatedApp):
         pub_conf_json = json.dumps(self.pub_config)
         with open(path, 'r') as f:
             content = f.read()
-        content = content.replace('<%= config %>', pub_conf_json)
+        content = content.replace(self.public_config_token, pub_conf_json)
         with open(path, 'w') as f:
             f.write(content)
