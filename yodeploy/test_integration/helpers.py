@@ -12,7 +12,7 @@ from yodeploy.tests import unittest
 from yodeploy.test_integration import deployconf
 from yodeploy.application import Application
 
-tests_dir = os.path.join(os.path.dirname(__file__), '..')
+tests_dir = os.path.dirname(__file__)
 bin_dir = os.path.join(tests_dir, '..', 'cmds')
 deployconf_fn = deployconf.__file__.rstrip('c')
 
