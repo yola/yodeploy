@@ -45,4 +45,9 @@ deploy_settings = AttrDict(
         services={}
     ),
 
+    server=AttrDict(
+        username='test',
+        password='password',
+    )
+
 )
