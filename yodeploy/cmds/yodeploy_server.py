@@ -5,9 +5,9 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-
 from flask import Flask, abort, jsonify, request
 from OpenSSL import SSL
+from yoconfigurator.dicts import DotDict
 
 from yodeploy.application import Application
 from yodeploy.config import find_deploy_config, load_settings
@@ -15,11 +15,15 @@ from yodeploy.flask_auth import auth_decorator
 from yodeploy.deploy import available_applications, configure_logging, deploy
 from yodeploy.repository import get_repository
 
+log = logging.getLogger('yodeploy')
+
 flask_app = Flask(__name__)
 
 deploy_settings_fn = find_deploy_config()
-deploy_settings = load_settings(deploy_settings_fn)
-repository = get_repository(deploy_settings)
+
+flask_app.config.update(load_settings(deploy_settings_fn))
+
+repository = get_repository(DotDict(flask_app.config))
 
 
 @flask_app.errorhandler(500)
@@ -33,9 +37,9 @@ def not_found(error):
 
 
 @flask_app.route('/deploy/<app>/', methods=['GET', 'POST'])
-@auth_decorator(deploy_settings)
+@auth_decorator(DotDict(flask_app.config))
 def deploy_app(app):
-    if app not in available_applications(deploy_settings):
+    if app not in available_applications(DotDict(flask_app.config)):
         abort(404)
     if request.method == 'POST':
         log.debug('Request to deploy %s', app)
@@ -43,7 +47,7 @@ def deploy_app(app):
             log.debug('Extra arguments: %s', request.form)
         target = request.form.get('target', 'master')
         version = request.form.get('version')
-        deploy(app, target, deploy_settings_fn, version, deploy_settings)
+        deploy(app, target, deploy_settings_fn, version, DotDict(flask_app.config))
         log.info('Version %s of %s successfully deployed', version, app)
     application = Application(app, deploy_settings_fn)
     version = application.live_version
@@ -51,12 +55,12 @@ def deploy_app(app):
 
 
 @flask_app.route('/deploy/', methods=['GET'])
-@auth_decorator(deploy_settings)
+@auth_decorator(DotDict(flask_app.config))
 def get_all_deployed_versions():
     result = []
-    apps = available_applications(deploy_settings)
+    apps = available_applications(DotDict(flask_app.config))
     for app in apps:
-        appdir = os.path.join(deploy_settings.paths.apps, app)
+        appdir = os.path.join(DotDict(flask_app.config).paths.apps, app)
         app_result = {
             'name': app,
             'version': None
@@ -74,9 +78,9 @@ def parse_args():
     parser.add_argument('--listen', '-l', help='Bind to this IP address',
                         default='0.0.0.0')
     parser.add_argument('--port', '-p', type=int,
-                        default=deploy_settings.server.port,
+                        default=DotDict(flask_app.config).server.port,
                         help='Port to listen on (default: %s)' %
-                             deploy_settings.server.port)
+                             DotDict(flask_app.config).server.port)
     parser.add_argument('--debug', '-d', action='store_true',
                         help='Increase verbosity')
 
@@ -87,10 +91,9 @@ def parse_args():
 
 if __name__ == '__main__':
     opts = parse_args()
-    configure_logging(opts.debug, deploy_settings.server.logging)
-    log = logging.getLogger('yodeploy')
+    configure_logging(opts.debug, DotDict(flask_app.config).server.logging)
     context = SSL.Context(SSL.SSLv23_METHOD)
-    context.use_certificate_chain_file(deploy_settings.server.ssl.cert_chain)
-    context.use_privatekey_file(deploy_settings.server.ssl.key)
+    context.use_certificate_chain_file(DotDict(flask_app.config).server.ssl.cert_chain)
+    context.use_privatekey_file(DotDict(flask_app.config).server.ssl.key)
     log.debug('Starting yodeploy server')
     flask_app.run(host=opts.listen, port=opts.port, ssl_context=context)
