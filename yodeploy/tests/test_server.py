@@ -50,8 +50,6 @@ class ServerTestCase(unittest.TestCase):
         response = self.app.get('/deploy/basic-app/', headers=self.auth_header)
         json_response = json.loads(response.data)
 
-        print json_response
-
         self.assertEqual(response.status_code, 200)
         self.assertTrue('application' in json_response)
         self.assertEqual(json_response['application']['name'], 'basic-app')

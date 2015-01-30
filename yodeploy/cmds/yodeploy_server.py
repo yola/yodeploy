@@ -47,7 +47,8 @@ def deploy_app(app):
             log.debug('Extra arguments: %s', request.form)
         target = request.form.get('target', 'master')
         version = request.form.get('version')
-        deploy(app, target, deploy_settings_fn, version, DotDict(flask_app.config))
+        deploy(app, target, deploy_settings_fn, version,
+               DotDict(flask_app.config))
         log.info('Version %s of %s successfully deployed', version, app)
     application = Application(app, deploy_settings_fn)
     version = application.live_version
@@ -93,7 +94,8 @@ if __name__ == '__main__':
     opts = parse_args()
     configure_logging(opts.debug, DotDict(flask_app.config).server.logging)
     context = SSL.Context(SSL.SSLv23_METHOD)
-    context.use_certificate_chain_file(DotDict(flask_app.config).server.ssl.cert_chain)
+    context.use_certificate_chain_file(
+        DotDict(flask_app.config).server.ssl.cert_chain)
     context.use_privatekey_file(DotDict(flask_app.config).server.ssl.key)
     log.debug('Starting yodeploy server')
     flask_app.run(host=opts.listen, port=opts.port, ssl_context=context)
