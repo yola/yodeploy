@@ -53,10 +53,12 @@ class Builder(object):
         url = ('https://api.github.com/repos/%(repo)s/statuses/%(commit)s'
                % subst)
         target_url = os.environ.get('BUILD_URL', settings.url % subst)
+        build_environment = self.deploy_settings.artifacts.environment
         data = {
             'state': status,
             'target_url': target_url,
             'description': description,
+            'context': 'jenkins/%s' % build_environment
         }
         req = urllib2.Request(
             url=url,
