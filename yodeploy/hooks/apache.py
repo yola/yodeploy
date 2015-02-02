@@ -8,7 +8,6 @@ import sys
 from os.path import join
 
 from yodeploy.hooks.configurator import ConfiguratedApp
-from yodeploy.hooks.templating import TemplatedApp
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class Apache(object):
             sys.exit(1)
 
 
-class ApacheHostedApp(TemplatedApp, ConfiguratedApp):
+class ApacheHostedApp(ConfiguratedApp):
     vhost_path = '/etc/apache2/sites-enabled'
     includes_path = '/etc/apache2/yola.d'
     apache = Apache
