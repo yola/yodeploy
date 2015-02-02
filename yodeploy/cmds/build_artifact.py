@@ -52,9 +52,10 @@ class Builder(object):
         subst['repo'] = repo
         url = ('https://api.github.com/repos/%(repo)s/statuses/%(commit)s'
                % subst)
+        target_url = os.environ.get('BUILD_URL', settings.url % subst)
         data = {
             'state': status,
-            'target_url': settings.url % subst,
+            'target_url': target_url,
             'description': description,
         }
         req = urllib2.Request(
