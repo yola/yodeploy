@@ -58,7 +58,7 @@ class Builder(object):
             'state': status,
             'target_url': target_url,
             'description': description,
-            'context': 'yodeploy/%s' % build_environment
+            'context': 'yodeploy/%s' % build_environment,
         }
         req = urllib2.Request(
             url=url,
