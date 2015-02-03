@@ -8,14 +8,18 @@ from yoconfigurator.dicts import DotDict
 from yoconfigurator.filter import filter_config
 from yoconfigurator.smush import config_sources, smush_config
 
-from yodeploy.hooks.base import DeployHook
+from yodeploy.hooks.templating import TemplatedApp
 from yodeploy.locking import SpinLockFile
 from yodeploy.util import extract_tar
 
 log = logging.getLogger(__name__)
 
 
-class ConfiguratedApp(DeployHook):
+class ConfiguratedApp(TemplatedApp):
+
+    public_config_js_path = None
+    public_config_token = "<%= config %>"
+
     def __init__(self, *args, **kwargs):
         super(ConfiguratedApp, self).__init__(*args, **kwargs)
         self.config = None
@@ -32,6 +36,8 @@ class ConfiguratedApp(DeployHook):
         log.debug('Running ConfiguratedApp prepare hook')
         self.write_config()
         self.config = self.read_config()
+        self.pub_config = self.read_pub_config()
+        self.write_config_js()
 
     def configurator_deployed(self):
         self.config = self.read_config()
@@ -83,3 +89,18 @@ class ConfiguratedApp(DeployHook):
             return DotDict()
         with open(path, 'r') as f:
             return DotDict(json.load(f))
+
+    def write_config_js(self):
+        """Replace the config token with JSON serialized public config.
+
+        The default config token is '<%= config %>'.
+        """
+        if not self.public_config_js_path:
+            return
+        path = self.deploy_path(self.public_config_js_path)
+        pub_conf_json = json.dumps(self.pub_config)
+        with open(path, 'r') as f:
+            content = f.read()
+        content = content.replace(self.public_config_token, pub_conf_json)
+        with open(path, 'w') as f:
+            f.write(content)
