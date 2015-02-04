@@ -5,7 +5,7 @@ from yoconfigurator.tests import unittest
 
 from yodeploy.cmds import yodeploy_server
 from yodeploy.config import find_deploy_config, load_settings
-from yodeploy.tests.samples.helpers import deployconf_fn
+from yodeploy.test_integration.helpers import deployconf_fn
 
 
 deploy_settings = load_settings(find_deploy_config())
