@@ -52,10 +52,20 @@ class Builder(object):
         subst['repo'] = repo
         url = ('https://api.github.com/repos/%(repo)s/statuses/%(commit)s'
                % subst)
+        target_url = os.environ.get('BUILD_URL', settings.url % subst)
+
+        build_environment = self.deploy_settings.artifacts.environment
+        build_label = os.environ.get('label', None)
+
+        context = 'yodeploy/%s' % build_environment
+        if build_label:
+            context += '/%s' % build_label
+
         data = {
             'state': status,
-            'target_url': settings.url % subst,
+            'target_url': target_url,
             'description': description,
+            'context': context,
         }
         req = urllib2.Request(
             url=url,
