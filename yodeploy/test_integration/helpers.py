@@ -8,10 +8,11 @@ from os.path import join
 
 
 from yodeploy.deploy import deploy
-from yodeploy.tests import deployconf, unittest
+from yodeploy.tests import unittest
+from yodeploy.test_integration import deployconf
 from yodeploy.application import Application
 
-tests_dir = os.path.join(os.path.dirname(__file__), '..')
+tests_dir = os.path.dirname(__file__)
 bin_dir = os.path.join(tests_dir, '..', 'cmds')
 deployconf_fn = deployconf.__file__.rstrip('c')
 
@@ -50,7 +51,8 @@ def patch_deploy_venv(patch_with=None):
 
 
 def build_sample(app_name, version='1'):
-    """Call build_artifact in the sample app."""
+    """Clear all prev builds and call build_artifact in the sample app."""
+    clear(app_name)
     script_path = os.path.join(bin_dir, 'build_artifact.py')
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     env = {
@@ -70,7 +72,7 @@ def build_sample(app_name, version='1'):
 
 
 def deploy_sample(app_name, version="1"):
-    """Deploy the sample app to tests/filesys/deployed/app_name/."""
+    """Deploy the sample app to test_integration/filesys/deployed/app_name/."""
     orig_deploy_ve_fun = patch_deploy_venv()
     args = {
         'app': app_name,
