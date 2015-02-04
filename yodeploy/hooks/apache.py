@@ -28,9 +28,6 @@ class ApacheHostedApp(ConfiguratedApp):
     includes_path = '/etc/apache2/yola.d'
     apache = Apache
 
-    def __init__(self, *args, **kwargs):
-        super(ApacheHostedApp, self).__init__(*args, **kwargs)
-
     def deployed(self):
         super(ApacheHostedApp, self).deployed()
         self.apache_hosted_deployed()
@@ -71,9 +68,6 @@ class ApacheHostedApp(ConfiguratedApp):
 class ApacheMultiSiteApp(ApacheHostedApp):
 
     includes_path = '/etc/apache2/yola.d'
-
-    def __init__(self, *args, **kwargs):
-        super(ApacheMultiSiteApp, self).__init__(*args, **kwargs)
 
     def apache_hosted_prepare(self):
         """Create a several vhosts and place optional includes."""
