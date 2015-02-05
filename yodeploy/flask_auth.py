@@ -3,10 +3,11 @@ from functools import wraps
 from flask import jsonify, request
 
 
-def check_auth(config, username, password):
+def check_auth(username, password):
     """Check if a username / password combination is valid."""
-    return (username == config.server.username
-            and password == config.server.password)
+    from flask import current_app
+    return (username == current_app.config.server.username
+            and password == current_app.config.server.password)
 
 
 def authenticate():
@@ -18,13 +19,12 @@ def authenticate():
         {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 
-def auth_decorator(config):
+def auth_decorator():
     def requires_auth(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             auth = request.authorization
-            if not auth or not check_auth(
-                    config, auth.username, auth.password):
+            if not auth or not check_auth(auth.username, auth.password):
                 return authenticate()
             return f(*args, **kwargs)
         return decorated

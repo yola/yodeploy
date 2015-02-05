@@ -4,27 +4,27 @@ import json
 from yoconfigurator.tests import unittest
 
 from yodeploy.cmds import yodeploy_server
-from yodeploy.config import find_deploy_config, load_settings
-from yodeploy.test_integration.helpers import deployconf_fn
-
-
-deploy_settings = load_settings(find_deploy_config())
+from yodeploy.test_integration.helpers import (
+    build_sample, clear, deploy_sample, deployconf_fn)
 
 
 class ServerTestCase(unittest.TestCase):
     def setUp(self):
-        self.username = deploy_settings.server.username
-        self.password = deploy_settings.server.password
+        clear('basic-app')
+        build_sample('basic-app')
+        deploy_sample('basic-app')
+
+        self.flask_app = yodeploy_server.create_flask_app(deployconf_fn)
+
+        self.username = self.flask_app.config.server.username
+        self.password = self.flask_app.config.server.password
 
         self.auth_header = {
             'Authorization': 'Basic ' + base64.b64encode(
                 '%s:%s' % (self.username, self.password))
         }
 
-        yodeploy_server.flask_app.config.update(load_settings(deployconf_fn))
-        yodeploy_server.deploy_settings_fn = deployconf_fn
-
-        self.app = yodeploy_server.flask_app.test_client()
+        self.app = self.flask_app.test_client()
 
     def assertResponse(self, response, status_code=200, headers=None):
         self.assertEqual(response.status_code, status_code)
@@ -73,12 +73,8 @@ class ServerTestCase(unittest.TestCase):
 
     def test_get_deployed_basic_app_version(self):
         response = self.app.get('/deploy/basic-app/', headers=self.auth_header)
-        json_response = json.loads(response.data)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('application' in json_response)
-        self.assertEqual(json_response['application']['name'], 'basic-app')
-        self.assertEqual(json_response['application']['version'], '1')
+        self.assertDeployedApp(response, name='basic-app')
 
     def test_deploy_basic_app_latest_version(self):
         response = self.app.post(
