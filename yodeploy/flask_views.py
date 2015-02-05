@@ -48,7 +48,6 @@ def deploy_app(app):
 @auth_decorator()
 def get_all_deployed_versions():
     result = []
-    print current_app.config
     apps = available_applications(current_app.config)
     for app in apps:
         appdir = os.path.join(current_app.config.paths.apps, app)
