@@ -55,7 +55,7 @@ class Builder(object):
         target_url = os.environ.get('BUILD_URL', settings.url % subst)
 
         build_environment = self.deploy_settings.artifacts.environment
-        build_label = os.environ.get('label', None)
+        build_label = os.environ.get('JENKINS_SLAVE', None)
 
         context = 'yodeploy/%s' % build_environment
         if build_label:
