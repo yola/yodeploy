@@ -5,12 +5,12 @@ import subprocess
 import sys
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
-from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.python import PythonApp
 from yodeploy.util import chown_r, touch
 
 
 log = logging.getLogger(__name__)
+
 
 class DjangoApp(ApacheHostedApp, PythonApp):
     migrate_on_deploy = False

@@ -1,7 +1,6 @@
 """Application hooks for apps that use Apache."""
 
 import logging
-import os
 import subprocess
 import sys
 
