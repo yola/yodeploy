@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 
+from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.python import PythonApp
 from yodeploy.util import chown_r, touch
@@ -11,8 +12,7 @@ from yodeploy.util import chown_r, touch
 
 log = logging.getLogger(__name__)
 
-
-class DjangoApp(ConfiguratedApp, PythonApp):
+class DjangoApp(ApacheHostedApp, PythonApp):
     migrate_on_deploy = False
     uses_south = False
     has_media = False
@@ -22,34 +22,28 @@ class DjangoApp(ConfiguratedApp, PythonApp):
     vhost_path = '/etc/apache2/sites-enabled'
     vhost_snippet_path = '/etc/apache2/yola.d/services'
 
-    def __init__(self, *args, **kwargs):
-        super(DjangoApp, self).__init__(*args, **kwargs)
-
     def prepare(self):
         super(DjangoApp, self).prepare()
         self.django_prepare()
 
     def deployed(self):
-        super(DjangoApp, self).deployed()
         self.django_deployed()
+        super(DjangoApp, self).deployed()
+
+    def place_wsgi_handler(self):
+        if not self.template_exists('apache2/wsgi-handler.wsgi.template'):
+            raise Exception(
+                "The DjangoApp is missing a template for the wsgi handler.")
+        self.template(
+            'apache2/wsgi-handler.wsgi.template',
+            self.deploy_path(self.app + '.wsgi'))
 
     def django_prepare(self):
         log.debug('Running DjangoApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        if self.template_exists('apache2/vhost.conf.template'):
-            self.template('apache2/vhost.conf.template',
-                          os.path.join(self.vhost_path, self.app))
-        if self.template_exists('apache2/vhost-snippet.conf.template'):
-            if not os.path.exists(self.vhost_snippet_path):
-                os.makedirs(self.vhost_snippet_path)
-            self.template('apache2/vhost-snippet.conf.template',
-                          os.path.join(self.vhost_snippet_path,
-                                       self.app + '.conf'))
-        if self.template_exists('apache2/wsgi-handler.wsgi.template'):
-            self.template('apache2/wsgi-handler.wsgi.template',
-                          self.deploy_path(self.app + '.wsgi'))
+        self.place_wsgi_handler()
 
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
@@ -94,11 +88,6 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         data_dir = os.path.join(self.root, 'data')
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
-        try:
-            subprocess.check_call(('service', 'apache2', 'reload'))
-        except subprocess.CalledProcessError:
-            log.error("Unable to reload apache2")
-            sys.exit(1)
 
     def migrate(self):
         log.info('Running migrations on %s', self.app)
@@ -139,3 +128,8 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
+
+
+class DjangoMultiSiteApp(ApacheMultiSiteApp, DjangoApp):
+
+    pass
