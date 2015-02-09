@@ -38,6 +38,32 @@ class DjangoApp(ApacheHostedApp, PythonApp):
             'apache2/wsgi-handler.wsgi.template',
             self.deploy_path(self.app + '.wsgi'))
 
+    def prepare_logfile(self):
+        logfile = self.config.get(self.app, {}).get('path', {}).get('log')
+
+        if not logfile:
+            return
+
+        try:
+            os.mkdir(os.path.dirname(logfile))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
+        touch(logfile, 'www-data', 'adm', 0640)
+
+    def call_compress(self):
+        if not self.compress:
+            return
+
+        cmd = ['compress', '--force']
+
+        if isinstance(self.compress, list):
+            for extension in self.compress:
+                cmd += ['-e', extension]
+
+        self.manage_py(*cmd)
+
     def django_prepare(self):
         log.debug('Running DjangoApp prepare hook')
         if self.config is None:
@@ -57,16 +83,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 os.mkdir(media_dir)
             chown_r(data_dir, 'www-data', 'www-data')
 
-        logfile = self.config.get(self.app, {}).get('path', {}).get('log',
-                                                                    None)
-        if logfile:
-            try:
-                os.mkdir(os.path.dirname(logfile))
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-
-            touch(logfile, 'www-data', 'adm', 0640)
+        self.prepare_logfile()
 
         if self.migrate_on_deploy:
             self.migrate()
@@ -74,12 +91,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if self.has_static:
             self.manage_py('collectstatic', '--noinput')
 
-        if self.compress:
-            cmd = ['compress', '--force']
-            if isinstance(self.compress, list):
-                for extension in self.compress:
-                    cmd += ['-e', extension]
-            self.manage_py(*cmd)
+        self.call_compress()
 
         if self.compile_i18n:
             self.manage_py('compilemessages')
