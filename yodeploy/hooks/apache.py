@@ -56,8 +56,6 @@ class ApacheHostedApp(ConfiguratedApp):
         Create an appname sub-folder to house the snippits.
         """
         yolad_app_path = join(self.includes_path, self.app)
-        if not os.path.exists(yolad_app_path):
-            os.makedirs(yolad_app_path)
         tmpls_dir = join('apache2', 'yola.d', self.app)
         self.template_all(tmpls_dir, yolad_app_path)
 

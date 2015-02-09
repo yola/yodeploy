@@ -37,6 +37,8 @@ class TemplatedApp(DeployHook):
         count = 0
         if not self.template_exists(path):
             return count
+        if not os.path.exists(dest):
+            os.makedirs(dest)
         template_path = self.template_filename(path)
         for tmpl in os.listdir(template_path):
             self.template(os.path.join(path, tmpl), os.path.join(dest, tmpl))
