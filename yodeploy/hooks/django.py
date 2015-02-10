@@ -48,10 +48,9 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if not self.compress:
             return
 
+        file_exts_to_compress = [] if bool(self.compress) else self.compress
         cmd = ['compress', '--force']
-
-        if isinstance(self.compress, list):
-            [cmd.extend(('-e', ext)) for ext in self.compress]
+        [cmd.extend(('-e', ext)) for ext in file_exts_to_compress]
 
         self.manage_py(*cmd)
 

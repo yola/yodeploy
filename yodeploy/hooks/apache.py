@@ -60,8 +60,6 @@ class ApacheHostedApp(ConfiguratedApp):
 
 class ApacheMultiSiteApp(ApacheHostedApp):
 
-    includes_path = '/etc/apache2/yola.d'
-
     def apache_hosted_prepare(self):
         """Create a several vhosts and place optional includes."""
         log.debug("Running ApacheMultiSiteApp prepare hook.")
