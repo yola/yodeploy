@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+0.4.24
+------
+
+* Add support for injecting public configuration into a src file
+* Bugfix target_url with build artifact
+* Add integration tests with sample apps
+
 0.4.23
 ------
 
