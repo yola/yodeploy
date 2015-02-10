@@ -30,14 +30,6 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         self.django_deployed()
         super(DjangoApp, self).deployed()
 
-    def place_wsgi_handler(self):
-        if not self.template_exists('apache2/wsgi-handler.wsgi.template'):
-            raise Exception(
-                "The DjangoApp is missing a template for the wsgi handler.")
-        self.template(
-            'apache2/wsgi-handler.wsgi.template',
-            self.deploy_path(self.app + '.wsgi'))
-
     def prepare_logfile(self):
         logfile = self.config.get(self.app, {}).get('path', {}).get('log')
 
@@ -68,7 +60,9 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        self.place_wsgi_handler()
+        self.template(
+            'apache2/wsgi-handler.wsgi.template',
+            self.deploy_path(self.app + '.wsgi'))
 
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')

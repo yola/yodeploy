@@ -42,10 +42,6 @@ class ApacheHostedApp(ConfiguratedApp):
         self.place_includes()
 
     def place_vhost(self):
-        if not self.template_exists('apache2/vhost.conf.template'):
-            raise Exception(
-                "The ApacheHostedApp is missing a template for the vhost.")
-
         dest = join(self.vhost_path, "%s.conf" % self.app)
         self.template('apache2/vhost.conf.template', dest)
 
@@ -74,7 +70,4 @@ class ApacheMultiSiteApp(ApacheHostedApp):
 
     def place_vhosts(self):
         tmpl_dir = join('apache2', 'sites')
-        count = self.template_all(tmpl_dir, self.vhost_path)
-        if count < 1:
-            raise Exception(
-                "The ApacheMultiSiteApp is missing vhost templates.")
+        self.template_all(tmpl_dir, self.vhost_path, min_count=1)

@@ -29,18 +29,25 @@ class TemplatedApp(DeployHook):
 
         os.chmod(destination, perm)
 
-    def template_all(self, path, dest):
+    def template_all(self, path, dest, min_count=0):
         """Write all templates in the path to the destination.
 
-        Returns the number of templates processed.
+        Fails quietly unless a minimum number of templates is specified.
         """
         count = 0
+        template_path = self.template_filename(path)
+
         if not self.template_exists(path):
-            return count
+            if min_count:
+                raise Exception("Templates missing from %s" % template_path)
+            return
+
         if not os.path.exists(dest):
             os.makedirs(dest)
-        template_path = self.template_filename(path)
+
         for tmpl in os.listdir(template_path):
             self.template(os.path.join(path, tmpl), os.path.join(dest, tmpl))
             count += 1
-        return count
+
+        if count < min_count:
+            raise Exception("Templates missing from %s" % template_path)
