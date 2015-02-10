@@ -59,8 +59,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         cmd = ['compress', '--force']
 
         if isinstance(self.compress, list):
-            for extension in self.compress:
-                cmd += ['-e', extension]
+            [cmd.extend(('-e', ext)) for ext in self.compress]
 
         self.manage_py(*cmd)
 
