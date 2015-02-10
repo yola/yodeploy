@@ -19,8 +19,6 @@ class DjangoApp(ApacheHostedApp, PythonApp):
     compress = False
     compile_i18n = False
     has_static = False
-    vhost_path = '/etc/apache2/sites-enabled'
-    vhost_snippet_path = '/etc/apache2/yola.d/services'
 
     def prepare(self):
         super(DjangoApp, self).prepare()

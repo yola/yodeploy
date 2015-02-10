@@ -8,7 +8,4 @@ class TestDjangoHook(unittest.TestCase):
         self.dh = DjangoApp('test', None, '/tmp/test', '123', {}, None)
 
     def test_vhost_attributes(self):
-        self.assertEqual(self.dh.vhost_path,
-            '/etc/apache2/sites-enabled')
-        self.assertEqual(self.dh.vhost_snippet_path,
-            '/etc/apache2/yola.d/services')
+        self.assertEqual(self.dh.vhost_path, '/etc/apache2/sites-enabled')
