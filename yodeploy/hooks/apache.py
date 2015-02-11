@@ -46,7 +46,7 @@ class ApacheHostedApp(ConfiguratedApp):
         dest = join(self.vhost_path, "%s.conf" % self.app)
         self.template('apache2/vhost.conf.template', dest)
 
-        # clean up old vhosts (ones that do not end in `.conf`)
+        # clean up old vhosts, yodeploy <= v0.4.24 did not append `.conf`
         old_vhost = join(self.vhost_path, self.app)
         if os.path.exists(old_vhost):
             os.path.unlink(old_vhost)
