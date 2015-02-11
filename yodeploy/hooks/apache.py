@@ -1,6 +1,7 @@
 """Application hooks for apps that use Apache."""
 
 import logging
+import os
 import subprocess
 import sys
 
@@ -44,6 +45,11 @@ class ApacheHostedApp(ConfiguratedApp):
     def place_vhost(self):
         dest = join(self.vhost_path, "%s.conf" % self.app)
         self.template('apache2/vhost.conf.template', dest)
+
+        # clean up old vhosts (ones that do not end in `.conf`)
+        old_vhost = join(self.vhost_path, self.app)
+        if os.path.exists(old_vhost):
+            os.path.unlink(old_vhost)
 
     def place_includes(self):
         """Place all snippits in Apache's yola.d.
