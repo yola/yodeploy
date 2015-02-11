@@ -74,4 +74,4 @@ class ApacheMultiSiteApp(ApacheHostedApp):
 
     def place_vhosts(self):
         tmpl_dir = join('apache2', 'sites')
-        self.template_all(tmpl_dir, self.vhost_path, min_count=1)
+        self.template_all(tmpl_dir, self.vhost_path, min_count=2)
