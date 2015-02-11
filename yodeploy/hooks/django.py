@@ -57,9 +57,10 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        self.template(
-            'apache2/wsgi-handler.wsgi.template',
-            self.deploy_path(self.app + '.wsgi'))
+        if self.template_exists('apache2/wsgi-handler.wsgi.template'):
+            self.template(
+                'apache2/wsgi-handler.wsgi.template',
+                self.deploy_path(self.app + '.wsgi'))
 
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
