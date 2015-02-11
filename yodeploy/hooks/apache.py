@@ -49,7 +49,7 @@ class ApacheHostedApp(ConfiguratedApp):
         # clean up old vhosts, yodeploy <= v0.4.24 did not append `.conf`
         old_vhost = join(self.vhost_path, self.app)
         if os.path.exists(old_vhost):
-            os.path.unlink(old_vhost)
+            os.unlink(old_vhost)
 
     def place_includes(self):
         """Place all snippits in Apache's yola.d.
