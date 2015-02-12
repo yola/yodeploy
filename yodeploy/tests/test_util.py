@@ -65,10 +65,9 @@ class TestExtractTar(TmpDirTestCase):
         self.assertNotTMPPExists('extracted/quux')
 
     @unittest.skipIf('fakeroot' not in itertools.chain.from_iterable(
-            os.listdir(component)
-            for component in os.environ['PATH'].split(os.pathsep)
-            if os.path.isdir(component)
-        ), "Test requires fakeroot")
+        os.listdir(component)
+        for component in os.environ['PATH'].split(os.pathsep)
+        if os.path.isdir(component)), "Test requires fakeroot")
     def test_permission_squash(self):
         self.create_tar('test.tar.gz', 'foo/bar')
 
