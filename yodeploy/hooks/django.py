@@ -6,7 +6,7 @@ import sys
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.python import PythonApp
-from yodeploy.util import chown_r, touch
+from yodeploy.util import chown_r, ignoring, touch
 
 
 log = logging.getLogger(__name__)
@@ -34,11 +34,8 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if not logfile:
             return
 
-        try:
+        with ignoring(errno.EEXIST):
             os.mkdir(os.path.dirname(logfile))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
 
         touch(logfile, 'www-data', 'adm', 0640)
 

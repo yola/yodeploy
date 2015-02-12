@@ -1,4 +1,5 @@
 """Yodeploy utilities."""
+import contextlib
 import grp
 import logging
 import os
@@ -71,3 +72,13 @@ def delete_dir_content(path):
                 shutil.rmtree(os.path.join(root, d))
             except OSError:
                 log.warn("Unable to delete %s %s", root, d)
+
+
+@contextlib.contextmanager
+def ignoring(ignore_err_no):
+    """Ignore OSErrors accoring to the given error number."""
+    try:
+        yield
+    except OSError as e:
+        if ignore_err_no != getattr(e, "errno", None):
+            raise
