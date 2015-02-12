@@ -14,6 +14,10 @@ class TestDjangoAppDeployment(ApacheTestCase):
     def test_places_a_wsgi_handler(self):
         self.assertDeployed('deployed/django-app/live/django-app.wsgi')
 
+    def test_prepares_logfiles(self):
+        self.assertDeployed('deployed/django-app/logs/app.log')
+        self.assertDeployed('deployed/django-app/logs/app-celery.log')
+
 
 class TestDjangoMultisiteDeployment(ApacheTestCase):
 

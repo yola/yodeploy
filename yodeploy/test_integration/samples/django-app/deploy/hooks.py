@@ -1,3 +1,4 @@
+import getpass
 import mock
 
 from os.path import join
@@ -12,5 +13,7 @@ class Hooks(DjangoApp):
     apache = mock.Mock()
     vhost_path = join(tests_dir, 'filesys', 'etc', 'apache2', 'sites-enabled')
     includes_path = join(tests_dir, 'filesys', 'etc', 'apache2', 'yola.d')
+    log_user = getpass.getuser()
+    log_group = None
 
 hooks = Hooks

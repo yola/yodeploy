@@ -19,6 +19,8 @@ class DjangoApp(ApacheHostedApp, PythonApp):
     compress = False
     compile_i18n = False
     has_static = False
+    log_user = 'www-data'
+    log_group = 'adm'
 
     def prepare(self):
         super(DjangoApp, self).prepare()
@@ -28,16 +30,16 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         self.django_deployed()
         super(DjangoApp, self).deployed()
 
-    def prepare_logfile(self):
-        logfile = self.config.get(self.app, {}).get('path', {}).get('log')
+    def prepare_logfiles(self):
+        path = self.config.get(self.app, {}).get('path', {})
+        logs = [path.get('log'), path.get('celery_log')]
 
-        if not logfile:
-            return
-
-        with ignoring(errno.EEXIST):
-            os.mkdir(os.path.dirname(logfile))
-
-        touch(logfile, 'www-data', 'adm', 0640)
+        for logfile in logs:
+            if not logfile:
+                continue
+            with ignoring(errno.EEXIST):
+                os.mkdir(os.path.dirname(logfile))
+            touch(logfile, self.log_user, self.log_group, 0640)
 
     def call_compress(self):
         if not self.compress:
@@ -71,7 +73,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 os.mkdir(media_dir)
             chown_r(data_dir, 'www-data', 'www-data')
 
-        self.prepare_logfile()
+        self.prepare_logfiles()
 
         if self.migrate_on_deploy:
             self.migrate()
