@@ -1,0 +1,3 @@
+<VirtualHost>
+  ServerName {{aconf.domain.yola}}
+</VirtualHost>

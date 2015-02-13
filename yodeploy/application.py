@@ -9,7 +9,7 @@ import yodeploy.ipc_logging
 import yodeploy.virtualenv
 from yodeploy.locking import LockFile, SpinLockFile
 from yodeploy.repository import version_sort_key
-from yodeploy.util import extract_tar
+from yodeploy.util import extract_tar, ignoring
 
 
 log = logging.getLogger(__name__)
@@ -204,11 +204,8 @@ class Application(object):
             for version in self.deployed_versions:
                 ve = os.path.join(self.appdir, 'versions', version,
                                   'virtualenv')
-                try:
+                with ignoring(errno.ENOENT):
                     used_virtualenvs.add(os.path.basename(os.readlink(ve)))
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        raise
 
             ve_dir = os.path.join(self.appdir, 'virtualenvs')
             if os.path.isdir(ve_dir):

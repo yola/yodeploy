@@ -7,10 +7,11 @@ import sys
 from os.path import join
 
 
+from yodeploy.application import Application
 from yodeploy.deploy import deploy
 from yodeploy.tests import unittest
 from yodeploy.test_integration import deployconf
-from yodeploy.application import Application
+from yodeploy.util import ignoring
 
 tests_dir = os.path.dirname(__file__)
 bin_dir = os.path.join(tests_dir, '..', 'cmds')
@@ -18,11 +19,8 @@ deployconf_fn = deployconf.__file__.rstrip('c')
 
 
 def rmdir(path):
-    try:
+    with ignoring(errno.ENOENT):
         shutil.rmtree(path)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
 
 
 def clear(app_name):

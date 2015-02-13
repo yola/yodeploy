@@ -1,0 +1,7 @@
+<VirtualHost>
+
+    ServerName {{aconf.domain}}
+
+    WSGIScriptAlias /django-app/live/django-app.wsgi
+
+</VirtualHost>
