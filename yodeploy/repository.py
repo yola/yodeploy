@@ -8,6 +8,8 @@ from StringIO import StringIO
 
 import boto
 
+from yodeploy.util import ignoring
+
 log = logging.getLogger(__name__)
 STORES = {}
 
@@ -125,11 +127,8 @@ class LocalRepositoryStore(object):
                 raise KeyError(e)
             raise
         if metadata:
-            try:
+            with ignoring(errno.ENOENT):
                 os.unlink(fn + '.meta')
-            except OSError, e:
-                if e.errno != errno.ENOENT:
-                    raise
 
     def list(self, path=None, files=False, dirs=True):
         '''
@@ -147,14 +146,11 @@ class LocalRepositoryStore(object):
         if dirs:
             predicates.append(os.path.isdir)
 
-        try:
+        with ignoring(errno.ENOENT):
             for filename in os.listdir(directory):
                 pathname = os.path.join(directory, filename)
                 if any(predicate(pathname) for predicate in predicates):
                     yield filename
-        except OSError, e:
-            if e.errno != errno.ENOENT:
-                raise
 
 
 @_register_store('s3')

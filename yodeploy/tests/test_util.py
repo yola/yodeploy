@@ -1,3 +1,4 @@
+import errno
 import grp
 import itertools
 import os
@@ -7,7 +8,8 @@ import subprocess
 import sys
 
 from yodeploy.tests import unittest, TmpDirTestCase
-from yodeploy.util import chown_r, touch, extract_tar, delete_dir_content
+from yodeploy.util import (
+    chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
 
 class TestChown_R(TmpDirTestCase):
@@ -65,10 +67,9 @@ class TestExtractTar(TmpDirTestCase):
         self.assertNotTMPPExists('extracted/quux')
 
     @unittest.skipIf('fakeroot' not in itertools.chain.from_iterable(
-            os.listdir(component)
-            for component in os.environ['PATH'].split(os.pathsep)
-            if os.path.isdir(component)
-        ), "Test requires fakeroot")
+        os.listdir(component)
+        for component in os.environ['PATH'].split(os.pathsep)
+        if os.path.isdir(component)), "Test requires fakeroot")
     def test_permission_squash(self):
         self.create_tar('test.tar.gz', 'foo/bar')
 
@@ -100,3 +101,14 @@ class TestDelete_Dir_Content(TmpDirTestCase):
         delete_dir_content(self.tmppath())
         self.assertFalse(os.path.exists(f))
         self.assertFalse(os.path.exists(d))
+
+
+class TestContextManagerForIgnoringErrors(TmpDirTestCase):
+    def test_can_be_used_to_create_directories(self):
+        d = self.tmppath('some', 'dir')
+        self.assertFalse(os.path.exists(d))
+        with ignoring(errno.EEXIST):
+            os.makedirs(d)
+        self.assertTrue(os.path.exists(d))
+        with ignoring(errno.EEXIST):
+            os.makedirs(d)
