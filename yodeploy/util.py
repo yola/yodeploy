@@ -80,5 +80,5 @@ def ignoring(ignore_err_no):
     try:
         yield
     except OSError as e:
-        if ignore_err_no != getattr(e, "errno", None):
+        if e.errno != ignore_err_no:
             raise
