@@ -10,6 +10,7 @@ from yodeploy.test_integration.helpers import tests_dir
 # cleans up test output, this hook is supposed to fail
 sys.stderr = open(os.devnull, 'w')
 
+
 class Hooks(ApacheMultiSiteApp):
 
     # these overrides are only needed for testsing
