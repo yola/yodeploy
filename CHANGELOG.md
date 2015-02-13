@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+0.5.0
+------
+
+* Add `ApacheHostedApp` for single domain apps
+* Add `ApacheMultiSiteApp` for whitelabel apps
+* Add `DjangoMultiSiteApp` for whitelabel django apps
+* `DjangoApp`:
+    - Extend `ApacheHostedApp`
+    - Add support for celery log
+    - Drop support for `vhost-snippet.conf.template`
+* Add integration tests with sample apps
+
 0.4.24
 ------
 
@@ -48,7 +60,7 @@ Change Log
 0.4.16
 ------
 
-* Add a data_dir @property to the DataDirApp hook so it can be used elsewhere
+* Add a data_dir `@property` to the DataDirApp hook so it can be used elsewhere
 * Update yoconfigurator to 0.4.4
 
 0.4.15
