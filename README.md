@@ -30,7 +30,7 @@ The current hook points are:
 On-disk Deployment layout
 -------------------------
 
-`/srv/`\ *app*: Deploy root
+*/srv/app*: Deploy root
 
     `versions`
 
@@ -50,13 +50,13 @@ On-disk Deployment layout
 Repository layout
 -----------------
 
-*app*\ `/`\ *target*\ `/`\ *artifact*\ `/`\ *version*\ : A particular version of an
+*app/target/artifact/version* : A particular version of an
 artifact.
 
-*app*\ `/`\ *target*\ `/`\ *artifact*\ `/`\ *version*\ `.meta`\ : The metadata for an
+*app/target/artifact/version*.meta: The metadata for an
 artifact. Only used in stores that don't support metadata on objects.
 
-*app*\ `/`\ *target*\ `/`\ *artifact*\ `/latest`: A text file containing
+*app/target/artifact*/latest: A text file containing
 the *version* of the most recent *artifact*.
 
 Compat levels
