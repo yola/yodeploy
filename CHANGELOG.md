@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.5.1
+------
+
+* Update manifest
+
 0.5.0
 ------
 
