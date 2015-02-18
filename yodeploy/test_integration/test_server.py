@@ -61,7 +61,7 @@ class ServerTestCase(unittest.TestCase):
         response = self.app.get('/deploy/')
         self.assertResponse(
             response, status_code=401,
-            headers={'WWW-Authenticate': 'Basic realm="Login Required"'})
+            headers={'WWW-Authenticate': 'Basic realm="yodeploy"'})
 
     def test_with_auth(self):
         response = self.app.get('/deploy/', headers=self.auth_header)

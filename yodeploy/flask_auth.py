@@ -16,7 +16,7 @@ def authenticate():
         jsonify({'error': 'Could not verify your access level for that URL.\n'
                           'You have to login with proper credentials'}),
         401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        {'WWW-Authenticate': 'Basic realm="yodeploy"'})
 
 
 def auth_decorator():
