@@ -9,7 +9,7 @@ import socket
 import subprocess
 import sys
 import urllib2
-from collections import Counter
+from collections import defaultdict
 from xml.etree import ElementTree
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -109,7 +109,8 @@ class Builder(object):
             failed = True
 
         msg = 'Tests %s' % ('failed' if failed else 'passed')
-        results = Counter(tests=0, failures=0, errors=0, skip=0)
+        results = defaultdict(int)
+        results.update(dict(tests=0, failures=0, errors=0, skip=0))
 
         for report_file in ('xunit', 'xunit-integration'):
             report_path = 'test_build/reports/%s.xml' % report_file
