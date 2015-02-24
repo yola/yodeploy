@@ -115,8 +115,9 @@ class Builder(object):
         for report_file in ('xunit', 'xunit-integration'):
             report_path = 'test_build/reports/%s.xml' % report_file
             if os.path.isfile(report_path):
-                report_tree = ElementTree.parse(report_path)
-                for (k, v) in report_tree.find('testsuite').attrib.iteritems():
+                test_tree = ElementTree.parse(report_path)
+                test_suite = test_tree.find('testsuite') or test_tree.getroot()
+                for (k, v) in test_suite.attrib.iteritems():
                     if k in results:
                         results[k] += int(v)
                 msg = ('Ran %(tests)s tests: %(failures)s failures, '
