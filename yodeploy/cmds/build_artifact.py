@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import urllib2
+from collections import Counter
 from xml.etree import ElementTree
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -108,12 +109,18 @@ class Builder(object):
             failed = True
 
         msg = 'Tests %s' % ('failed' if failed else 'passed')
-        report_path = 'test_build/reports/xunit.xml'
-        if os.path.isfile(report_path):
-            report_details = ElementTree.parse(report_path).getroot().attrib
-            msg = ('Ran %(tests)s tests: %(failures)s failures, '
-                   '%(errors)s errors, %(skip)s skipped') % report_details
-        self.set_commit_status('failure' if failed else 'success', msg)
+        results = Counter(tests=0, failures=0, errors=0, skip=0)
+
+        for report_file in ('xunit', 'xunit-integration'):
+            report_path = 'test_build/reports/%s.xml' % report_file
+            if os.path.isfile(report_path):
+                report_tree = ElementTree.parse(report_path)
+                for (k, v) in report_tree.find('testsuite').attrib.iteritems():
+                    if k in results:
+                        results[k] += int(v)
+                msg = ('Ran %(tests)s tests: %(failures)s failures, '
+                       '%(errors)s errors, %(skip)s skipped') % results
+            self.set_commit_status('failure' if failed else 'success', msg)
 
         if failed:
             abort(msg)
