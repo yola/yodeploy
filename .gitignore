@@ -4,6 +4,7 @@
 /.coverage
 /build
 /dist
+/test-build
 /test-data
 /yodeploy/test_integration/filesys/*
 /yodeploy/test_integration/samples/*/configuration.json
