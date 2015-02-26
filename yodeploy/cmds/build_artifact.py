@@ -144,7 +144,7 @@ class Builder(object):
             jenkins_tag = ' (tag: %s)' % self.tag
         print
         print ('Jenkins description: %s:%.8s%s "%s"'
-               % (self.target, self.commit, jenkins_tag, self.commit_msg))
+               % (self.branch, self.commit, jenkins_tag, self.commit_msg))
 
 
 class BuildCompat1(Builder):
