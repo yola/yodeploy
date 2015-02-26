@@ -1,25 +1,31 @@
 #!/bin/bash
 
-set -efxu
+set -efx
 
 cd "$(dirname "$0")/.."
 
-rm -rf reports
-mkdir reports
+# Setup our test environment
+scripts/build.sh test_build
 
-virtualenv/bin/python setup.py nosetests --with-xunit \
-                                         --with-spec \
-                                         --spec-color \
-                                         --xunit-file=reports/TEST-nose.xml \
-                                         --cover-html \
-                                         --cover-html-dir=reports \
-                                         --cover-package=yodeploy \
-                                         --with-xcoverage \
-                                         --xcoverage-file=reports/coverage.xml
+cp setup.py test_build/
+
+mkdir -p test_build/reports
+
+# Activate the venv
+. virtualenv/bin/activate
+cd test_build/
+
+./setup.py nosetests --with-xunit \
+                     --with-spec \
+                     --spec-color \
+                     --xunit-file=reports/xunit.xml \
+                     --cover-html \
+                     --cover-html-dir=reports \
+                     --cover-package=yodeploy \
+                     --with-xcoverage \
+                     --xcoverage-file=reports/coverage.xml
 
 # Ignore the return status of these linters
 set +e
-pep8 yodeploy > reports/pep8.report
-pyflakes yodeploy > reports/pyflakes.report
-pylint yodeploy > reports/pylint.report
-exit 0
+flake8 --output-file reports/flake8.report yodeploy
+set -e
