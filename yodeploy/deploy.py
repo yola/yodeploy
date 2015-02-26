@@ -57,7 +57,26 @@ def report(app, action, old_version, version, deploy_settings):
         sock.sendto('deploys.%s.%s.%s:1|c'
                     % (environment, hostname, app.replace('.', '_')), addr)
 
-    if 'webhook' in services:
+    if 'fieldhq' in services:
+        service_settings = deploy_settings.report.service_settings.fieldhq
+        payload = {
+            'app': app,
+            'action': action,
+            'old_version': old_version,
+            'version': version,
+            'user': user,
+            'fqdn': fqdn,
+            'environment': environment,
+        }
+        for fieldhq_url in service_settings.urls:
+            log.info('Sending deploy information to FieldHQ (%s)', fieldhq_url)
+            try:
+                requests.post(
+                    fieldhq_url, data=json.dumps(payload),
+                    headers={'Content-type': 'application/json'})
+            except RequestException as e:
+                log.warning('Could not send post-deploy webhook: %s', e)
+    elif 'webhook' in services:
         log.info('Sending deploy information to webhook')
         service_settings = deploy_settings.report.service_settings.webhook
         payload = {
