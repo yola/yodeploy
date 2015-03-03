@@ -9,7 +9,6 @@ import socket
 import subprocess
 import sys
 import urllib2
-from collections import defaultdict
 from xml.etree import ElementTree
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
