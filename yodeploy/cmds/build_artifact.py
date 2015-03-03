@@ -109,8 +109,7 @@ class Builder(object):
             failed = True
 
         msg = 'Tests %s' % ('failed' if failed else 'passed')
-        results = defaultdict(int)
-        results.update(dict(tests=0, failures=0, errors=0, skip=0))
+        results = {'tests': 0, 'failures': 0, 'errors': 0, 'skip': 0}
 
         for report_file in ('xunit', 'xunit-integration'):
             report_path = 'test_build/reports/%s.xml' % report_file
