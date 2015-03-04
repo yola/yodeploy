@@ -57,8 +57,8 @@ def report(app, action, old_version, version, deploy_settings):
         sock.sendto('deploys.%s.%s.%s:1|c'
                     % (environment, hostname, app.replace('.', '_')), addr)
 
-    if 'fieldhq' in services:
-        service_settings = deploy_settings.report.service_settings.fieldhq
+    if 'webhooks' in services:
+        service_settings = deploy_settings.report.service_settings.webhooks
         payload = {
             'app': app,
             'action': action,
