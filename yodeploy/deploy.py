@@ -69,7 +69,11 @@ def report(app, action, old_version, version, deploy_settings):
             'environment': environment,
         }
         for webhook_url in service_settings.urls:
-            log.info('Sending deploy information to webhook: %s', webhook_url)
+            log_url = webhook_url
+            if '@' in log_url:
+                log_url = '%s//%s' % (log_url[:log_url.index('//')],
+                                      log_url[log_url.index('@')+1:])
+            log.info('Sending deploy information to webhook: %s', log_url)
             try:
                 requests.post(
                     webhook_url, data=json.dumps(payload),
