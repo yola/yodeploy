@@ -68,11 +68,11 @@ def report(app, action, old_version, version, deploy_settings):
             'fqdn': fqdn,
             'environment': environment,
         }
-        for fieldhq_url in service_settings.urls:
-            log.info('Sending deploy information to FieldHQ (%s)', fieldhq_url)
+        for webhook_url in service_settings.urls:
+            log.info('Sending deploy information to webhook: %s', webhook_url)
             try:
                 requests.post(
-                    fieldhq_url, data=json.dumps(payload),
+                    webhook_url, data=json.dumps(payload),
                     headers={'Content-type': 'application/json'})
             except RequestException as e:
                 log.warning('Could not send post-deploy webhook: %s', e)
