@@ -72,7 +72,7 @@ def report(app, action, old_version, version, deploy_settings):
             log_url = webhook_url
             if '@' in log_url:
                 log_url = '%s//%s' % (log_url[:log_url.index('//')],
-                                      log_url[log_url.index('@')+1:])
+                                      log_url[log_url.index('@') + 1:])
             log.info('Sending deploy information to webhook: %s', log_url)
             try:
                 requests.post(
