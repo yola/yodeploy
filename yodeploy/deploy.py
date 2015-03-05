@@ -76,28 +76,6 @@ def report(app, action, old_version, version, deploy_settings):
                     headers={'Content-type': 'application/json'})
             except RequestException as e:
                 log.warning('Could not send post-deploy webhook: %s', e)
-    elif 'webhook' in services:
-        log.info('Sending deploy information to webhook')
-        service_settings = deploy_settings.report.service_settings.webhook
-        payload = {
-            'app': app,
-            'action': action,
-            'old_version': old_version,
-            'version': version,
-            'user': user,
-            'fqdn': fqdn,
-            'environment': environment,
-        }
-        auth = None
-        if service_settings.username:
-            auth = (service_settings.username, service_settings.password)
-        try:
-            requests.post(service_settings.url,
-                          auth=auth,
-                          headers={'Content-type': 'application/json'},
-                          data=json.dumps(payload))
-        except RequestException as e:
-            log.warning('Could not send post-deploy webhook: %s', e)
 
 
 def available_applications(deploy_settings):
