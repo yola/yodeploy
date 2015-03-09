@@ -3,6 +3,7 @@ import logging
 import os
 import socket
 import sys
+import urlparse
 
 import requests
 from requests.exceptions import RequestException
@@ -34,6 +35,13 @@ def configure_logging(verbose, conf, filename=None):
         logging.getLogger().addHandler(handler)
 
     logging.getLogger('boto').setLevel(logging.WARNING)
+
+
+def strip_auth(url):
+    parts = urlparse.urlparse(url)
+    masked = parts._replace(
+        netloc=parts.hostname + (':%s' % parts.port if parts.port else ''))
+    return urlparse.urlunparse(masked)
 
 
 def report(app, action, old_version, version, deploy_settings):
@@ -69,7 +77,8 @@ def report(app, action, old_version, version, deploy_settings):
             'environment': environment,
         }
         for webhook_url in service_settings.urls:
-            log.info('Sending deploy information to webhook: %s', webhook_url)
+            log.info('Sending deploy information to webhook: %s',
+                     strip_auth(webhook_url))
             try:
                 requests.post(
                     webhook_url, data=json.dumps(payload),
