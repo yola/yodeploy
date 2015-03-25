@@ -4,52 +4,62 @@ import os
 import subprocess
 import sys
 
-from yodeploy.hooks.configurator import ConfiguratedApp
+from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.python import PythonApp
-from yodeploy.util import chown_r, touch
+from yodeploy.util import chown_r, ignoring, touch
 
 
 log = logging.getLogger(__name__)
 
 
-class DjangoApp(ConfiguratedApp, PythonApp):
+class DjangoApp(ApacheHostedApp, PythonApp):
     migrate_on_deploy = False
     uses_south = False
     has_media = False
     compress = False
     compile_i18n = False
     has_static = False
-    vhost_path = '/etc/apache2/sites-enabled'
-    vhost_snippet_path = '/etc/apache2/yola.d/services'
-
-    def __init__(self, *args, **kwargs):
-        super(DjangoApp, self).__init__(*args, **kwargs)
+    log_user = 'www-data'
+    log_group = 'adm'
 
     def prepare(self):
         super(DjangoApp, self).prepare()
         self.django_prepare()
 
     def deployed(self):
-        super(DjangoApp, self).deployed()
         self.django_deployed()
+        super(DjangoApp, self).deployed()
+
+    def prepare_logfiles(self):
+        path = self.config.get(self.app, {}).get('path', {})
+        logs = [path.get('log'), path.get('celery_log')]
+
+        for logfile in logs:
+            if not logfile:
+                continue
+            with ignoring(errno.EEXIST):
+                os.mkdir(os.path.dirname(logfile))
+            touch(logfile, self.log_user, self.log_group, 0640)
+
+    def call_compress(self):
+        if not self.compress:
+            return
+
+        file_exts_to_compress = [] if self.compress is True else self.compress
+        cmd = ['compress', '--force']
+        [cmd.extend(('-e', ext)) for ext in file_exts_to_compress]
+
+        self.manage_py(*cmd)
 
     def django_prepare(self):
         log.debug('Running DjangoApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
 
-        if self.template_exists('apache2/vhost.conf.template'):
-            self.template('apache2/vhost.conf.template',
-                          os.path.join(self.vhost_path, self.app))
-        if self.template_exists('apache2/vhost-snippet.conf.template'):
-            if not os.path.exists(self.vhost_snippet_path):
-                os.makedirs(self.vhost_snippet_path)
-            self.template('apache2/vhost-snippet.conf.template',
-                          os.path.join(self.vhost_snippet_path,
-                                       self.app + '.conf'))
         if self.template_exists('apache2/wsgi-handler.wsgi.template'):
-            self.template('apache2/wsgi-handler.wsgi.template',
-                          self.deploy_path(self.app + '.wsgi'))
+            self.template(
+                'apache2/wsgi-handler.wsgi.template',
+                self.deploy_path(self.app + '.wsgi'))
 
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
@@ -63,16 +73,7 @@ class DjangoApp(ConfiguratedApp, PythonApp):
                 os.mkdir(media_dir)
             chown_r(data_dir, 'www-data', 'www-data')
 
-        logfile = self.config.get(self.app, {}).get('path', {}).get('log',
-                                                                    None)
-        if logfile:
-            try:
-                os.mkdir(os.path.dirname(logfile))
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-
-            touch(logfile, 'www-data', 'adm', 0640)
+        self.prepare_logfiles()
 
         if self.migrate_on_deploy:
             self.migrate()
@@ -80,12 +81,7 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         if self.has_static:
             self.manage_py('collectstatic', '--noinput')
 
-        if self.compress:
-            cmd = ['compress', '--force']
-            if isinstance(self.compress, list):
-                for extension in self.compress:
-                    cmd += ['-e', extension]
-            self.manage_py(*cmd)
+        self.call_compress()
 
         if self.compile_i18n:
             self.manage_py('compilemessages')
@@ -94,11 +90,6 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         data_dir = os.path.join(self.root, 'data')
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
-        try:
-            subprocess.check_call(('service', 'apache2', 'reload'))
-        except subprocess.CalledProcessError:
-            log.error("Unable to reload apache2")
-            sys.exit(1)
 
     def migrate(self):
         log.info('Running migrations on %s', self.app)
@@ -139,3 +130,8 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
+
+
+class DjangoMultiSiteApp(ApacheMultiSiteApp, DjangoApp):
+
+    pass

@@ -1,3 +1,5 @@
+"""Yodeploy utilities."""
+import contextlib
 import grp
 import logging
 import os
@@ -9,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 def chown_r(path, user, group):
-    '''recursive chown'''
+    """Recursive chown."""
     uid = user if isinstance(user, int) else pwd.getpwnam(user).pw_uid
     gid = group if isinstance(group, int) else grp.getgrnam(group).gr_gid
 
@@ -20,8 +22,7 @@ def chown_r(path, user, group):
 
 
 def touch(path, user=None, group=None, perm=None):
-    '''Create a file owned by user.group with the specified permissions'''
-
+    """Create a file owned by user.group with the specified permissions."""
     open(path, 'a').close()
 
     uid = pwd.getpwnam(user).pw_uid if user else -1
@@ -33,10 +34,11 @@ def touch(path, user=None, group=None, perm=None):
 
 
 def extract_tar(tarball, root):
-    '''Ensure that tarball only has one root directory.
+    """Ensure that tarball only has one root directory.
+
     Extract it into the parent directory of root, and rename the extracted
     directory to root.
-    '''
+    """
     workdir = os.path.dirname(root)
     tar = tarfile.open(tarball, 'r')
     try:
@@ -58,7 +60,7 @@ def extract_tar(tarball, root):
 
 
 def delete_dir_content(path):
-    '''Delete all files and directories under given path.'''
+    """Delete all files and directories under given path."""
     for root, dirs, files in os.walk(path):
         for f in files:
             try:
@@ -70,3 +72,13 @@ def delete_dir_content(path):
                 shutil.rmtree(os.path.join(root, d))
             except OSError:
                 log.warn("Unable to delete %s %s", root, d)
+
+
+@contextlib.contextmanager
+def ignoring(ignore_err_no):
+    """Ignore OSErrors accoring to the given error number."""
+    try:
+        yield
+    except OSError as e:
+        if e.errno != ignore_err_no:
+            raise

@@ -3,6 +3,7 @@ import logging
 import os
 import socket
 import sys
+import urlparse
 
 import requests
 from requests.exceptions import RequestException
@@ -36,6 +37,13 @@ def configure_logging(verbose, conf, filename=None):
     logging.getLogger('boto').setLevel(logging.WARNING)
 
 
+def strip_auth(url):
+    parts = urlparse.urlparse(url)
+    masked = parts._replace(
+        netloc=parts.hostname + (':%s' % parts.port if parts.port else ''))
+    return urlparse.urlunparse(masked)
+
+
 def report(app, action, old_version, version, deploy_settings):
     "Report to the world that we deployed."
 
@@ -57,9 +65,8 @@ def report(app, action, old_version, version, deploy_settings):
         sock.sendto('deploys.%s.%s.%s:1|c'
                     % (environment, hostname, app.replace('.', '_')), addr)
 
-    if 'webhook' in services:
-        log.info('Sending deploy information to webhook')
-        service_settings = deploy_settings.report.service_settings.webhook
+    if 'webhooks' in services:
+        service_settings = deploy_settings.report.service_settings.webhooks
         payload = {
             'app': app,
             'action': action,
@@ -69,16 +76,15 @@ def report(app, action, old_version, version, deploy_settings):
             'fqdn': fqdn,
             'environment': environment,
         }
-        auth = None
-        if service_settings.username:
-            auth = (service_settings.username, service_settings.password)
-        try:
-            requests.post(service_settings.url,
-                          auth=auth,
-                          headers={'Content-type': 'application/json'},
-                          data=json.dumps(payload))
-        except RequestException as e:
-            log.warning('Could not send post-deploy webhook: %s', e)
+        for webhook_url in service_settings.urls:
+            log.info('Sending deploy information to webhook: %s',
+                     strip_auth(webhook_url))
+            try:
+                requests.post(
+                    webhook_url, data=json.dumps(payload),
+                    headers={'Content-type': 'application/json'})
+            except RequestException as e:
+                log.warning('Could not send post-deploy webhook: %s', e)
 
 
 def available_applications(deploy_settings):

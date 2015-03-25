@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import urllib2
+from xml.etree import ElementTree
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -55,7 +56,7 @@ class Builder(object):
         target_url = os.environ.get('BUILD_URL', settings.url % subst)
 
         build_environment = self.deploy_settings.artifacts.environment
-        build_label = os.environ.get('label', None)
+        build_label = os.environ.get('JENKINS_SLAVE', None)
 
         context = 'yodeploy/%s' % build_environment
         if build_label:
@@ -99,12 +100,30 @@ class Builder(object):
         print_banner('Test')
         env = self.build_env()
         self.set_commit_status('pending', 'Tests Running')
+        failed = False
+
         try:
             check_call('scripts/test.sh', env=env)
         except subprocess.CalledProcessError:
-            self.set_commit_status('failure', 'Tests did not pass')
-            abort('Tests failed')
-        self.set_commit_status('success', 'Tests passed')
+            failed = True
+
+        msg = 'Tests %s' % ('failed' if failed else 'passed')
+        results = {'tests': 0, 'failures': 0, 'errors': 0, 'skip': 0}
+
+        for report_file in ('xunit', 'xunit-integration'):
+            report_path = 'test_build/reports/%s.xml' % report_file
+            if os.path.isfile(report_path):
+                test_tree = ElementTree.parse(report_path)
+                test_suite = test_tree.find('testsuite') or test_tree.getroot()
+                for (k, v) in test_suite.attrib.iteritems():
+                    if k in results:
+                        results[k] += int(v)
+                msg = ('Ran %(tests)s tests: %(failures)s failures, '
+                       '%(errors)s errors, %(skip)s skipped') % results
+            self.set_commit_status('failure' if failed else 'success', msg)
+
+        if failed:
+            abort(msg)
 
     def upload(self):
         raise NotImplemented()
@@ -123,7 +142,8 @@ class Builder(object):
             jenkins_tag = ' (tag: %s)' % self.tag
         print
         print ('Jenkins description: %s:%.8s%s "%s"'
-               % (self.target, self.commit, jenkins_tag, self.commit_msg))
+               % (self.branch.replace('origin/', ''), self.commit,
+                  jenkins_tag, self.commit_msg))
 
 
 class BuildCompat1(Builder):
