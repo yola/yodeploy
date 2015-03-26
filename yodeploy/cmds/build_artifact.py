@@ -212,18 +212,23 @@ class BuildCompat3(Builder):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+                                   '--target', self.target, '--download']
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
+                                '--target', self.target, '--download']
+        if self.upload_virtualenvs:
+            build_deploy_virtualenv.append('--upload')
+            build_app_virtualenv.append('--upload')
+
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
-            check_call((python, build_ve, '-a', 'deploy',
-                        '--target', self.target, '--download', '--upload'),
-                       cwd='deploy', abort='build-virtualenv failed')
+            check_call(build_deploy_virtualenv, cwd='deploy',
+                       abort='build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
             print_banner('Build app virtualenv')
-            check_call((python, build_ve, '-a', self.app,
-                        '--target', self.target, '--download', '--upload'),
-                       abort='build-virtualenv failed')
+            check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
 
     def upload(self):
