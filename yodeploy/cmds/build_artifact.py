@@ -22,7 +22,8 @@ import yodeploy.repository
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
-                 deploy_settings, repository, build_virtualenvs):
+                 deploy_settings, repository, build_virtualenvs,
+                 upload_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -34,6 +35,7 @@ class Builder(object):
         self.deploy_settings = deploy_settings
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
+        self.upload_virtualenvs = upload_virtualenvs
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -452,11 +454,14 @@ def main():
         tag = line
         break
 
+    upload_virtualenvs = not opts.test_only
+
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
                            repository=repository,
-                           build_virtualenvs=opts.build_virtualenvs)
+                           build_virtualenvs=opts.build_virtualenvs,
+                           upload_virtualenvs=upload_virtualenvs)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
