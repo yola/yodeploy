@@ -22,7 +22,8 @@ import yodeploy.repository
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
-                 deploy_settings, repository, build_virtualenvs):
+                 deploy_settings, repository, build_virtualenvs,
+                 upload_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -34,6 +35,7 @@ class Builder(object):
         self.deploy_settings = deploy_settings
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
+        self.upload_virtualenvs = upload_virtualenvs
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -210,18 +212,23 @@ class BuildCompat3(Builder):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+                                   '--target', self.target, '--download']
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
+                                '--target', self.target, '--download']
+        if self.upload_virtualenvs:
+            build_deploy_virtualenv.append('--upload')
+            build_app_virtualenv.append('--upload')
+
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
-            check_call((python, build_ve, '-a', 'deploy',
-                        '--target', self.target, '--download', '--upload'),
-                       cwd='deploy', abort='build-virtualenv failed')
+            check_call(build_deploy_virtualenv, cwd='deploy',
+                       abort='build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
         if os.path.exists('requirements.txt'):
             print_banner('Build app virtualenv')
-            check_call((python, build_ve, '-a', self.app,
-                        '--target', self.target, '--download', '--upload'),
-                       abort='build-virtualenv failed')
+            check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
 
     def upload(self):
@@ -452,11 +459,14 @@ def main():
         tag = line
         break
 
+    upload_virtualenvs = not opts.test_only
+
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
                            repository=repository,
-                           build_virtualenvs=opts.build_virtualenvs)
+                           build_virtualenvs=opts.build_virtualenvs,
+                           upload_virtualenvs=upload_virtualenvs)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
