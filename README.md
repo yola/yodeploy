@@ -1,5 +1,6 @@
 yodeploy
 ========
+[![Build Status](https://jenkins.yola.net/buildStatus/icon?job=Build-yodeploy)](https://jenkins.yola.net/view/Build/job/Build-yodeploy/)
 
 Python helpers for Yola's Deployment system.
 
