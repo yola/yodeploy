@@ -1,4 +1,5 @@
 Flask==0.10.1
+Flask-HTTPAuth==2.5.0
 pyOpenSSL==0.14
 Tempita==0.5dev
 argparse==1.2.1

@@ -5,26 +5,13 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from flask import Flask
 from OpenSSL import SSL
-from yoconfigurator.dicts import DotDict
 
-from yodeploy.config import find_deploy_config, load_settings
+from yodeploy.config import find_deploy_config
 from yodeploy.deploy import configure_logging
+from yodeploy.flask_app.app import create_app
 
 log = logging.getLogger('yodeploy')
-
-
-def create_flask_app(settings_fn):
-    app = Flask(__name__)
-    app.config = DotDict(app.config)
-    app.config.update(load_settings(settings_fn))
-    app.config.deploy_config_fn = settings_fn
-
-    from yodeploy.flask_views import yodeploy_blueprint
-    app.register_blueprint(yodeploy_blueprint)
-
-    return app
 
 
 def parse_args():
@@ -46,7 +33,7 @@ def parse_args():
 
 if __name__ == '__main__':
     opts = parse_args()
-    flask_app = create_flask_app(find_deploy_config())
+    flask_app = create_app(find_deploy_config())
     configure_logging(opts.debug, flask_app.config.server.logging)
     context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(flask_app.config.server.ssl.cert_chain)

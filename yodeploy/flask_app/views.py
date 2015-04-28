@@ -1,32 +1,19 @@
 import logging
 import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import Blueprint, abort, current_app, jsonify, request
 
 from yodeploy.application import Application
 from yodeploy.deploy import available_applications, deploy
-from yodeploy.flask_auth import auth_decorator
+from yodeploy.flask_app.auth import auth
 
 log = logging.getLogger('yodeploy')
 
 yodeploy_blueprint = Blueprint('yodeploy_server', __name__)
 
 
-@yodeploy_blueprint.app_errorhandler(500)
-def server_error(error):
-    return jsonify({'error': 'Server error'}), 500
-
-
-@yodeploy_blueprint.app_errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Not found'}), 404
-
-
 @yodeploy_blueprint.route('/deploy/<app>/', methods=['GET', 'POST'])
-@auth_decorator()
+@auth.login_required
 def deploy_app(app):
     if app not in available_applications(current_app.config):
         abort(404)
@@ -45,7 +32,7 @@ def deploy_app(app):
 
 
 @yodeploy_blueprint.route('/deploy/', methods=['GET'])
-@auth_decorator()
+@auth.login_required
 def get_all_deployed_versions():
     result = []
     apps = available_applications(current_app.config)

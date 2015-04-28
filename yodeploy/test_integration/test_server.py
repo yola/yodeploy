@@ -3,7 +3,7 @@ import json
 
 from yoconfigurator.tests import unittest
 
-from yodeploy.cmds import yodeploy_server
+from yodeploy.flask_app.app import create_app
 from yodeploy.test_integration.helpers import (
     build_sample, clear, deploy_sample, deployconf_fn)
 
@@ -14,7 +14,7 @@ class ServerTestCase(unittest.TestCase):
         build_sample('basic-app')
         deploy_sample('basic-app')
 
-        self.flask_app = yodeploy_server.create_flask_app(deployconf_fn)
+        self.flask_app = create_app(deployconf_fn)
 
         self.username = self.flask_app.config.server.username
         self.password = self.flask_app.config.server.password
@@ -61,7 +61,8 @@ class ServerTestCase(unittest.TestCase):
         response = self.app.get('/deploy/')
         self.assertResponse(
             response, status_code=401,
-            headers={'WWW-Authenticate': 'Basic realm="yodeploy"'})
+            headers={
+                'WWW-Authenticate': 'Basic realm="Authentication Required"'})
 
     def test_with_auth(self):
         response = self.app.get('/deploy/', headers=self.auth_header)
