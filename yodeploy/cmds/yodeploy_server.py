@@ -15,7 +15,7 @@ log = logging.getLogger('yodeploy')
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Yodeploy server")
+    parser = argparse.ArgumentParser(description='Yodeploy server')
 
     parser.add_argument('--listen', '-l', help='Bind to this IP address',
                         default='0.0.0.0')
