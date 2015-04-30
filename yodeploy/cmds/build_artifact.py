@@ -124,7 +124,9 @@ class Builder(object):
         if any(results.values()):
             msg = ('Ran %(tests)s tests: %(failures)s failures, '
                    '%(errors)s errors, %(skip)s skipped') % results
-        self.set_commit_status('failure' if failed else 'success', msg)
+
+        self.set_commit_status(
+            'failure' if failed or results['failures'] else 'success', msg)
 
         if failed:
             abort(msg)
