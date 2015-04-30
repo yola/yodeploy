@@ -120,9 +120,11 @@ class Builder(object):
                 for (k, v) in test_suite.attrib.iteritems():
                     if k in results:
                         results[k] += int(v)
-                msg = ('Ran %(tests)s tests: %(failures)s failures, '
-                       '%(errors)s errors, %(skip)s skipped') % results
-            self.set_commit_status('failure' if failed else 'success', msg)
+
+        if any(results.values()):
+            msg = ('Ran %(tests)s tests: %(failures)s failures, '
+                   '%(errors)s errors, %(skip)s skipped') % results
+        self.set_commit_status('failure' if failed else 'success', msg)
 
         if failed:
             abort(msg)
