@@ -57,8 +57,10 @@ def build_sample(app_name, version='1'):
         'PATH': os.environ['PATH'],
         'PYTHONPATH': ':'.join(sys.path),
         'BUILD_NUMBER': version,
+        'GIT_BRANCH': 'master',
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
+
     p = subprocess.Popen(
         (script_path, '--no-virtualenvs', '--config', deployconf_fn),
         cwd=app_dir,
