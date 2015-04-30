@@ -124,8 +124,6 @@ class Builder(object):
         if any(results.values()):
             msg = ('Ran %(tests)s tests: %(failures)s failures, '
                    '%(errors)s errors, %(skip)s skipped') % results
-            if results['failed'] > 0:
-                failed = True
         self.set_commit_status('failure' if failed else 'success', msg)
 
         if failed:
