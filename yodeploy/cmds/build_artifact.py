@@ -125,8 +125,12 @@ class Builder(object):
             msg = ('Ran %(tests)s tests: %(failures)s failures, '
                    '%(errors)s errors, %(skip)s skipped') % results
 
+        # If the test script is intentionally ignoring test failures, don't
+        # fail the build
+        commit_status = failed or bool(results['failures'])
+
         self.set_commit_status(
-            'failure' if failed or results['failures'] else 'success', msg)
+            'failure' if commit_status else 'success', msg)
 
         if failed:
             abort(msg)
