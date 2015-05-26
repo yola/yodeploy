@@ -44,7 +44,7 @@ def strip_auth(url):
     return urlparse.urlunparse(masked)
 
 
-def report(app, action, old_version, version, deploy_settings):
+def report(app, action, target, old_version, version, deploy_settings):
     "Report to the world that we deployed."
 
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
@@ -52,8 +52,8 @@ def report(app, action, old_version, version, deploy_settings):
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
-    message = '%s@%s: Deployed %s: %s -> %s' % (user, fqdn, app, old_version,
-                                                version)
+    message = '%s@%s: Deployed %s/%s: %s -> %s' % (user, fqdn, target, app,
+                                                   old_version, version)
 
     log.info(message)
     services = deploy_settings.report.services
@@ -112,7 +112,8 @@ def deploy(app, target, config, version, deploy_settings):
         version = repository.latest_version(app, target)
 
     application.deploy(target, repository, version)
-    report(application.app, 'deploy', old_version, version, deploy_settings)
+    report(application.app, 'deploy', target, old_version, version,
+           deploy_settings)
 
 
 def gc(max_versions, config, deploy_settings):
