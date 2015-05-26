@@ -70,6 +70,7 @@ def report(app, action, target, old_version, version, deploy_settings):
         payload = {
             'app': app,
             'action': action,
+            'target': target,
             'old_version': old_version,
             'version': version,
             'user': user,
