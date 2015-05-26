@@ -16,8 +16,9 @@ log = logging.getLogger(__name__)
 
 
 def configure_logging(verbose, conf, filename=None):
-    "Set up logging"
-    logging.basicConfig(level=logging.DEBUG, filename=filename, stream=sys.stdout)
+    """Set up logging."""
+    logging.basicConfig(
+        level=logging.DEBUG, filename=filename, stream=sys.stdout)
     root = logging.getLogger()
 
     for handler in root.handlers:
@@ -45,8 +46,7 @@ def strip_auth(url):
 
 
 def report(app, action, target, old_version, version, deploy_settings):
-    "Report to the world that we deployed."
-
+    """Report to the world that we deployed."""
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
     environment = deploy_settings.artifacts.environment
     hostname = socket.gethostname()
@@ -88,8 +88,7 @@ def report(app, action, target, old_version, version, deploy_settings):
 
 
 def available_applications(deploy_settings):
-    "Return the applications available for deployment"
-
+    """Return the applications available for deployment."""
     if deploy_settings.apps.limit:
         return deploy_settings.apps.available
 
@@ -98,7 +97,7 @@ def available_applications(deploy_settings):
 
 
 def deploy(app, target, config, version, deploy_settings):
-    "Deploy an application"
+    """Deploy an application."""
     if app not in available_applications(deploy_settings):
         log.error('This application is not in the available applications '
                   'list. Please check your deploy config.')
@@ -117,7 +116,7 @@ def deploy(app, target, config, version, deploy_settings):
 
 
 def gc(max_versions, config, deploy_settings):
-    """Clean up old deploys"""
+    """Clean up old deploys."""
     for app in available_applications(deploy_settings):
         if os.path.isdir(os.path.join(deploy_settings.paths.apps, app,
                                       'versions')):
