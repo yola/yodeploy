@@ -52,8 +52,8 @@ def report(app, action, target, old_version, version, deploy_settings):
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
-    message = '%s@%s: Deployed %s/%s: %s -> %s' % (user, fqdn, target, app,
-                                                   old_version, version)
+    message = '%s@%s: Deployed %s (%s): %s -> %s' % (user, fqdn, app, target,
+                                                     old_version, version)
 
     log.info(message)
     services = deploy_settings.report.services
