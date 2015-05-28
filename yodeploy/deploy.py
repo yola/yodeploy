@@ -16,8 +16,9 @@ log = logging.getLogger(__name__)
 
 
 def configure_logging(verbose, conf, filename=None):
-    "Set up logging"
-    logging.basicConfig(level=logging.DEBUG, filename=filename, stream=sys.stdout)
+    """Set up logging."""
+    logging.basicConfig(
+        level=logging.DEBUG, filename=filename, stream=sys.stdout)
     root = logging.getLogger()
 
     for handler in root.handlers:
@@ -44,16 +45,15 @@ def strip_auth(url):
     return urlparse.urlunparse(masked)
 
 
-def report(app, action, old_version, version, deploy_settings):
-    "Report to the world that we deployed."
-
+def report(app, action, target, old_version, version, deploy_settings):
+    """Report to the world that we deployed."""
     user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
     environment = deploy_settings.artifacts.environment
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
-    message = '%s@%s: Deployed %s: %s -> %s' % (user, fqdn, app, old_version,
-                                                version)
+    message = '%s@%s: Deployed %s (%s): %s -> %s' % (user, fqdn, app, target,
+                                                     old_version, version)
 
     log.info(message)
     services = deploy_settings.report.services
@@ -70,6 +70,7 @@ def report(app, action, old_version, version, deploy_settings):
         payload = {
             'app': app,
             'action': action,
+            'target': target,
             'old_version': old_version,
             'version': version,
             'user': user,
@@ -88,8 +89,7 @@ def report(app, action, old_version, version, deploy_settings):
 
 
 def available_applications(deploy_settings):
-    "Return the applications available for deployment"
-
+    """Return the applications available for deployment."""
     if deploy_settings.apps.limit:
         return deploy_settings.apps.available
 
@@ -98,7 +98,7 @@ def available_applications(deploy_settings):
 
 
 def deploy(app, target, config, version, deploy_settings):
-    "Deploy an application"
+    """Deploy an application."""
     if app not in available_applications(deploy_settings):
         log.error('This application is not in the available applications '
                   'list. Please check your deploy config.')
@@ -112,11 +112,12 @@ def deploy(app, target, config, version, deploy_settings):
         version = repository.latest_version(app, target)
 
     application.deploy(target, repository, version)
-    report(application.app, 'deploy', old_version, version, deploy_settings)
+    report(application.app, 'deploy', target, old_version, version,
+           deploy_settings)
 
 
 def gc(max_versions, config, deploy_settings):
-    """Clean up old deploys"""
+    """Clean up old deploys."""
     for app in available_applications(deploy_settings):
         if os.path.isdir(os.path.join(deploy_settings.paths.apps, app,
                                       'versions')):
