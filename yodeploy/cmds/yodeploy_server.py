@@ -14,7 +14,7 @@ from yodeploy.flask_app.app import create_app
 log = logging.getLogger('yodeploy')
 
 
-def parse_args():
+def parse_args(flask_app):
     parser = argparse.ArgumentParser(description='Yodeploy server')
 
     parser.add_argument('--listen', '-l', help='Bind to this IP address',
@@ -32,8 +32,8 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    opts = parse_args()
     flask_app = create_app(find_deploy_config())
+    opts = parse_args(flask_app)
     configure_logging(opts.debug, flask_app.config.server.logging)
     context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(flask_app.config.server.ssl.cert_chain)
