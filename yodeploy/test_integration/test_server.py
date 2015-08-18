@@ -73,12 +73,12 @@ class ServerTestCase(unittest.TestCase):
         self.assertDeployedApps(response, apps=['basic-app'])
 
     def test_get_deployed_basic_app_version(self):
-        response = self.app.get('/deploy/basic-app/', headers=self.auth_header)
+        response = self.app.get('/deploy/basic-app', headers=self.auth_header)
 
         self.assertDeployedApp(response, name='basic-app')
 
     def test_deploy_basic_app_latest_version(self):
         response = self.app.post(
-            '/deploy/basic-app/', headers=self.auth_header)
+            '/deploy/basic-app', headers=self.auth_header)
 
         self.assertDeployedApp(response, name='basic-app')

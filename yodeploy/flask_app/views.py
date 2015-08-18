@@ -12,7 +12,7 @@ log = logging.getLogger('yodeploy')
 yodeploy_blueprint = Blueprint('yodeploy_server', __name__)
 
 
-@yodeploy_blueprint.route('/deploy/<app>/', methods=['GET', 'POST'])
+@yodeploy_blueprint.route('/deploy/<app>', methods=['GET', 'POST'])
 @auth.login_required
 def deploy_app(app):
     if app not in available_applications(current_app.config):
