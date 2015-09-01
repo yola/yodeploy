@@ -69,8 +69,12 @@ class ConfiguratedApp(TemplatedApp):
                                      self.settings.artifacts.environment,
                                      self.settings.artifacts.cluster,
                                      configs_dirs, app_conf_dir)
-            config = smush_config(
-                sources, initial={'yoconfigurator': {'app': self.app}})
+
+            initial = {
+                'yoconfigurator': {'app': self.app},
+                'deploy_dir': self.deploy_dir,
+            }
+            config = smush_config(sources, initial=initial)
 
             public_filter_pn = os.path.join(app_conf_dir, 'public-data.py')
             public_config = filter_config(config, public_filter_pn)
