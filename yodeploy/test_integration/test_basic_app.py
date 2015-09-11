@@ -2,12 +2,14 @@ import os
 
 from yoconfigurator.tests import unittest
 
-from yodeploy.test_integration.helpers import build_sample, deploy_sample
+from yodeploy.test_integration.helpers import (
+    build_sample, clear, deploy_sample)
 
 
 class TestBasicAppDeploy(unittest.TestCase):
 
     def setUp(self):
+        clear('basic-app')
         build_sample('basic-app')
         deploy_sample('basic-app')
         self.deployed_app = os.path.join(
