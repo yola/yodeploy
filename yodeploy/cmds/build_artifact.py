@@ -413,6 +413,53 @@ def abort(message):
     sys.exit(1)
 
 
+class GitHelper(object):
+
+    """Get and format info from the local git repo.
+
+    Use the environment variables Jenkins exports.
+    Fallback to calling out to git.
+    """
+
+    @property
+    def commit(self):
+        commit = os.environ.get('GIT_COMMIT')
+        if not commit:
+            commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+        return commit
+
+    @property
+    def branch(self):
+        branch = os.environ.get('GIT_BRANCH')
+        if branch:
+            return branch
+        git_branch = ('git', 'branch', '-r', '--contains', 'HEAD')
+        rbranches = check_output(git_branch)
+        for rbranch in rbranches.splitlines():
+            if ' -> ' in rbranch:
+                continue
+            remote, branch = rbranch.strip().split('/', 1)
+            break
+        return branch
+
+    @property
+    def commit_msg(self):
+        return check_output(
+            ('git', 'show', '-s', '--format=%s', self.commit)).strip()
+
+    @property
+    def tag(self):
+        tags = check_output(('git', 'tag', '--contains', self.commit))
+        tag = None
+        for line in tags.splitlines():
+            line = line.strip()
+            if line.startswith('jenkins-'):
+                continue
+            tag = line
+            break
+        return tag
+
+
 def main():
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
@@ -436,36 +483,16 @@ def main():
     deploy_settings = yodeploy.config.load_settings(opts.config)
     repository = yodeploy.repository.get_repository(deploy_settings)
 
-    # Jenkins exports these environment variables
-    # but we have some fallbacks
-    commit = os.environ.get('GIT_COMMIT')
-    if not commit:
-        commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
-
-    branch = os.environ.get('GIT_BRANCH')
-    if not branch:
-        rbranches = check_output(('git', 'branch', '-r', '--contains', 'HEAD'))
-        for rbranch in rbranches.splitlines():
-            if ' -> ' in rbranch:
-                continue
-            remote, branch = rbranch.strip().split('/', 1)
-            break
+    git = GitHelper()
+    commit = git.commit
+    branch = git.branch
+    commit_msg = git.commit_msg
+    tag = git.tag
 
     version = os.environ.get('BUILD_NUMBER')
     if not version:
         version = next_version(opts.app, opts.target, repository,
                                deploy_settings)
-    # Other git bits:
-    commit_msg = check_output(('git', 'show', '-s', '--format=%s',
-                               commit)).strip()
-    tags = check_output(('git', 'tag', '--contains', commit))
-    tag = None
-    for line in tags.splitlines():
-        line = line.strip()
-        if line.startswith('jenkins-'):
-            continue
-        tag = line
-        break
 
     upload_virtualenvs = not opts.test_only
 
