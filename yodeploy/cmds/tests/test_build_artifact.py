@@ -9,8 +9,10 @@ class TestGitHelper(TestCase):
     def setUp(self):
         self.patcher = patch('yodeploy.cmds.build_artifact.check_output')
         self.check_output = self.patcher.start()
-        self.addCleanup(self.patcher.stop)
         self.git = GitHelper()
+
+    def cleanUp(self):
+        self.patcher.stop()
 
     def test_uses_get_show_for_the_commit_message(self):
         self.check_output.return_value = 'my commit message'
