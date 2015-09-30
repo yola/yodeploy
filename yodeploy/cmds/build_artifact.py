@@ -444,8 +444,11 @@ class GitHelper(object):
 
     @property
     def commit_msg(self):
-        return check_output(
-            ('git', 'show', '-s', '--format=%s', self.commit)).strip()
+        git_show = ('git', 'show', '-s', '--format=%s', self.commit)
+        msg = check_output(git_show).strip()
+        # amazon gets unhappy when you attach non-ascii meta
+        ascii_msg = msg.decode('utf-8').encode('ascii', 'replace')
+        return ascii_msg
 
     @property
     def tag(self):
