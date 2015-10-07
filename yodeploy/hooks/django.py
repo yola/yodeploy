@@ -109,7 +109,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 new_db = True
 
         self.manage_py('syncdb', '--noinput')
-        if self.uses_south:
+        if self.has_migrations:
             self.manage_py('migrate')
 
         if new_db:
