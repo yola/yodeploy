@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class DjangoApp(ApacheHostedApp, PythonApp):
     migrate_on_deploy = False
-    uses_south = False
+    has_migrations = False
     has_media = False
     compress = False
     compile_i18n = False
