@@ -2,6 +2,8 @@
 
 from setuptools import setup, find_packages
 
+import yodeploy
+
 
 def parse_requirements():
     requirements = []
