@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.5.2
+0.6.0
 ------
 
 * `uses_south` flag in DjangoApp hook is renamed to `has_migrations` to be
