@@ -2,6 +2,8 @@
 
 from setuptools import setup, find_packages
 
+import yodeploy
+
 
 def parse_requirements():
     requirements = []
@@ -22,7 +24,7 @@ setup(
     author='Stefano Rivera',
     author_email='stefano.rivera@yola.com',
     url='https://github.com/yola/yodeploy',
-    version='0.5.1',
+    version=yodeploy.__version__,
     packages=find_packages(),
     scripts=['bin/test-templates.py'],
     test_suite='nose.collector',

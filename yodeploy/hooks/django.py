@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class DjangoApp(ApacheHostedApp, PythonApp):
     migrate_on_deploy = False
-    uses_south = False
+    has_migrations = False
     has_media = False
     compress = False
     compile_i18n = False
@@ -109,7 +109,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 new_db = True
 
         self.manage_py('syncdb', '--noinput')
-        if self.uses_south:
+        if self.has_migrations:
             self.manage_py('migrate')
 
         if new_db:
