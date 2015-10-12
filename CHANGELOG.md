@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.6.0
+------
+
+* `uses_south` flag in DjangoApp hook is renamed to `has_migrations` to be
+  compliant with Django 1.8+, which doesn't need South for migrations.
+
 0.5.1
 ------
 
