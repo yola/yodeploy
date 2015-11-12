@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.7.0
+------
+
+* Bump to newer version of setuptools
+
 0.6.0
 ------
 
