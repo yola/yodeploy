@@ -12,5 +12,5 @@ nosexcover==1.0.7
 pinocchio==0.4.1
 requests==1.2.3
 unittest2==0.5.1
-virtualenv==1.9.1
+virtualenv==13.1.2
 yoconfigurator==0.4.6

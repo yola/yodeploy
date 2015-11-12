@@ -78,8 +78,7 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
         virtualenv.logger = virtualenv.Logger([
             (virtualenv.Logger.level_for_integer(2), sys.stdout)])
 
-    virtualenv.create_environment(ve_dir, site_packages=False,
-                                  use_distribute=True)
+    virtualenv.create_environment(ve_dir, site_packages=False)
     with open(os.path.join(app_dir, req_file), 'r') as f:
         requirements = []
         for line in f:
@@ -91,14 +90,6 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
             if line.startswith('#'):
                 continue
             requirements.append(line)
-
-    # Update to distribute 0.6.13 for
-    # https://bitbucket.org/tarek/distribute/issue/163
-    cmd = [os.path.join('bin', 'python'),
-           os.path.join('bin', 'easy_install'),
-          ] + pypi + [
-           'distribute==0.6.13']
-    subprocess.check_call(cmd, cwd=ve_dir)
 
     if requirements:
         cmd = [os.path.join('bin', 'python'),
