@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.7.1
+------
+
+* Make easy_install unzip eggs (the same behavious as before yodeploy 0.7.0)
+
 0.7.0
 ------
 
