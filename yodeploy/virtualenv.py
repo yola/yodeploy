@@ -93,7 +93,7 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
 
     if requirements:
         cmd = [os.path.join('bin', 'python'),
-               os.path.join('bin', 'easy_install'),
+               os.path.join('bin', 'easy_install'), '--always-unzip'
               ] + pypi
         cmd += requirements
         subprocess.check_call(cmd, cwd=ve_dir)
