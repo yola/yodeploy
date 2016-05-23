@@ -390,12 +390,6 @@ def write_wrapper(script, ve, args=None):
 
 def setup_deployconfigs(yola_src):
     """Configure deployconfigs"""
-    # Create hostname.py
-    configs = os.path.join(yola_src, 'deployconfigs', 'configs')
-    hostname_py = os.path.join(configs, 'hostname.py')
-    sample = os.path.join(configs, 'hostname.sample.py')
-    if not os.path.exists(hostname_py):
-        shutil.copyfile(sample, hostname_py)
 
     # Create yodeploy.conf
     deploy_settings_fn = deploy_settings_location()
