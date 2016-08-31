@@ -1,6 +1,7 @@
 import errno
 import logging
 import os
+import re
 import subprocess
 import sys
 
@@ -10,6 +11,19 @@ from yodeploy.util import chown_r, ignoring, touch
 
 
 log = logging.getLogger(__name__)
+
+
+def parse_django_version(version):
+    """Convert a version string to a version tuple.
+
+    Examples:
+    '1.7' -> (1, 7)
+    '1.10a1' -> (1, 10)
+    '2.0' -> (2, 0)
+    """
+    version = version.strip()
+    matches = re.match(r'^(\d+)\.(\d+).*', version)
+    return tuple(map(int, matches.groups()))
 
 
 class DjangoApp(ApacheHostedApp, PythonApp):
@@ -91,6 +105,18 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
 
+    @property
+    def django_version(self):
+        return parse_django_version(self.manage_py('version'))
+
+    def run_migrate_commands(self):
+        if self.django_version >= (1, 7,):
+            self.manage_py('migrate', '--noinput')
+        else:
+            self.manage_py('syncdb', '--noinput')
+            if self.has_migrations:
+                self.manage_py('migrate')
+
     def migrate(self):
         log.info('Running migrations on %s', self.app)
         if self.config is None:
@@ -108,9 +134,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
             if not os.path.exists(aconf.db.name):
                 new_db = True
 
-        self.manage_py('syncdb', '--noinput')
-        if self.has_migrations:
-            self.manage_py('migrate')
+        self.run_migrate_commands()
 
         if new_db:
             seed_data = self.deploy_path(self.app, 'seed_data.json')
@@ -126,7 +150,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                command] + list(args)
         log.debug("Executing %r", cmd)
         try:
-            subprocess.check_call(cmd, cwd=self.deploy_dir)
+            return subprocess.check_call(cmd, cwd=self.deploy_dir)
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
