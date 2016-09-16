@@ -2,7 +2,7 @@ import unittest
 
 from mock import PropertyMock, call, patch
 
-from yodeploy.hooks.django import DjangoApp, parse_django_version
+from yodeploy.hooks.django import DjangoApp
 
 
 class TestDjangoHook(unittest.TestCase):
@@ -12,17 +12,6 @@ class TestDjangoHook(unittest.TestCase):
 
     def test_vhost_attributes(self):
         self.assertEqual(self.dh.vhost_path, '/etc/apache2/sites-enabled')
-
-
-class TestParseDjangoVersion(unittest.TestCase):
-    def test_parses_major_and_minor_from_alpha_version_number(self):
-        self.assertEqual(parse_django_version('1.9a1'), (1, 9))
-
-    def test_parses_double_digit_minor_version(self):
-        self.assertEqual(parse_django_version('1.10'), (1, 10))
-
-    def test_parses_single_digit_minor_version(self):
-        self.assertEqual(parse_django_version('1.5'), (1, 5))
 
 
 class TestDjangoMigrateCommand(unittest.TestCase):

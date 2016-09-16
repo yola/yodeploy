@@ -1,9 +1,10 @@
 import errno
 import logging
 import os
-import re
 import subprocess
 import sys
+
+from pkg_resources import parse_version
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.python import PythonApp
@@ -11,19 +12,6 @@ from yodeploy.util import chown_r, ignoring, touch
 
 
 log = logging.getLogger(__name__)
-
-
-def parse_django_version(version):
-    """Convert a version string to a version tuple.
-
-    Examples:
-    '1.7' -> (1, 7)
-    '1.10a1' -> (1, 10)
-    '2.0' -> (2, 0)
-    """
-    version = version.strip()
-    matches = re.match(r'^(\d+)\.(\d+).*', version)
-    return tuple(map(int, matches.groups()))
 
 
 class DjangoApp(ApacheHostedApp, PythonApp):
@@ -107,7 +95,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
 
     @property
     def django_version(self):
-        return parse_django_version(self.manage_py('version'))
+        return tuple(parse_version(self.manage_py('version')))
 
     def run_migrate_commands(self):
         if self.django_version >= (1, 7,):
