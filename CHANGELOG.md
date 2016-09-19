@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.8.0
+0.7.2
 -----
 
 * Add Django 1.9+ compatibility for `migrate` command (`syncdb` still works
