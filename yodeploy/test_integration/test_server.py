@@ -1,7 +1,6 @@
 import base64
 import json
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.flask_app.app import create_app
 from yodeploy.test_integration.helpers import (

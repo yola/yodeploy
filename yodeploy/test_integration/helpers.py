@@ -3,13 +3,13 @@ import os
 import subprocess
 import shutil
 import sys
+import unittest
 
 from os.path import join
 
 
 from yodeploy.application import Application
 from yodeploy.deploy import deploy
-from yodeploy.tests import unittest
 from yodeploy.test_integration import deployconf
 from yodeploy.util import ignoring
 

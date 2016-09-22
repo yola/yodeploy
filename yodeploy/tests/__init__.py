@@ -1,15 +1,8 @@
 import os
 import shutil
-import sys
 import tarfile
 import tempfile
-
-unittest = None
-if sys.version_info >= (2, 7):
-    import unittest
-    hush_pyflakes = unittest
-else:
-    import unittest2 as unittest
+import unittest
 
 
 class TmpDirTestCase(unittest.TestCase):

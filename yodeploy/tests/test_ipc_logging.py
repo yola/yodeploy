@@ -6,11 +6,12 @@ import socket
 import struct
 import subprocess
 import sys
+import unittest
 
 from yodeploy.ipc_logging import (
     ExistingSocketHandler, LoggingSocketRequestHandler,
     ThreadedLogStreamServer)
-from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.tests import TmpDirTestCase
 
 
 class TestExistingSocketHandler(unittest.TestCase):

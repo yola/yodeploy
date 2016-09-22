@@ -1,6 +1,5 @@
 import os
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.test_integration.helpers import build_sample, deploy_sample
 

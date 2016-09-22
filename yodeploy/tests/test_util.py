@@ -6,8 +6,9 @@ import pwd
 import stat
 import subprocess
 import sys
+import unittest
 
-from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.tests import TmpDirTestCase
 from yodeploy.util import (
     chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
