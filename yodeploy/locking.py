@@ -33,7 +33,7 @@ class LockFile(object):
         """
         try:
             self._f = os.open(self.filename,
-                              os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
+                              os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0o600)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise

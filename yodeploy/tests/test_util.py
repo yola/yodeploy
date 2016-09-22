@@ -37,9 +37,9 @@ class TestTouch(TmpDirTestCase):
         self.assertTMPPExists('foo')
 
     def test_perm(self):
-        touch(self.tmppath('foo'), perm=0641)
+        touch(self.tmppath('foo'), perm=0o641)
         s = os.stat(self.tmppath('foo'))
-        self.assertEqual(stat.S_IMODE(s.st_mode), 0641)
+        self.assertEqual(stat.S_IMODE(s.st_mode), 0o641)
 
     def test_uid(self):
         # We probably aren't root...

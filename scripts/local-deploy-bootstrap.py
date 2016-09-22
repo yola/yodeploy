@@ -367,7 +367,7 @@ def build_virtualenv(bootstrap=False):
         tar.close()
         os.unlink(fn)
         virtualenv_py = 'virtualenv-%s/virtualenv.py' % version
-        os.chmod(virtualenv_py, 0755)
+        os.chmod(virtualenv_py, 0o755)
         bootstrap_virtualenv(virtualenv_py)
         shutil.rmtree('virtualenv-%s' % version)
 
@@ -385,7 +385,7 @@ def write_wrapper(script, ve, args=None):
         script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
         f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
-    os.chmod(wrapper_name, 0755)
+    os.chmod(wrapper_name, 0o755)
 
 
 def setup_deployconfigs(yola_src):

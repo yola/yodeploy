@@ -16,7 +16,7 @@ class TemplatedApp(DeployHook):
     def template_exists(self, template_name):
         return os.path.exists(self.template_filename(template_name))
 
-    def template(self, template_name, destination, perm=0644):
+    def template(self, template_name, destination, perm=0o644):
         log.debug('Parsing template: %s -> %s', template_name, destination)
         fn = self.template_filename(template_name)
         tmpl = tempita.Template.from_filename(fn)
