@@ -1,5 +1,5 @@
 # This should be self-contained, local-bootstrap imports it
-
+from __future__ import print_function
 import imp
 import sys
 import os
@@ -30,9 +30,9 @@ def find_deploy_config(exit_if_missing=True):
         if os.path.exists(path):
             return path
     if exit_if_missing:
-        print >> sys.stderr, "Deploy settings couldn't be located."
-        print >> sys.stderr, ("Copy yodeploy's conf/yodeploy.conf.sample"
-                              " to %s" % paths[0])
+        print("Deploy settings couldn't be located.", file=sys.stderr)
+        print("Copy yodeploy's conf/yodeploy.conf.sample to %s" % paths[0],
+              file=sys.stderr)
         sys.exit(1)
 
 

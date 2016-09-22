@@ -73,11 +73,11 @@ def do_available_apps(opts):
 
     apps = available_applications(opts.deploy_settings)
     if apps:
-        print 'Available Applications:'
+        print('Available Applications:')
         for app in apps:
-            print ' * %s' % app
+            print(' * %s' % app)
     else:
-        print 'No available applications'
+        print('No available applications')
 
 
 def do_deploy(opts):

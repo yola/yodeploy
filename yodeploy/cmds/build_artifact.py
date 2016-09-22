@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import argparse
 import copy
 import json
@@ -140,20 +140,20 @@ class Builder(object):
 
     def summary(self):
         print_banner('Summary')
-        print 'App: %s' % self.app
-        print 'Target: %s' % self.target
-        print 'Version: %s' % self.version
-        print 'Branch: %s' % self.branch
-        print 'Commit: %s' % self.commit
-        print 'Commit message: %s' % self.commit_msg
+        print('App: %s' % self.app)
+        print('Target: %s' % self.target)
+        print('Version: %s' % self.version)
+        print('Branch: %s' % self.branch)
+        print('Commit: %s' % self.commit)
+        print('Commit message: %s' % self.commit_msg)
         jenkins_tag = ''
         if self.tag:
-            print 'Tag: %s' % self.tag
+            print('Tag: %s' % self.tag)
             jenkins_tag = ' (tag: %s)' % self.tag
-        print
-        print ('Jenkins description: %s:%.8s%s "%s"'
-               % (self.branch.replace('origin/', ''), self.commit,
-                  jenkins_tag, self.commit_msg))
+        print()
+        print('Jenkins description: %s:%.8s%s "%s"' % (
+            self.branch.replace('origin/', ''), self.commit, jenkins_tag,
+            self.commit_msg))
 
 
 class BuildCompat1(Builder):
@@ -173,10 +173,10 @@ class BuildCompat1(Builder):
                                   self.deploy_settings.build.deploy_content_server)
         self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
                                                    % self.distname)
-        print 'Environment:'
-        print ' DISTNAME=%s' % self.distname
-        print ' DEPLOYSERVER=%s' % self.dcs
-        print ' ARTIFACT=%s' % self.artifact
+        print('Environment:')
+        print(' DISTNAME=%s' % self.distname)
+        print(' DEPLOYSERVER=%s' % self.dcs)
+        print(' ARTIFACT=%s' % self.artifact)
 
     def build_env(self):
         env = super(BuildCompat1, self).build_env()
@@ -254,7 +254,7 @@ class BuildCompat3(Builder):
         with open(artifact) as f:
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
-        print 'Uploaded'
+        print('Uploaded')
 
 
 class BuildCompat4(BuildCompat3):
@@ -388,7 +388,7 @@ def print_box(lines, border='light'):
         output.append(borders['v'] + line.ljust(width) + borders['v'])
     output.append(borders['ur'] + borders['h'] * width + borders['ul'])
 
-    print '\n'.join(line.encode('utf-8') for line in output)
+    print('\n'.join(line.encode('utf-8') for line in output))
 
 
 def print_banner(message, width=79, position='left', **kwargs):
@@ -408,7 +408,7 @@ def print_banner(message, width=79, position='left', **kwargs):
 
 
 def abort(message):
-    print >> sys.stderr, message
+    print(message, file=sys.stderr)
     print_banner('Aborted')
     sys.exit(1)
 
@@ -471,7 +471,7 @@ def main():
     if os.path.exists('deploy/compat'):
         with open('deploy/compat') as f:
             compat = int(f.read().strip())
-    print 'Detected build compat level %s' % compat
+    print('Detected build compat level %s' % compat)
     try:
         BuilderClass = {
             1: BuildCompat1,
@@ -479,8 +479,8 @@ def main():
             4: BuildCompat4,
         }[compat]
     except KeyError:
-        print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
-                              'are supported')
+        print('Only legacy and yodeploy compat >=3 apps are supported',
+              file=sys.stderr)
         sys.exit(1)
 
     deploy_settings = yodeploy.config.load_settings(opts.config)

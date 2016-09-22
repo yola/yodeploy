@@ -75,7 +75,7 @@ def main():
     version = yodeploy.virtualenv.ve_version(
         yodeploy.virtualenv.sha224sum(options.requirement))
     if options.hash:
-        print version
+        print(version)
         return
 
     existing_ve = os.path.exists('virtualenv')

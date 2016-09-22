@@ -39,14 +39,14 @@ log = logging.getLogger('local-bootstrap')
 def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
-        print
+        print()
         input_ = raw_input('%s [Y/n] ' % message)
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
         if input_ in ('n', 'no'):
             return False
-        print 'Invalid selection'
+        print('Invalid selection')
 
 
 def abort(message):
