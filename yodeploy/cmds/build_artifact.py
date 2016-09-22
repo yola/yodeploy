@@ -78,8 +78,8 @@ class Builder(object):
             })
         try:
             urllib2.urlopen(req)
-        except urllib2.URLError, e:
-            print >> sys.stderr, "Failed to notify GitHub: %s" % e
+        except urllib2.URLError as e:
+            print("Failed to notify GitHub: %s", file=sys.stderr)
 
     def prepare(self):
         pass

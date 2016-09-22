@@ -144,7 +144,7 @@ def call(cmd, *args, **kwargs):
     log.debug('Calling %s', ' '.join(cmd))
     try:
         return subprocess.call(cmd, *args, **kwargs)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             return 127
         raise

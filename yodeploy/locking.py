@@ -34,7 +34,7 @@ class LockFile(object):
         try:
             self._f = os.open(self.filename,
                               os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
             self._f = os.open(self.filename, os.O_WRONLY)

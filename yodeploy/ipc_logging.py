@@ -35,7 +35,7 @@ class LoggingSocketRequestHandler(SocketServer.BaseRequestHandler):
                 if len(buf) < size:
                     buf += self.request.recv(size - len(buf))
                     continue
-            except IOError, e:
+            except IOError as e:
                 if e.errno == errno.EBADF:
                     break
             record = pickle.loads(buf[header_size:])

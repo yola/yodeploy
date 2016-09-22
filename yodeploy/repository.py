@@ -122,7 +122,7 @@ class LocalRepositoryStore(object):
         fn = os.path.join(self.root, path)
         try:
             os.unlink(fn)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError(e)
             raise
