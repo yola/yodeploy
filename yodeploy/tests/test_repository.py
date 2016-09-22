@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from io import StringIO
 import unittest
 
 from yodeploy.repository import (version_sort_key, RepositoryFile, Repository,

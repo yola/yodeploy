@@ -1,10 +1,10 @@
 import errno
+from io import StringIO
 import json
 import logging
 import os
 import re
 import shutil
-from StringIO import StringIO
 
 import boto
 

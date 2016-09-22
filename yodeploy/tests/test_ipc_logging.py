@@ -1,4 +1,4 @@
-import StringIO
+from io import StringIO
 import logging
 import os
 import pickle
@@ -34,7 +34,7 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
         # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
@@ -57,7 +57,7 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
         logger.setLevel(logging.WARN)
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
@@ -98,7 +98,7 @@ logger.warn("Testing 123")
 
         logger = logging.getLogger('test')
         logger.propegate = False
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
