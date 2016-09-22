@@ -117,7 +117,7 @@ class Builder(object):
             if os.path.isfile(report_path):
                 test_tree = ElementTree.parse(report_path)
                 test_suite = test_tree.find('testsuite') or test_tree.getroot()
-                for (k, v) in test_suite.attrib.iteritems():
+                for (k, v) in test_suite.attrib.items():
                     if k in results:
                         results[k] += int(v)
 

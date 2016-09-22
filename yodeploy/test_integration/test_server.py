@@ -29,7 +29,7 @@ class ServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, status_code)
 
         headers = headers or {}
-        for header, value in headers.iteritems():
+        for header, value in headers.items():
             self.assertEqual(response.headers[header], value)
 
     def assertDeployedApps(self, response, status_code=200, headers=None,
