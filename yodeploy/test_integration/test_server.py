@@ -39,7 +39,7 @@ class ServerTestCase(unittest.TestCase):
                            apps=None):
         self.assertResponse(response, status_code, headers)
 
-        json_response = json.loads(response.data)
+        json_response = json.loads(response.data.decode())
 
         self.assertTrue('applications' in json_response)
 
@@ -55,7 +55,7 @@ class ServerTestCase(unittest.TestCase):
                           name=None, version='1'):
         self.assertResponse(response, status_code, headers)
 
-        json_response = json.loads(response.data)
+        json_response = json.loads(response.data.decode())
 
         self.assertTrue('application' in json_response)
 
