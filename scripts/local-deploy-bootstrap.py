@@ -21,11 +21,19 @@ import socket
 import subprocess
 import sys
 import tarfile
-import urllib2
-import urlparse
+
+try:  # python 3
+    from urllib.request import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urllib.parse import urljoin, urlparse, urlunparse
+except ImportError:  # python 2
+    from urllib2 import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urlparse import urljoin, urlparse, urlunparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import yodeploy.config
+
+import yodeploy.config  # noqa
 
 
 GIT_REPO = 'git@github.com:yola/%s.git'
@@ -168,7 +176,7 @@ def git_mirror_available():
         our_netrc = None
 
     for name, url in GIT_MIRRORS:
-        parsed = urlparse.urlparse(url)
+        parsed = urlparse(url)
         if parsed.scheme:
             host = parsed.hostname
             port = parsed.scheme
@@ -283,21 +291,21 @@ def urlopener_with_auth(url):
     open it.
     Uses urllib2, so SSL certs aren't verified.
     """
-    opener = urllib2.build_opener()
-    parsed = urlparse.urlparse(url)
+    opener = build_opener()
+    parsed = urlparse(url)
     if parsed.username and parsed.password:
         host = parsed.hostname
         if parsed.port:
             host += ':%i' % parsed.port
         stripped_auth = (parsed[0], host) + parsed[2:]
-        url = urlparse.urlunparse(stripped_auth)
+        url = urlunparse(stripped_auth)
 
-        passwd_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        base_url = urlparse.urlunparse((parsed[0], host, '', '', '', ''))
+        passwd_mgr = HTTPPasswordMgrWithDefaultRealm()
+        base_url = urlunparse((parsed[0], host, '', '', '', ''))
         passwd_mgr.add_password(realm=None, uri=base_url,
                                 user=parsed.username, passwd=parsed.password)
-        auth_handler = urllib2.HTTPBasicAuthHandler(passwd_mgr)
-        opener = urllib2.build_opener(auth_handler)
+        auth_handler = HTTPBasicAuthHandler(passwd_mgr)
+        opener = build_opener(auth_handler)
     return url, opener
 
 
@@ -320,7 +328,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
             path = match.group(1).split('#', 1)[0]
             name = os.path.basename(path)
             if name == expected_name:
-                url = urlparse.urljoin(pypi, path)
+                url = urljoin(pypi, path)
                 break
         else:
             raise Exception('%s version %s not found on PyPI' % (app, version))

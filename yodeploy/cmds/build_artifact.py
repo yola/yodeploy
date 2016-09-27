@@ -8,16 +8,21 @@ import shutil
 import socket
 import subprocess
 import sys
-import urllib2
 from xml.etree import ElementTree
+
+try:
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import Request, urlopen, URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yoconfigurator.base import write_config
-from yoconfigurator.filter import filter_config
-from yoconfigurator.smush import config_sources, smush_config
-import yodeploy.config
-import yodeploy.repository
+from yoconfigurator.base import write_config  # noqa
+from yoconfigurator.filter import filter_config  # noqa
+from yoconfigurator.smush import config_sources, smush_config  # noqa
+import yodeploy.config  # noqa
+import yodeploy.repository  # noqa
 
 
 class Builder(object):
@@ -70,15 +75,15 @@ class Builder(object):
             'description': description,
             'context': context,
         }
-        req = urllib2.Request(
+        req = Request(
             url=url,
             data=json.dumps(data),
             headers={
                 'Authorization': 'token %s' % settings.oauth_token,
             })
         try:
-            urllib2.urlopen(req)
-        except urllib2.URLError as e:
+            urlopen(req)
+        except URLError as e:
             print("Failed to notify GitHub: %s", file=sys.stderr)
 
     def prepare(self):

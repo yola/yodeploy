@@ -15,8 +15,14 @@ import shutil
 import subprocess
 import sys
 import tarfile
-import urllib2
-import urlparse
+
+
+try:  # python 3
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlparse
+except ImportError:  # python 2
+    from urllib2 import Request, urlopen
+    from urlparse import urlparse
 
 
 deploy_settings_fn = '/etc/yola/deploy.conf.py'
@@ -34,10 +40,10 @@ class S3Client(object):
     def get(self, key):
         url = 'https://s3.amazonaws.com/%s/%s' % (self.bucket, key)
         log.debug('Downloading %s', url)
-        req = urllib2.Request(url)
+        req = Request(url)
         req.add_header('Date', email.utils.formatdate())
         self._sign_req(req)
-        return urllib2.urlopen(req)
+        return urlopen(req)
 
     def _sign_req(self, req):
         # We don't bother with CanonicalizedAmzHeaders
@@ -47,7 +53,7 @@ class S3Client(object):
                      req.get_header('Content-MD5', ''),
                      req.get_header('Content-Type', ''),
                      req.get_header('Date', ''),
-                     urlparse.urlparse(req.get_full_url()).path]
+                     urlparse(req.get_full_url()).path]
         cleartext = '\n'.join(cleartext)
 
         mac = hmac.new(self.secret_key, cleartext, hashlib.sha1)
