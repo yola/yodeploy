@@ -1,10 +1,14 @@
-import SocketServer
 import errno
 import logging
 import logging.handlers
 import pickle
 import socket
 import struct
+
+try:
+    import socketserver  # python 3
+except:
+    import SocketServer as socketserver  # python 2
 
 
 class ExistingSocketHandler(logging.handlers.SocketHandler):
@@ -14,13 +18,13 @@ class ExistingSocketHandler(logging.handlers.SocketHandler):
         self.sock = sock
 
 
-class LoggingSocketRequestHandler(SocketServer.BaseRequestHandler):
+class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
     '''A SocketServer handler that un-pickles log messages created by
     SocketHandler
     '''
     def __init__(self, request, client_address, server, oneshot=False):
         self._oneshot = oneshot
-        SocketServer.BaseRequestHandler.__init__(self, request, client_address,
+        socketserver.BaseRequestHandler.__init__(self, request, client_address,
                                                  server)
 
     def handle(self):
@@ -49,8 +53,8 @@ class LoggingSocketRequestHandler(SocketServer.BaseRequestHandler):
                 break
 
 
-class ThreadedLogStreamServer(SocketServer.ThreadingMixIn,
-                              SocketServer.UnixStreamServer):
+class ThreadedLogStreamServer(socketserver.ThreadingMixIn,
+                              socketserver.UnixStreamServer):
     '''A Server that will receive all log messages sent over the supplied
     (already open) socket
     '''
