@@ -18,9 +18,12 @@ class ServerTestCase(unittest.TestCase):
         self.username = self.flask_app.config.server.username
         self.password = self.flask_app.config.server.password
 
+        auth_header_val = '%s:%s' % (self.username, self.password)
+        auth_header_val = auth_header_val.encode()
+        auth_header_val = b'Basic %s' % base64.b64encode(auth_header_val)
+
         self.auth_header = {
-            'Authorization': 'Basic ' + base64.b64encode(
-                '%s:%s' % (self.username, self.password))
+            'Authorization': auth_header_val
         }
 
         self.app = self.flask_app.test_client()
