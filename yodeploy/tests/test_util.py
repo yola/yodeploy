@@ -80,7 +80,7 @@ class TestExtractTar(TmpDirTestCase):
         }
         subprocess.check_call((
             'fakeroot',
-            'python',
+            sys.executable,
             '-c', (
                 'import yodeploy.util, os; '
                 'yodeploy.util.extract_tar("%s", "%s"); '

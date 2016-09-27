@@ -105,7 +105,7 @@ logger.warn("Testing 123")
         tlss = ThreadedLogStreamServer()
 
         p = subprocess.Popen((
-                'python',
+                sys.executable,
                 self.tmppath('client.py'),
                 str(tlss.remote_socket.fileno())
             ), env={

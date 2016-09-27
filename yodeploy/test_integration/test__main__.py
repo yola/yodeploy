@@ -43,7 +43,7 @@ deploy_settings = AttrDict(
         # .__main__ is needed for silly Python 2.6
         # See http://bugs.python.org/issue2751
         p = subprocess.Popen((
-                'python', '-m', 'yodeploy.__main__',
+                sys.executable, '-m', 'yodeploy.__main__',
                 '--config', self.tmppath('config.py'),
                 '--app', 'test',
                 '--hook', 'prepare',
