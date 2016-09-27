@@ -1,4 +1,3 @@
-from io import StringIO
 import logging
 import os
 import pickle
@@ -7,6 +6,16 @@ import struct
 import subprocess
 import sys
 import unittest
+
+# StringIO.StringIO does not require unicode strings in Python 2.7, but
+# io.StringIO does. In Python 2, using io.StringIO would not be
+# representative of actual usage in our tests because python 2 uses byte
+# strings by default. In Python 3, io.StringIO is appropriate because it uses
+# unicode strings by default.
+try:
+    from StringIO import StringIO  # python 2.7, allows byte strings
+except ImportError:
+    from io import StringIO  # python 3, requires unicode
 
 from yodeploy.ipc_logging import (
     ExistingSocketHandler, LoggingSocketRequestHandler,
