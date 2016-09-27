@@ -79,6 +79,14 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
 
 
 class TestThreadedLogStreamServer(TmpDirTestCase):
+    def setUp(self):
+        super(TestThreadedLogStreamServer, self).setUp()
+        self.tlss = ThreadedLogStreamServer()
+
+    def tearDown(self):
+        super(TestThreadedLogStreamServer, self).tearDown()
+        self.tlss.shutdown()
+
     def test_integration(self):
         with open(self.tmppath('client.py'), 'w') as f:
             f.write("""import logging
@@ -102,8 +110,6 @@ logger.warn("Testing 123")
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
-        tlss = ThreadedLogStreamServer()
-
         p = subprocess.Popen((
                 sys.executable,
                 self.tmppath('client.py'),
@@ -119,4 +125,3 @@ logger.warn("Testing 123")
         logger.removeHandler(handler)
         logger.propegate = True
         self.assertTrue(buffer_.getvalue())
-        tlss.shutdown()
