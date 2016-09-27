@@ -122,13 +122,15 @@ logger.warn("Testing 123")
         p = subprocess.Popen((
                 sys.executable,
                 self.tmppath('client.py'),
-                str(tlss.remote_socket.fileno())
+                str(self.tlss.remote_socket.fileno())
             ), env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': ':'.join(sys.path),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False)
         out, err = p.communicate()
-        self.assertEqual(p.wait(), 0, 'Subprocess outputted: ' + out + err)
+        output = out + err
+        self.assertEqual(
+            p.wait(), 0, 'Subprocess outputted: %s' % output.decode())
 
         handler.flush()
         logger.removeHandler(handler)

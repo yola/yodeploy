@@ -105,15 +105,15 @@ class Application(object):
         if target:
             cmd += ['--target', target]
         cmd += [self.appdir, version]
-        try:
-            subprocess.check_call(cmd, env={
-                    'PATH': os.environ['PATH'],
-            })
-        except subprocess.CalledProcessError:
+
+        cmd_proc = subprocess.Popen(
+            cmd, env={'PATH': os.environ['PATH']}, close_fds=False)
+        cmd_proc.wait()
+        tlss.shutdown()
+
+        if cmd_proc.returncode != 0:
             log.error("Hook '%s' failed %s/%s", hook, self.app, version)
             raise Exception("Hook failed")
-        finally:
-            tlss.shutdown()
 
     def deploy(self, target, repository, version):
         if version is None:

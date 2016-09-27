@@ -59,8 +59,19 @@ class ThreadedLogStreamServer(socketserver.ThreadingMixIn,
     (already open) socket
     '''
     def __init__(self):
-        self.socket, self.remote_socket = socket.socketpair(socket.AF_UNIX,
-                                                            socket.SOCK_STREAM)
+        self.socket, self.remote_socket = socket.socketpair(
+            socket.AF_UNIX, socket.SOCK_STREAM)
+
+        # In python >= 3.4, file descriptors are not inheritable by child
+        # processes by default. We need to be able to pass the fd for
+        # self.remote_socket to child processes via a command line argument
+        # in various scenarios, so here we explicitly configure the fd to allow
+        # for that.
+        try:
+            self.remote_socket.set_inheritable(True)
+        except AttributeError:  # set_inheritable not available in python < 3.4
+            pass
+
         self.RequestHandlerClass = LoggingSocketRequestHandler
         self.process_request(self.socket, None)
 
