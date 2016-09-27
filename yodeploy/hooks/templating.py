@@ -19,7 +19,7 @@ class TemplatedApp(DeployHook):
     def template(self, template_name, destination, perm=0o644):
         log.debug('Parsing template: %s -> %s', template_name, destination)
         fn = self.template_filename(template_name)
-        tmpl = tempita.Template.from_filename(fn)
+        tmpl = tempita.Template.from_filename(fn, encoding='utf-8')
 
         output = tmpl.substitute(conf=self.config,
                                  aconf=self.config.get(self.app, {}),
