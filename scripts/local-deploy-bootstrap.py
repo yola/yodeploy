@@ -43,12 +43,20 @@ GIT_MIRRORS = (
 
 log = logging.getLogger('local-bootstrap')
 
+try:
+    # overrwrite unsafe python 2 input method with raw_input, which does not
+    # eval user input.
+    input = raw_input
+except NameError:
+    # in python 3 raw_input is already renamed to raw_input
+    pass
+
 
 def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
         print()
-        input_ = raw_input('%s [Y/n] ' % message)
+        input_ = input('%s [Y/n] ' % message)
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
@@ -110,7 +118,7 @@ def check_environment():
         log.info("The YOLA_SRC environment variable exists. Following it")
     else:
         if 'YOLA_SRC' not in os.environ:
-            input_ = raw_input('Where do you keep your Yola GIT checkouts? '
+            input_ = input('Where do you keep your Yola GIT checkouts? '
                                '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
