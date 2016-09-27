@@ -28,7 +28,7 @@ class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
                                                  server)
 
     def handle(self):
-        buf = ''
+        buf = b''
         header_size = struct.calcsize('>L')
         while True:
             try:
