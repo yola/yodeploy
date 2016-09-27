@@ -31,9 +31,13 @@ def clear(app_name):
 
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
-    if not hasattr(sys, 'real_prefix'):
+    py2ve = not getattr(sys, 'real_prefix', None)  # python 2.7
+    py3ve = getattr(sys, 'base_prefix', None) != sys.prefix  # py >3.3
+
+    if not py2ve and not py3ve:
         raise unittest.SkipTest("Test requires a virtual environment.")
-    return join(os.path.dirname(sys.executable), '..')
+
+    return os.path.realpath(join(os.path.dirname(sys.executable), '..'))
 
 
 def patch_deploy_venv(patch_with=None):
