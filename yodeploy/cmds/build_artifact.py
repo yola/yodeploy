@@ -336,18 +336,6 @@ def check_call(*args, **kwargs):
             raise
 
 
-def check_output(*args, **kwargs):
-    '''
-    Backport of subprocess.check_output, with enough features for this module
-    '''
-    p = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
-    output = p.communicate()[0]
-    ret = p.poll()
-    if ret:
-        raise subprocess.CalledProcessError(ret, args)
-    return output
-
-
 def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
@@ -430,7 +418,9 @@ class GitHelper(object):
     def commit(self):
         commit = os.environ.get('GIT_COMMIT')
         if not commit:
-            commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+            commit = subprocess.check_output(('git', 'rev-parse', 'HEAD'))
+            commit = commit.decode('utf-8')
+            commit = commit.strip()
         return commit
 
     @property
@@ -439,7 +429,7 @@ class GitHelper(object):
         if branch:
             return branch
         git_branch = ('git', 'branch', '-r', '--contains', 'HEAD')
-        rbranches = check_output(git_branch)
+        rbranches = subprocess.check_output(git_branch).decode('utf-8')
         for rbranch in rbranches.splitlines():
             if ' -> ' in rbranch:
                 continue
@@ -450,14 +440,19 @@ class GitHelper(object):
     @property
     def commit_msg(self):
         git_show = ('git', 'show', '-s', '--format=%s', self.commit)
-        msg = check_output(git_show).strip()
-        # amazon gets unhappy when you attach non-ascii meta
-        ascii_msg = msg.decode('utf-8').encode('ascii', 'replace')
-        return ascii_msg
+        msg = subprocess.check_output(git_show).decode('utf-8').strip()
+        # amazon gets unhappy when you attach non-ascii meta, so we convert
+        # it to an ascii string causing us to drop all unicode characters
+        # (they become ?), but then we change the string back to a unicode
+        # string so that it's json.dump friendly in python 3.
+        msg = msg.encode('ascii', 'replace').decode('utf-8')
+        return msg
 
     @property
     def tag(self):
-        tags = check_output(('git', 'tag', '--contains', self.commit))
+        tags = subprocess.check_output(
+            ('git', 'tag', '--contains', self.commit))
+        tags = tags.decode('utf-8')
         tag = None
         for line in tags.splitlines():
             line = line.strip()
