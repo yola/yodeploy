@@ -138,7 +138,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                command] + list(args)
         log.debug("Executing %r", cmd)
         try:
-            return subprocess.check_call(cmd, cwd=self.deploy_dir)
+            return subprocess.check_output(cmd, cwd=self.deploy_dir)
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
