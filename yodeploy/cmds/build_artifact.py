@@ -256,7 +256,7 @@ class BuildCompat3(Builder):
         if self.tag:
             metadata['vcs_tag'] = self.tag
 
-        with open(artifact) as f:
+        with open(artifact, 'rb') as f:
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
         print('Uploaded')

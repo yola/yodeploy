@@ -121,7 +121,7 @@ def do_download(opts, repository):
         opts.save_as = opts.filename
     with repository.get(opts.app, opts.version, target=opts.target,
                         artifact=opts.filename) as f1:
-        with open(opts.save_as, 'w') as f2:
+        with open(opts.save_as, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 

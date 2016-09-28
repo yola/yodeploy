@@ -51,7 +51,7 @@ class ConfiguratedApp(TemplatedApp):
         with SpinLockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
             try:
                 with self.repository.get('configs', target='master') as f1:
-                    with open(conf_tarball, 'w') as f2:
+                    with open(conf_tarball, 'wb') as f2:
                         shutil.copyfileobj(f1, f2)
             except KeyError:
                 raise Exception("No configs in artifacts repository")

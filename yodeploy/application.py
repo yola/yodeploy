@@ -147,12 +147,14 @@ class Application(object):
         if not os.path.isdir(unpack_dir):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
+
         with repository.get(self.app, version, target) as f1:
             if f1.metadata.get('deploy_compat') not in ('3', '4'):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
-            with open(tarball, 'w') as f2:
+            with open(tarball, 'wb') as f2:
                 shutil.copyfileobj(f1, f2)
+
         extract_tar(tarball, os.path.join(unpack_dir, version))
         os.unlink(tarball)
         staging = os.path.join(self.appdir, 'versions', version)

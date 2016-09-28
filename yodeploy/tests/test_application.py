@@ -93,7 +93,7 @@ deploy_settings = AttrDict(
     def test_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -106,7 +106,7 @@ deploy_settings = AttrDict(
     def test_double_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -120,7 +120,7 @@ deploy_settings = AttrDict(
     def test_unpack_live(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -244,7 +244,7 @@ hooks = Hooks
             'foo/deploy/compat': '4\n',
         })
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
                   source='test-data/deploy-ve/virtualenv.tar.gz')

@@ -44,7 +44,7 @@ def download_ve(repository, app, ve_version, target='master',
                 dest='virtualenv.tar.gz'):
     artifact = 'virtualenv-%s.tar.gz' % ve_version
     with repository.get(app, target=target, artifact=artifact) as f1:
-        with open(dest, 'w') as f2:
+        with open(dest, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 
@@ -59,7 +59,7 @@ def upload_ve(repository, app, ve_version, target='master',
             log.error('Skipping: already exists')
             return
         version = str(int(versions[-1]) + 1)
-    with open(source) as f:
+    with open(source, 'rb') as f:
         repository.put(app, version, f, {}, target, artifact)
 
 
