@@ -340,12 +340,12 @@ def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
         'ascii': {
-            'ul': '+',
-            'ur': '+',
-            'dl': '+',
-            'dr': '+',
-            'h': '-',
-            'v': '|',
+            'ul': u'+',
+            'ur': u'+',
+            'dl': u'+',
+            'dr': u'+',
+            'h': u'-',
+            'v': u'|',
         },
         'light': {
             'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
@@ -381,7 +381,7 @@ def print_box(lines, border='light'):
         output.append(borders['v'] + line.ljust(width) + borders['v'])
     output.append(borders['ur'] + borders['h'] * width + borders['ul'])
 
-    print('\n'.join(line.encode('utf-8') for line in output))
+    print(*output, sep='\n')
 
 
 def print_banner(message, width=79, position='left', **kwargs):

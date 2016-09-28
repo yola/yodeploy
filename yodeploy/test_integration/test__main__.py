@@ -52,7 +52,11 @@ deploy_settings = AttrDict(
             ), env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': ':'.join(sys.path),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                'PYTHONIOENCODING': 'utf-8'
+            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         out, err = p.communicate()
-        self.assertEqual(p.wait(), 0, 'Subprocess outputted: ' + out + err)
+
+        self.assertEqual(
+            p.wait(), 0, 'Subprocess outputted: %s%s' % (out, err))
         self.assertTMPPExists('test', 'hello')

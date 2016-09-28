@@ -126,11 +126,12 @@ logger.warn("Testing 123")
             ), env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': ':'.join(sys.path),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False)
+            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False,
+            universal_newlines=True)
         out, err = p.communicate()
-        output = out + err
+
         self.assertEqual(
-            p.wait(), 0, 'Subprocess outputted: %s' % output.decode())
+            p.wait(), 0, 'Subprocess outputted: %s%s' % (out, err))
 
         handler.flush()
         logger.removeHandler(handler)

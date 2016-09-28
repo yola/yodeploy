@@ -62,15 +62,17 @@ def build_sample(app_name, version='1'):
         'PYTHONPATH': ':'.join(sys.path),
         'BUILD_NUMBER': version,
         'GIT_BRANCH': 'master',
-        'YOLA_SRC': os.path.join(tests_dir, 'samples')
+        'YOLA_SRC': os.path.join(tests_dir, 'samples'),
+        'PYTHONIOENCODING': 'utf-8'
     }
 
     p = subprocess.Popen(
         (script_path, '--no-virtualenvs', '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env)
+        stderr=subprocess.PIPE, env=env, universal_newlines=True)
     out, err = p.communicate()
+
     if err or p.wait() != 0:
         raise Exception(out + err)
 
