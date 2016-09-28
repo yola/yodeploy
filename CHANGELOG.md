@@ -4,7 +4,7 @@ Change Log
 0.7.3
 -----
 
-* Fix bug in `hooks.django.DjangoApp.django_version`.
+* Make `hooks.django.DjangoApp.manage_py` method return command output.
 
 0.7.2
 -----
