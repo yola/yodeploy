@@ -97,10 +97,23 @@ class ConfiguratedApp(TemplatedApp):
         """
         if not self.public_config_js_path:
             return
+
         path = self.deploy_path(self.public_config_js_path)
         pub_conf_json = json.dumps(self.pub_config)
-        with open(path, 'r') as f:
+        token = self.public_config_token
+
+        with open(path, 'rb') as f:
             content = f.read()
-        content = content.replace(self.public_config_token, pub_conf_json)
+
+        # In python 3, we need to coerce the content string to be the same
+        # type as token and pub_conf_json before we can do our token
+        # substitution. The following converts content to a unicode string.
+        try:
+            content = content.decode()  # python 3
+        except UnicodeDecodeError:
+            pass  # python 2
+
+        content = content.replace(token, pub_conf_json)
+
         with open(path, 'w') as f:
             f.write(content)
