@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.7.3
+-----
+
+* Fix bug in `hooks.django.DjangoApp.django_version`.
+
 0.7.2
 -----
 
