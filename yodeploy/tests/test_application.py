@@ -8,6 +8,9 @@ from yodeploy.repository import LocalRepositoryStore, Repository
 from yodeploy.tests import TmpDirTestCase
 from yodeploy.virtualenv import create_ve, sha224sum, upload_ve, ve_version
 
+SRC_ROOT = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), '..', '..'))
+
 
 class ApplicationTest(TmpDirTestCase):
 
@@ -41,6 +44,17 @@ deploy_settings = AttrDict(
         self._deploy_ve_hash = ve_version(sha224sum(
             'test-data/deploy-ve/requirements.txt'))
 
+    def _prep_wip_yodeploy_for_install(self):
+        """Copy the yodeploy checkout under test to a temp directory.
+
+        Returns the full path of the yodeploy copy.
+        """
+        copy_destination = self.tmppath('yodeploy-lib')
+
+        shutil.copytree(SRC_ROOT, self.tmppath('yodeploy-lib'))
+
+        return copy_destination
+
     def _create_test_ve(self):
         """
         Bootstrap a deploy virtualenv, for our tests
@@ -56,9 +70,13 @@ deploy_settings = AttrDict(
         if os.path.exists('test-data/deploy-ve'):
             shutil.rmtree('test-data/deploy-ve')
         os.makedirs('test-data/deploy-ve')
+
         if not os.path.exists('test-data/deploy-ve/requirements.txt'):
+            yodeploy_installable = self._prep_wip_yodeploy_for_install()
+
             with open('test-data/deploy-ve/requirements.txt', 'w') as f:
-                f.write('yodeploy\n')
+                f.write('%s\n' % yodeploy_installable)
+
         create_ve('test-data/deploy-ve', pypi)
 
     def test_attributes(self):
