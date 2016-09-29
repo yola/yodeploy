@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import time
 
@@ -39,10 +40,18 @@ deploy_settings = AttrDict(
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
         self.app = Application('test', self.tmppath('config.py'))
-        if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
+
+        self.test_ve_tar_path = self._data_path('deploy-ve/virtualenv.tar.gz')
+        self.test_req_path = self._data_path('deploy-ve/requirements.txt')
+        self.test_ve_path = self._data_path('deploy-ve')
+
+        if not os.path.exists(self.test_ve_tar_path):
             self._create_test_ve()
-        self._deploy_ve_hash = ve_version(sha224sum(
-            'test-data/deploy-ve/requirements.txt'))
+        self._deploy_ve_hash = ve_version(sha224sum(self.test_req_path))
+
+    def _data_path(self, fragment):
+        version_suffix = 'py%s' % platform.python_version()
+        return os.path.join('test-data-%s' % version_suffix, fragment)
 
     def _prep_wip_yodeploy_for_install(self):
         """Copy the yodeploy checkout under test to a temp directory.
@@ -67,17 +76,17 @@ deploy_settings = AttrDict(
                     yodeploy.config.find_deploy_config())
             pypi = deploy_settings.build.pypi
 
-        if os.path.exists('test-data/deploy-ve'):
-            shutil.rmtree('test-data/deploy-ve')
-        os.makedirs('test-data/deploy-ve')
+        if os.path.exists(self.test_ve_path):
+            shutil.rmtree(self.test_ve_path)
+        os.makedirs(self.test_ve_path)
 
-        if not os.path.exists('test-data/deploy-ve/requirements.txt'):
+        if not os.path.exists(self.test_req_path):
             yodeploy_installable = self._prep_wip_yodeploy_for_install()
 
-            with open('test-data/deploy-ve/requirements.txt', 'w') as f:
+            with open(self.test_req_path, 'w') as f:
                 f.write('%s\n' % yodeploy_installable)
 
-        create_ve('test-data/deploy-ve', pypi)
+        create_ve(self.test_ve_path, pypi)
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
@@ -209,7 +218,7 @@ hooks = Hooks
                                'compat'), 'w') as f:
             f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.prepare('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'hello')
@@ -237,7 +246,7 @@ hooks = Hooks
                                'compat'), 'w') as f:
             f.write('4\n')
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.deployed('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'hello')
@@ -265,7 +274,7 @@ hooks = Hooks
         with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.deploy('master', self.repo, version)
