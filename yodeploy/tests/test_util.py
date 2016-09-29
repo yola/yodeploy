@@ -78,18 +78,18 @@ class TestExtractTar(TmpDirTestCase):
             'PATH': os.environ['PATH'],
             'PYTHONPATH': ':'.join(sys.path),
         }
-        subprocess.check_call((
-            'fakeroot',
-            sys.executable,
-            '-c', (
-                'import yodeploy.util, os; '
-                'yodeploy.util.extract_tar("%s", "%s"); '
-                's = os.stat("%s"); '
-                'assert s.st_uid == 0; '
-                'assert s.st_gid == 0'
-            ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
-                 self.tmppath('extracted/bar'))
-        ), env=env)
+        test_script = (
+            'import yodeploy.util, os; '
+            'yodeploy.util.extract_tar("%s", "%s"); '
+            's = os.stat("%s"); '
+            'assert s.st_uid == 0; '
+            'assert s.st_gid == 0'
+        ) % (
+            self.tmppath('test.tar.gz'), self.tmppath('extracted'),
+            self.tmppath('extracted/bar'))
+
+        subprocess.check_call(
+            ('fakeroot', sys.executable, '-c', "'%s'" % test_script), env=env)
 
 
 class TestDelete_Dir_Content(TmpDirTestCase):
