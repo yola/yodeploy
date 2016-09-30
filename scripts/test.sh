@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 scripts/build.sh test_build
 
 cp setup.py test_build/
+cp -R bin test_build/
 
 mkdir -p test_build/reports
 
