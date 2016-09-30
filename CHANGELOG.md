@@ -17,6 +17,12 @@ DEV
 * test suite: Ensure that the test process does not hang indefinitely due to
   ThreadedLogStreamServer failures.
 
+0.7.3
+-----
+
+* Make `hooks.django.DjangoApp.manage_py` method return command output.
+
+
 0.7.2
 -----
 
