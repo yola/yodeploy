@@ -381,6 +381,16 @@ def print_box(lines, border='light'):
         output.append(borders['v'] + line.ljust(width) + borders['v'])
     output.append(borders['ur'] + borders['h'] * width + borders['ul'])
 
+    # We should only encode the ouput if we're using a bytes buffer for stdout
+    # with an incompatible encoding.
+    encoding = (getattr(sys.stdout, 'encoding', '') or '').lower()
+    if encoding != 'utf-8' and sys.version_info < (3, 0):
+        # If encoding if falsey, it means that the output encoding is unknown.
+        # Historically it has been safe to assume utf-8 in such instances, so
+        # we continue to do that below.
+        output_enc = encoding or 'utf-8'
+        output = (l.encode(output_enc, errors='replace') for l in output)
+
     print(*output, sep='\n')
 
 
