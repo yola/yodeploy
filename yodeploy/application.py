@@ -112,14 +112,11 @@ class Application(object):
         }
 
         cmd_proc = subprocess.Popen(
-            cmd, env=env, close_fds=False, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
-        out, err = cmd_proc.communicate()
+            cmd, env=env, close_fds=False, universal_newlines=True)
         cmd_proc.wait()
         tlss.shutdown()
 
-        if cmd_proc.returncode != 0 or err:
+        if cmd_proc.returncode != 0:
             log.error("Hook '%s' failed %s/%s", hook, self.app, version)
             raise Exception("Hook failed")
 
