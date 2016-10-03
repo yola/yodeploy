@@ -84,7 +84,7 @@ class Builder(object):
         try:
             urlopen(req)
         except URLError as e:
-            print("Failed to notify GitHub: %s", file=sys.stderr)
+            print('Failed to notify GitHub: %s' % e, file=sys.stderr)
 
     def prepare(self):
         pass
