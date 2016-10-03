@@ -5,7 +5,7 @@ Change Log
 -----
 
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
-  (this change is incompatible with Python<=2.6)
+  (Dropped support for Python 2.6)
 
 0.7.2
 -----
