@@ -8,7 +8,7 @@
 #    - Installs scripts to ~/bin
 #  deployconfigs
 #    - Configures configs/hostname.py
-
+from __future__ import print_function
 import contextlib
 import errno
 import logging
