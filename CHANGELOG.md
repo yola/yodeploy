@@ -5,7 +5,7 @@ DEV
 ---
 
 * Drop support for Python 2.6
-* Add experimental support for Python 3.3+
+* Add experimental support for Python >= 3.4
 * Make `yodeploy.repository.LocalRepository.get()` always returns byte buffers
 * Make `yodeploy.repository.LocalRepository.put()` accept unicode strings,
   unicode buffers, byte strings, and byte buffers
