@@ -1,11 +1,12 @@
 Change Log
 ==========
 
+NOTE: Versions >= 0.7.3 require Python >= 2.7.
+
 0.7.3
 -----
 
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
-  (Dropped support for Python 2.6)
 
 0.7.2
 -----
