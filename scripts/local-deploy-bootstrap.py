@@ -48,7 +48,7 @@ try:
     # eval user input.
     input = raw_input
 except NameError:
-    # in python 3 raw_input is already renamed to raw_input
+    # in python 3 raw_input is already renamed to input
     pass
 
 
