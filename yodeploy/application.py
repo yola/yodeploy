@@ -111,14 +111,13 @@ class Application(object):
             'PYTHONIOENCODING': 'utf-8'
         }
 
-        cmd_proc = subprocess.Popen(
-            cmd, env=env, close_fds=False, universal_newlines=True)
-        cmd_proc.wait()
-        tlss.shutdown()
-
-        if cmd_proc.returncode != 0:
+        try:
+            subprocess.check_call(cmd, env=env, close_fds=False)
+        except subprocess.CalledProcessError:
             log.error("Hook '%s' failed %s/%s", hook, self.app, version)
             raise Exception("Hook failed")
+        finally:
+            tlss.shutdown()
 
     def deploy(self, target, repository, version):
         if version is None:
