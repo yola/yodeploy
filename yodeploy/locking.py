@@ -18,6 +18,15 @@ class UnlockedException(Exception):
 class LockFile(object):
     """A simple on-disk Unix lock file.
     Automatically cleans up stale lock files.
+
+    Locking on unix is harder that one would like. Asthetically, we don't want
+    to leave closed lock files lying around. But this means we have to jump
+    through some hoops to ensure that all users are actually using the same
+    file, and nobody is holding an fcntl lock on a deleted lock file.
+
+    O_CREAT | O_EXCL has no ability to differentiate between locked and stale
+    lockfiles, so we use POSIX fcntl locks. And ensure that the lock file we
+    hold is the one that the next consumer will check.
     """
     def __init__(self, filename):
         self.filename = filename
