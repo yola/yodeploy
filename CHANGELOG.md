@@ -4,6 +4,7 @@ Change Log
 0.7.3
 -----
 
+* NOTE: From now YoDeploy requires Python >= 2.7.
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
 
 0.7.2
