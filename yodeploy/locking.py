@@ -60,7 +60,6 @@ class LockFile(object):
     def release(self):
         if not self.held:
             raise UnlockedException("We don't hold a lock")
-        fcntl.flock(self._f, fcntl.LOCK_UN)
         os.unlink(self.filename)
         os.close(self._f)
         self._f = None
