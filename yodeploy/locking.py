@@ -1,4 +1,3 @@
-import errno
 import fcntl
 import logging
 import os
@@ -40,18 +39,19 @@ class LockFile(object):
         """
         Attempt to acquire the lock. Returns boolean result
         """
+        f = os.open(self.filename, os.O_CREAT | os.O_WRONLY, 0o600)
         try:
-            self._f = os.open(self.filename,
-                              os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0600)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                raise
-            self._f = os.open(self.filename, os.O_WRONLY)
-        try:
-            fcntl.flock(self._f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError:
-            return False
-        return True
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+            # If our (locked) file is still available in the FS, we haven't
+            # raced with a release.
+            if os.fstat(f).st_ino == os.stat(self.filename).st_ino:
+                self._f = f
+                return True
+        except (IOError, OSError):
+            pass
+        os.close(f)
+        return False
 
     @property
     def held(self):
