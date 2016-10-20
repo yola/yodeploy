@@ -18,7 +18,7 @@ class LockFile(object):
     """A simple on-disk Unix lock file.
     Automatically cleans up stale lock files.
 
-    Locking on unix is harder that one would like. Asthetically, we don't want
+    Locking on unix is harder that one would like. Aesthetically, we don't want
     to leave closed lock files lying around. But this means we have to jump
     through some hoops to ensure that all users are actually using the same
     file, and nobody is holding an fcntl lock on a deleted lock file.
