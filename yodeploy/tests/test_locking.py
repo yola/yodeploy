@@ -1,3 +1,5 @@
+import mock
+import os
 import threading
 
 from yodeploy.tests import TmpDirTestCase
@@ -58,6 +60,45 @@ class LockFileTest(TmpDirTestCase):
         lf = LockFile(self.tmppath('lockfile'))
         with lf:
             self.assertRaises(LockedException, lf.acquire)
+
+    def test_held_is_false_when_aquire_failed(self):
+        lf1 = LockFile(self.tmppath('lockfile'))
+        lf1.acquire()
+
+        lf2 = LockFile(self.tmppath('lockfile'))
+        lf2.try_acquire()
+        self.assertFalse(lf2.held)
+
+    def test_avoids_holding_deleted_lock(self):
+        # Intentionally release a lock (l1) while between open and fnctl in a
+        # second instance (l2)
+        lf1 = LockFile(self.tmppath('lockfile'))
+        lf1.acquire()
+        lf2 = LockFile(self.tmppath('lockfile'))
+
+        opened = threading.Event()
+        released = threading.Event()
+
+        os_open = os.open
+
+        def slow_open(*args, **kwargs):
+            r = os_open(*args, **kwargs)
+            opened.set()
+            released.wait(1)
+            return r
+
+        def acquire():
+            with mock.patch('os.open', new=slow_open):
+                lf2.try_acquire()
+
+        t = threading.Thread(target=acquire)
+        t.start()
+        opened.wait(1)
+        lf1.release()
+        released.set()
+
+        t.join()
+        self.assertFalse(lf2.held)
 
 
 class SpinLockFileTest(TmpDirTestCase):
