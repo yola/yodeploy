@@ -10,4 +10,4 @@ logger = logging.getLogger('test')
 handler = ipc_logging.ExistingSocketHandler(sock)
 logger.addHandler(handler)
 
-logger.warn("Testing 123")
+logger.warn('Testing 123')
