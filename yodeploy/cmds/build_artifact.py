@@ -455,7 +455,7 @@ class GitHelper(object):
         # it to an ascii string causing us to drop all unicode characters
         # (they become ?), but then we change the string back to a unicode
         # string so that it's json.dump friendly in python 3.
-        msg = msg.encode('ascii', 'replace').decode('utf-8')
+        msg = msg.encode('ascii', 'replace').decode('ascii')
         return msg
 
     @property
