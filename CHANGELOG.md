@@ -4,7 +4,6 @@ Change Log
 DEV
 ---
 
-* Drop support for Python 2.6
 * Add experimental support for Python >= 3.4
 * Make `yodeploy.repository.LocalRepository.get()` always returns byte buffers
 * Make `yodeploy.repository.LocalRepository.put()` accept unicode strings,
@@ -20,6 +19,7 @@ DEV
 0.7.3
 -----
 
+* NOTE: From now YoDeploy requires Python >= 2.7.
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
 
 

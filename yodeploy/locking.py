@@ -1,4 +1,3 @@
-import errno
 import fcntl
 import logging
 import os
@@ -18,6 +17,15 @@ class UnlockedException(Exception):
 class LockFile(object):
     """A simple on-disk Unix lock file.
     Automatically cleans up stale lock files.
+
+    Locking on unix is harder that one would like. Aesthetically, we don't want
+    to leave closed lock files lying around. But this means we have to jump
+    through some hoops to ensure that all users are actually using the same
+    file, and nobody is holding an fcntl lock on a deleted lock file.
+
+    O_CREAT | O_EXCL has no ability to differentiate between locked and stale
+    lockfiles, so we use POSIX fcntl locks. And ensure that the lock file we
+    hold is the one that the next consumer will check.
     """
     def __init__(self, filename):
         self.filename = filename
@@ -31,18 +39,19 @@ class LockFile(object):
         """
         Attempt to acquire the lock. Returns boolean result
         """
+        f = os.open(self.filename, os.O_CREAT | os.O_WRONLY, 0o600)
         try:
-            self._f = os.open(self.filename,
-                              os.O_EXCL | os.O_CREAT | os.O_WRONLY, 0o600)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-            self._f = os.open(self.filename, os.O_WRONLY)
-        try:
-            fcntl.flock(self._f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError:
-            return False
-        return True
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+            # If our (locked) file is still available in the FS, we haven't
+            # raced with a release.
+            if os.fstat(f).st_ino == os.stat(self.filename).st_ino:
+                self._f = f
+                return True
+        except (IOError, OSError):
+            pass
+        os.close(f)
+        return False
 
     @property
     def held(self):
@@ -51,7 +60,6 @@ class LockFile(object):
     def release(self):
         if not self.held:
             raise UnlockedException("We don't hold a lock")
-        fcntl.flock(self._f, fcntl.LOCK_UN)
         os.unlink(self.filename)
         os.close(self._f)
         self._f = None
