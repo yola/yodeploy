@@ -65,11 +65,10 @@ class ApplicationTestCase(TmpDirTestCase):
             shutil.rmtree(self.test_ve_path)
         os.makedirs(self.test_ve_path)
 
-        if not os.path.exists(self.test_req_path):
-            yodeploy_installable = self._prep_wip_yodeploy_for_install()
+        yodeploy_installable = self._prep_wip_yodeploy_for_install()
 
-            with open(self.test_req_path, 'w') as f:
-                f.write('%s\n' % yodeploy_installable)
+        with open(self.test_req_path, 'w') as f:
+            f.write('%s\n' % yodeploy_installable)
 
         create_ve(self.test_ve_path, pypi)
 
