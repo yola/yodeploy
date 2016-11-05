@@ -7,7 +7,7 @@ import stat
 import subprocess
 import sys
 
-from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.tests import HelperScriptConsumer, TmpDirTestCase, unittest
 from yodeploy.util import (
     chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
@@ -50,7 +50,7 @@ class TestTouch(TmpDirTestCase):
         self.assertEqual(s.st_gid, os.getgid())
 
 
-class TestExtractTar(TmpDirTestCase):
+class TestExtractTar(TmpDirTestCase, HelperScriptConsumer):
     def test_simple(self):
         self.create_tar('test.tar.gz', 'foo/bar', 'foo/baz')
         extract_tar(self.tmppath('test.tar.gz'), self.tmppath('extracted'))
@@ -80,14 +80,10 @@ class TestExtractTar(TmpDirTestCase):
         subprocess.check_call((
             'fakeroot',
             'python',
-            '-c', (
-                'import yodeploy.util, os; '
-                'yodeploy.util.extract_tar("%s", "%s"); '
-                's = os.stat("%s"); '
-                'assert s.st_uid == 0; '
-                'assert s.st_gid == 0'
-            ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
-                 self.tmppath('extracted/bar'))
+            self.get_helper_path('permission_squash_checker.py'),
+            self.tmppath('test.tar.gz'),
+            self.tmppath('extracted'),
+            self.tmppath('extracted/bar')
         ), env=env)
 
 
