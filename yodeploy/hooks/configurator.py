@@ -1,3 +1,4 @@
+import codecs
 import json
 import logging
 import os
@@ -102,18 +103,17 @@ class ConfiguratedApp(TemplatedApp):
         pub_conf_json = json.dumps(self.pub_config)
         token = self.public_config_token
 
-        with open(path, 'rb') as f:
-            content = f.read()
-
-        # In python 3, we need to coerce the content string to be the same
-        # type as token and pub_conf_json before we can do our token
-        # substitution. The following converts content to a unicode string.
         try:
-            content = content.decode()  # python 3
-        except UnicodeDecodeError:
-            pass  # python 2
+            # Convert python 2 byte strings to unicode
+            pub_conf_json = pub_conf_json.decode('utf-8')
+            token = token.decode('utf-8')
+        except AttributeError:
+            pass
+
+        with codecs.open(path, 'r', 'utf-8') as f:
+            content = f.read()
 
         content = content.replace(token, pub_conf_json)
 
-        with open(path, 'w') as f:
+        with codecs.open(path, 'w', 'utf-8') as f:
             f.write(content)
