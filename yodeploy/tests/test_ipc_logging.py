@@ -20,7 +20,7 @@ except ImportError:
 from yodeploy.ipc_logging import (
     ExistingSocketHandler, LoggingSocketRequestHandler,
     ThreadedLogStreamServer)
-from yodeploy.tests import TmpDirTestCase
+from yodeploy.tests import HelperScriptConsumer
 
 
 class TestExistingSocketHandler(unittest.TestCase):
@@ -87,32 +87,13 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         self.assertFalse(buffer_.getvalue())
 
 
-class TestThreadedLogStreamServer(TmpDirTestCase):
+class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
     def setUp(self):
         super(TestThreadedLogStreamServer, self).setUp()
         self.tlss = ThreadedLogStreamServer()
-
-    def tearDown(self):
-        super(TestThreadedLogStreamServer, self).tearDown()
-        self.tlss.shutdown()
+        self.addCleanup(self.tlss.shutdown)
 
     def test_integration(self):
-        with open(self.tmppath('client.py'), 'w') as f:
-            f.write("""import logging
-import socket
-import sys
-
-import yodeploy.ipc_logging
-
-fd = int(sys.argv[1])
-sock = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_STREAM)
-logger = logging.getLogger('test')
-handler = yodeploy.ipc_logging.ExistingSocketHandler(sock)
-logger.addHandler(handler)
-
-logger.warn("Testing 123")
-""")
-
         logger = logging.getLogger('test')
         logger.propegate = False
         buffer_ = StringIO()
@@ -121,7 +102,7 @@ logger.warn("Testing 123")
 
         p = subprocess.Popen((
                 sys.executable,
-                self.tmppath('client.py'),
+                self.get_helper_path('tlss_user.py'),
                 str(self.tlss.remote_socket.fileno())
             ), env={
                 'PATH': os.environ['PATH'],

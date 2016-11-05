@@ -62,3 +62,11 @@ class TmpDirTestCase(unittest.TestCase):
     def assertTMPPContents(self, contents, *fragments):
         with open(self.tmppath(*fragments)) as f:
             self.assertEqual(f.read(), contents)
+
+
+class HelperScriptConsumer(object):
+    """Mixin thats adds helpers for calling test script subprocesses."""
+
+    def get_helper_path(self, name):
+        helpers = os.path.join(os.path.dirname(__file__), 'helper_scripts')
+        return os.path.join(helpers, name)
