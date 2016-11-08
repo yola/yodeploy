@@ -8,7 +8,7 @@ listening on. Typically this is achieved by passing subprocesses an appropriate
 file descriptor as an argument.
 
 Note about Python > 3.4: File descriptors are no longer inheritable by default.
-TlSS instances explicitly mark their file descriptors for the sockets they open
+TLSS instances explicitly mark their file descriptors for the sockets they open
 as inheritable so that subprocess may access them.
 
 """
