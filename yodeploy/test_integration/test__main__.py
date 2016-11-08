@@ -52,7 +52,6 @@ deploy_settings = AttrDict(
             ), env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': ':'.join(sys.path),
-                'PYTHONIOENCODING': 'utf-8'
             }, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             universal_newlines=True)
         out, err = p.communicate()

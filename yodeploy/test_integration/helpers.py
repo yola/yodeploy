@@ -62,8 +62,7 @@ def build_sample(app_name, version='1'):
         'PYTHONPATH': ':'.join(sys.path),
         'BUILD_NUMBER': version,
         'GIT_BRANCH': 'master',
-        'YOLA_SRC': os.path.join(tests_dir, 'samples'),
-        'PYTHONIOENCODING': 'utf-8'
+        'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
 
     p = subprocess.Popen(

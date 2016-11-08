@@ -108,7 +108,6 @@ class Application(object):
 
         env = {
             'PATH': os.environ['PATH'],
-            'PYTHONIOENCODING': 'utf-8'
         }
 
         try:
