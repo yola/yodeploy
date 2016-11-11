@@ -104,7 +104,7 @@ class LocalRepositoryStore(object):
 
     def put(self, path, data, metadata=None):
         """
-        Store a file (fp), stream, unicode string, or byte string.
+        Store a File object, stream, unicode string, or byte string.
 
         Optionally attach metadata to it.
         """
