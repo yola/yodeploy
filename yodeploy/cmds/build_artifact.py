@@ -23,7 +23,7 @@ from yoconfigurator.filter import filter_config  # noqa
 from yoconfigurator.smush import config_sources, smush_config  # noqa
 import yodeploy.config  # noqa
 import yodeploy.repository  # noqa
-import yodeploy.unicode_stdout # noqa
+from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
 class Builder(object):
@@ -465,6 +465,8 @@ class GitHelper(object):
 
 
 def main():
+    ensure_unicode_compatible()
+
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
 
