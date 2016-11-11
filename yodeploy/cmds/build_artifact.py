@@ -419,8 +419,8 @@ class GitHelper(object):
     def commit(self):
         commit = os.environ.get('GIT_COMMIT')
         if not commit:
-            commit = subprocess.check_output(('git', 'rev-parse', 'HEAD'))
-            commit = commit.decode('utf-8')
+            commit = subprocess.check_output(
+                ('git', 'rev-parse', 'HEAD'), universal_newlines=True)
             commit = commit.strip()
         return commit
 
@@ -430,7 +430,9 @@ class GitHelper(object):
         if branch:
             return branch
         git_branch = ('git', 'branch', '-r', '--contains', 'HEAD')
-        rbranches = subprocess.check_output(git_branch).decode('utf-8')
+        rbranches = subprocess.check_output(
+            git_branch, universal_newlines=True)
+
         for rbranch in rbranches.splitlines():
             if ' -> ' in rbranch:
                 continue
@@ -441,7 +443,11 @@ class GitHelper(object):
     @property
     def commit_msg(self):
         git_show = ('git', 'show', '-s', '--format=%s', self.commit)
-        msg = subprocess.check_output(git_show).decode('utf-8').strip()
+        # using universal_newlines below would introduce a string type
+        # inconsitency between python 2/3, so we deliberately don't use it
+        # so that check_output always returns a byte string here.
+        msg = subprocess.check_output(git_show).strip().decode('utf-8')
+
         # amazon gets unhappy when you attach non-ascii meta, so we convert
         # it to an ascii string causing us to drop all unicode characters
         # (they become ?), but then we change the string back to a unicode
@@ -452,8 +458,8 @@ class GitHelper(object):
     @property
     def tag(self):
         tags = subprocess.check_output(
-            ('git', 'tag', '--contains', self.commit))
-        tags = tags.decode('utf-8')
+            ('git', 'tag', '--contains', self.commit), universal_newlines=True)
+
         tag = None
         for line in tags.splitlines():
             line = line.strip()
