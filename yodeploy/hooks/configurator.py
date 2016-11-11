@@ -103,9 +103,12 @@ class ConfiguratedApp(TemplatedApp):
         pub_conf_json = json.dumps(self.pub_config)
         token = self.public_config_token
 
+        # Convert python 2 byte strings to unicode
         try:
-            # Convert python 2 byte strings to unicode
             pub_conf_json = pub_conf_json.decode('utf-8')
+        except AttributeError:
+            pass
+        try:
             token = token.decode('utf-8')
         except AttributeError:
             pass
