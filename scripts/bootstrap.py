@@ -34,8 +34,17 @@ class S3Client(object):
     '''A really simple, NIH, pure-python S3 client'''
     def __init__(self, bucket, access_key, secret_key):
         self.bucket = bucket
-        self.access_key = access_key
-        self.secret_key = secret_key
+
+        # Coerce keys to byte strings for safe use in hashing functions
+        try:
+            self.access_key = access_key.encode()
+        except AttributeError:
+            self.access_key = access_key
+
+        try:
+            self.secret_key = secret_key.encode()
+        except AttributeError:
+            self.secret_key = secret_key
 
     def get(self, key):
         url = 'https://s3.amazonaws.com/%s/%s' % (self.bucket, key)
@@ -55,12 +64,13 @@ class S3Client(object):
                      req.get_header('Date', ''),
                      urlparse(req.get_full_url()).path]
         cleartext = '\n'.join(cleartext)
+        cleartext = cleartext.encode()
 
         mac = hmac.new(self.secret_key, cleartext, hashlib.sha1)
         signature = base64.encodestring(mac.digest()).rstrip()
 
         req.add_header('Authorization',
-                       'AWS %s:%s' % (self.access_key, signature))
+                       b'AWS %s:%s' % (self.access_key, signature))
 
 
 # stolen from yodeploy.config
