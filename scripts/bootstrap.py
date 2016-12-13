@@ -176,7 +176,7 @@ def get_latest(s3, app, target, artifact, destination):
         f.close()
     try:
         f1 = s3.get(os.path.join(app, target, artifact, version))
-        with open(destination, 'w') as f2:
+        with open(destination, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
     finally:
         f1.close()
