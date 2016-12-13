@@ -171,7 +171,7 @@ def get_latest(s3, app, target, artifact, destination):
         os.makedirs(parent)
     f = s3.get(os.path.join(app, target, artifact, 'latest'))
     try:
-        version = f.read().rstrip()
+        version = f.read().decode('utf8').rstrip()
     finally:
         f.close()
     try:
