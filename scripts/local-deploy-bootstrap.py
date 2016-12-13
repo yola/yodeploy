@@ -332,7 +332,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     href_re = re.compile(r'<a href="(.+?)">')
     f = opener.open(os.path.join(pypi, app))
     try:
-        for match in href_re.finditer(f.read()):
+        for match in href_re.finditer(f.read().decode('utf-8')):
             path = match.group(1).split('#', 1)[0]
             name = os.path.basename(path)
             if name == expected_name:
