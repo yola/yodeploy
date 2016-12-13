@@ -105,7 +105,7 @@ except ImportError:
 
 def sha224sum(filename):
     m = hashlib.sha224()
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         m.update(f.read())
     return m.hexdigest()
 
