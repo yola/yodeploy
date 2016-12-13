@@ -267,7 +267,7 @@ def bootstrap_virtualenv(cmd):
     Bootstrap a virtualenv
     cmd specifies the location of virtualenv.py
     """
-    check_call((cmd, 'bootstrap_ve'))
+    check_call((sys.executable, cmd, 'bootstrap_ve'))
 
     packages = []
     with open('requirements.txt') as f:
