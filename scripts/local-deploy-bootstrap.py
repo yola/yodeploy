@@ -346,7 +346,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     log.debug('Downloading %s', url)
     f_in = opener.open(url)
     try:
-        with open(expected_name, 'w') as f_out:
+        with open(expected_name, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     finally:
         f_in.close()
