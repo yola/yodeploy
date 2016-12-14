@@ -262,12 +262,20 @@ def deploy_settings():
     return yodeploy.config.load_settings(deploy_settings_location())
 
 
-def bootstrap_virtualenv(cmd):
+def bootstrap_virtualenv(virtualenv_path=None):
+    """Bootstrap a virtualenv.
+
+    virtualenv_path should be the path to a virtualenv.py file to be used for
+    bootstrap_ve execution. If left unspecified, bootstrap_virtualenv will
+    attempt to use whatever virtualenv command exists on the user's path.
+
     """
-    Bootstrap a virtualenv
-    cmd specifies the location of virtualenv.py
-    """
-    check_call((sys.executable, cmd, 'bootstrap_ve'))
+    cmd = ('virtualenv', '--python={}'.format(sys.executable), 'bootstrap_ve')
+
+    if virtualenv_path:
+        cmd = (sys.executable, virtualenv_path, 'bootstrap_ve')
+
+    check_call(cmd)
 
     packages = []
     with open('requirements.txt') as f:
@@ -373,7 +381,7 @@ def build_virtualenv(bootstrap=False):
 
     # Bootstrap a virtualenv with easy_install
     if binary_available('virtualenv'):
-        bootstrap_virtualenv('virtualenv')
+        bootstrap_virtualenv()
     else:
         version = find_required_version('virtualenv')
         pypi = deploy_settings().build.pypi
