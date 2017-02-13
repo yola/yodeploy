@@ -91,12 +91,22 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
                 continue
             requirements.append(line)
 
-    if requirements:
-        cmd = [os.path.join('bin', 'python'),
-               os.path.join('bin', 'easy_install'), '--always-unzip'
-              ] + pypi
-        cmd += requirements
+    for requirement in requirements:
+        log.info('Preparing to install %s', requirement)
+
+        # Check that we're not going to stomp over something already installed
+        check_requirements(ve_dir, [requirement])
+
+        cmd = [
+            os.path.join('bin', 'python'),
+            os.path.join('bin', 'easy_install'), '--always-unzip'
+        ] + pypi + [requirement]
         subprocess.check_call(cmd, cwd=ve_dir)
+
+        log.info('Installed %s', requirement)
+
+    log.info('Verifying requirements were met')
+    check_requirements(ve_dir, requirements)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
@@ -110,6 +120,35 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
     finally:
         t.close()
         os.chdir(cwd)
+
+
+def check_requirements(ve_dir, requirements):
+    """Given a ve root, and a list of requirements, ensure that they are met"""
+    script = os.path.join(ve_dir, 'bin', 'check_requirement')
+    if not os.path.exists(script):
+        with open(script, 'w') as f:
+            f.write(
+                '#!/usr/bin/env python\n'
+                'import sys, pkg_resources\n'
+                'for req in sys.argv[1:]:\n'
+                '  try:\n'
+                '    pkg_resources.get_distribution(req)\n'
+                '  except pkg_resources.DistributionNotFound:\n'
+                '    pass\n'
+                '  except pkg_resources.VersionConflict as e:\n'
+                '    sys.stderr.write(\n'
+                '      "Incompatible requirement: %s\\n" % e)\n'
+                '    sys.exit(1)\n')
+        os.chmod(script, 0o755)
+
+    cmd = [
+        os.path.join(ve_dir, 'bin', 'python'),
+        script,
+    ] + requirements
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError:
+        sys.exit(1)
 
 
 def relocateable_ve(ve_dir):
