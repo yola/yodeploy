@@ -112,6 +112,7 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
 
+    log.info('Building virtualenv tarball')
     cwd = os.getcwd()
     os.chdir(app_dir)
     t = tarfile.open('virtualenv.tar.gz', 'w:gz')
