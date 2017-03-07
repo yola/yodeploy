@@ -91,17 +91,26 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
                 continue
             requirements.append(line)
 
+    sub_log = logging.getLogger(__name__ + '.easy_install')
     for requirement in requirements:
         log.info('Preparing to install %s', requirement)
-
-        # Check that we're not going to stomp over something already installed
-        check_requirements(ve_dir, [requirement])
 
         cmd = [
             os.path.join('bin', 'python'),
             os.path.join('bin', 'easy_install'), '--always-unzip'
         ] + pypi + [requirement]
-        subprocess.check_call(cmd, cwd=ve_dir)
+        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
+        output, _ = p.communicate()
+        for line in output.splitlines():
+            line = line.strip()
+            sub_log.info(line)
+            if line.startswith('Removing'):
+                log.error('Requirements were incompatible: %s', line)
+                sys.exit(1)
+
+        if p.returncode != 0:
+            log.error('easy_install exited non-zero (%i)', p.returncode)
+            sys.exit(1)
 
         log.info('Installed %s', requirement)
 
