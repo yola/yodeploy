@@ -134,30 +134,26 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
 
 def check_requirements(ve_dir, requirements):
     """Given a ve root, and a list of requirements, ensure that they are met"""
-    script = os.path.join(ve_dir, 'bin', 'check_requirement')
-    if not os.path.exists(script):
-        with open(script, 'w') as f:
-            f.write(
-                '#!/usr/bin/env python\n'
-                'import sys, pkg_resources\n'
-                'for req in sys.argv[1:]:\n'
-                '  try:\n'
-                '    pkg_resources.get_distribution(req)\n'
-                '  except pkg_resources.DistributionNotFound:\n'
-                '    pass\n'
-                '  except pkg_resources.VersionConflict as e:\n'
-                '    sys.stderr.write(\n'
-                '      "Incompatible requirement: %s\\n" % e)\n'
-                '    sys.exit(1)\n')
-        os.chmod(script, 0o755)
+    script = (
+        'import sys, pkg_resources\n'
+        'for req in %r:\n'
+        '  try:\n'
+        '    pkg_resources.get_distribution(req)\n'
+        '  except pkg_resources.DistributionNotFound:\n'
+        '    pass\n'
+        '  except pkg_resources.VersionConflict as e:\n'
+        '    print(\n'
+        '      "Incompatible requirement: %%s\\n" %% e)\n'
+        '    sys.exit(1)\n'
+    ) % (requirements,)
 
-    cmd = [
+    p = subprocess.Popen(
         os.path.join(ve_dir, 'bin', 'python'),
-        script,
-    ] + requirements
-    try:
-        subprocess.check_call(cmd)
-    except subprocess.CalledProcessError:
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    out, _ = p.communicate(script)
+
+    if p.returncode != 0:
+        log.error(out or 'Requirements check failed for unknown reasons')
         sys.exit(1)
 
 
