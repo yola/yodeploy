@@ -75,7 +75,8 @@ def build_sample(app_name, version='1'):
     }
 
     p = subprocess.Popen(
-        (script_path, '--no-virtualenvs', '--config', deployconf_fn),
+        (sys.executable, script_path, '--no-virtualenvs',
+            '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)
