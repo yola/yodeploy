@@ -91,17 +91,37 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
                 continue
             requirements.append(line)
 
-    if requirements:
-        cmd = [os.path.join('bin', 'python'),
-               os.path.join('bin', 'easy_install'), '--always-unzip'
-              ] + pypi
-        cmd += requirements
-        subprocess.check_call(cmd, cwd=ve_dir)
+    sub_log = logging.getLogger(__name__ + '.easy_install')
+    for requirement in requirements:
+        log.info('Preparing to install %s', requirement)
+
+        cmd = [
+            os.path.join('bin', 'python'),
+            os.path.join('bin', 'easy_install'), '--always-unzip'
+        ] + pypi + [requirement]
+        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
+        output, _ = p.communicate()
+        for line in output.splitlines():
+            line = line.strip()
+            sub_log.info(line)
+            if line.startswith('Removing'):
+                log.error('Requirements were incompatible: %s', line)
+                sys.exit(1)
+
+        if p.returncode != 0:
+            log.error('easy_install exited non-zero (%i)', p.returncode)
+            sys.exit(1)
+
+        log.info('Installed %s', requirement)
+
+    log.info('Verifying requirements were met')
+    check_requirements(ve_dir, requirements)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
 
+    log.info('Building virtualenv tarball')
     cwd = os.getcwd()
     os.chdir(app_dir)
     t = tarfile.open('virtualenv.tar.gz', 'w:gz')
@@ -110,6 +130,31 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
     finally:
         t.close()
         os.chdir(cwd)
+
+
+def check_requirements(ve_dir, requirements):
+    """Given a ve root, and a list of requirements, ensure that they are met"""
+    script = (
+        'import sys, pkg_resources\n'
+        'for req in %r:\n'
+        '  try:\n'
+        '    pkg_resources.get_distribution(req)\n'
+        '  except pkg_resources.DistributionNotFound:\n'
+        '    pass\n'
+        '  except pkg_resources.VersionConflict as e:\n'
+        '    print(\n'
+        '      "Incompatible requirement: %%s\\n" %% e)\n'
+        '    sys.exit(1)\n'
+    ) % (requirements,)
+
+    p = subprocess.Popen(
+        os.path.join(ve_dir, 'bin', 'python'),
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    out, _ = p.communicate(script)
+
+    if p.returncode != 0:
+        log.error(out or 'Requirements check failed for unknown reasons')
+        sys.exit(1)
 
 
 def relocateable_ve(ve_dir):
