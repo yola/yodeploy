@@ -23,10 +23,23 @@ def rmdir(path):
         shutil.rmtree(path)
 
 
+def rm(path):
+    with ignoring(errno.ENOENT):
+        os.remove(path)
+
+
 def clear(app_name):
     store = deployconf.deploy_settings.artifacts.store_settings.local.directory
     rmdir(join(store, app_name))
     rmdir(join(deployconf.deploy_settings.paths.apps, app_name))
+
+
+def cleanup_venv(app_name):
+    app_dir = os.path.join(tests_dir, 'samples', app_name)
+    rmdir(join(tests_dir, 'filesys', 'artifacts', app_name))
+    rmdir(join('/srv/deploy/data/artifacts', app_name))
+    rmdir(join(app_dir, 'virtualenv'))
+    rm(join(app_dir, 'virtualenv.tar.gz'))
 
 
 def mock_using_current_venv(*args):
@@ -66,13 +79,14 @@ def build_sample(app_name, version='1'):
     }
 
     p = subprocess.Popen(
-        (script_path, '--no-virtualenvs', '--config', deployconf_fn),
+        (sys.executable, script_path, '--no-virtualenvs',
+            '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env, universal_newlines=True)
     out, err = p.communicate()
 
-    if err or p.wait() != 0:
+    if p.wait() != 0:
         raise Exception(out + err)
 
 

@@ -11,5 +11,6 @@
 /yodeploy/test_integration/samples/*/configuration_public.json
 /yodeploy/test_integration/samples/*/build
 /yodeploy/test_integration/samples/*/dist
+/yodeploy/test_integration/samples/*/virtualenv*
 /virtualenv
 /virtualenv.tar.gz
