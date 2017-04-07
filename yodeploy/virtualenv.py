@@ -101,7 +101,7 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
         ] + pypi + [requirement]
         p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
         output, _ = p.communicate()
-        for line in output.splitlines():
+        for line in output.decode('utf-8').splitlines():
             line = line.strip()
             sub_log.info(line)
             if line.startswith('Removing'):
