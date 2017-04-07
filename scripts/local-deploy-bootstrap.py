@@ -225,7 +225,8 @@ def clone(app, yola_src, branch='master'):
 
     if (os.path.isdir(appdir)
             and not os.path.isdir(os.path.join(appdir, '.git'))):
-        if confirm("%s exists but isn't a git repository"):
+        if confirm("%s exists but isn't a git repository.\nDelete it?"
+                   % appdir):
             shutil.rmtree(appdir)
 
     mirror = git_mirror_available()
