@@ -150,7 +150,7 @@ def check_requirements(ve_dir, requirements):
     p = subprocess.Popen(
         os.path.join(ve_dir, 'bin', 'python'),
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, _ = p.communicate(script)
+    out, _ = p.communicate(script.encode('utf-8'))
 
     if p.returncode != 0:
         log.error(out or 'Requirements check failed for unknown reasons')
