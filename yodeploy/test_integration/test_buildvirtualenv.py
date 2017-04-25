@@ -32,7 +32,7 @@ class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
         try:
             build_sample('requirements-downgrade')
         except Exception as e:
-            if 'Requirements were incompatible' not in e.message:
+            if 'Requirements were incompatible' not in str(e):
                 raise e
             failed = True
         self.assertTrue(failed)
