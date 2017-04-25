@@ -1,6 +1,5 @@
 import os
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.test_integration.helpers import build_sample, cleanup_venv
 
@@ -11,7 +10,6 @@ def venv_path(app):
 
 
 class TestAppWithEmptyRequirements(unittest.TestCase):
-
     def setUp(self):
         cleanup_venv('requirements-empty')
         build_sample('requirements-empty')
