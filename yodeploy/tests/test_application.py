@@ -70,7 +70,7 @@ class ApplicationTestCase(TmpDirTestCase):
         with open(self.test_req_path, 'w') as f:
             f.write('%s\n' % yodeploy_installable)
 
-        create_ve(self.test_ve_path, pypi)
+        create_ve(self.test_ve_path, pypi, verify_req_install=False)
 
 
 class ApplicationTest(ApplicationTestCase):

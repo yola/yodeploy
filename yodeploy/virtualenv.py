@@ -63,7 +63,9 @@ def upload_ve(repository, app, ve_version, target='master',
         repository.put(app, version, f, {}, target, artifact)
 
 
-def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
+def create_ve(
+        app_dir, pypi=None, req_file='requirements.txt',
+        verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
 
@@ -114,8 +116,9 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
 
         log.info('Installed %s', requirement)
 
-    log.info('Verifying requirements were met')
-    check_requirements(ve_dir, requirements)
+    if verify_req_install:
+        log.info('Verifying requirements were met')
+        check_requirements(ve_dir, requirements)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
