@@ -1,10 +1,10 @@
 import errno
+from io import BytesIO, StringIO
 import json
 import logging
 import os
 import re
 import shutil
-from StringIO import StringIO
 
 import boto
 
@@ -12,6 +12,11 @@ from yodeploy.util import ignoring
 
 log = logging.getLogger(__name__)
 STORES = {}
+
+try:
+    string_types = (basestring,)  # python 2
+except NameError:
+    string_types = (str,)  # python 3
 
 
 def version_sort_key(version):
@@ -79,8 +84,8 @@ class LocalRepositoryStore(object):
 
         if metadata:
             metadata = self.get_metadata(path)
-            return open(fn), metadata
-        return open(fn)
+            return open(fn, 'rb'), metadata
+        return open(fn, 'rb')
 
     def get_metadata(self, path):
         '''
@@ -97,11 +102,29 @@ class LocalRepositoryStore(object):
         with open(meta_fn) as f:
             return json.load(f)
 
-    def put(self, path, fp, metadata=None):
-        '''
-        Store a file (fp).
+    def put(self, path, data, metadata=None):
+        """
+        Store a File object, stream, unicode string, or byte string.
+
         Optionally attach metadata to it.
-        '''
+        """
+        # File objects with no encoding attributes are byte data.
+        byte_data = not getattr(data, 'encoding', None)
+
+        # Coerce strings to in-memory Byte streams.
+        if isinstance(data, string_types):
+            data = BytesIO(data.encode())
+            byte_data = True
+
+        # Coerce python 3 explicit byte strings
+        if isinstance(data, bytes):
+            data = BytesIO(data)
+            byte_data = True
+
+        # io.StringIO instances are always unicode
+        if isinstance(data, StringIO):
+            byte_data = False
+
         directory = os.path.dirname(os.path.join(self.root, path))
         if not os.path.isdir(directory):
             os.makedirs(directory)
@@ -111,8 +134,9 @@ class LocalRepositoryStore(object):
             meta_fn = fn + '.meta'
             with open(meta_fn, 'w') as f:
                 json.dump(metadata, f)
-        with open(fn, 'w') as f:
-            shutil.copyfileobj(fp, f)
+
+        with open(fn, 'wb' if byte_data else 'w') as f:
+            shutil.copyfileobj(data, f)
 
     def delete(self, path, metadata=False):
         '''
@@ -122,7 +146,7 @@ class LocalRepositoryStore(object):
         fn = os.path.join(self.root, path)
         try:
             os.unlink(fn)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError(e)
             raise
@@ -245,18 +269,20 @@ class Repository(object):
         artifact_path = os.path.join(app, target, artifact)
         if not version:
             with self.store.get(os.path.join(artifact_path, 'latest')) as f:
-                version = f.read().strip()
+                version = f.read().strip().decode()
 
-        path = os.path.join(artifact_path, unicode(version))
+        path = os.path.join(artifact_path, version)
         f, metadata = self.store.get(path, metadata=True)
         return RepositoryFile(f, metadata)
 
     def latest_version(self, app, target='master', artifact=None):
         if not artifact:
             artifact = u'%s.tar.gz' % app
+
         artifact_path = os.path.join(app, target, artifact)
+
         with self.store.get(os.path.join(artifact_path, 'latest')) as f:
-            return f.read().strip()
+            return f.read().strip().decode()
 
     def get_metadata(self, app, version=None, target='master', artifact=None):
         '''
@@ -264,12 +290,14 @@ class Repository(object):
         '''
         if not artifact:
             artifact = u'%s.tar.gz' % app
+
         artifact_path = os.path.join(app, target, artifact)
+
         if not version:
             with self.store.get(os.path.join(artifact_path, 'latest')) as f:
                 version = f.read().strip()
 
-        path = os.path.join(artifact_path, unicode(version))
+        path = os.path.join(artifact_path, version)
         return self.store.get_metadata(path)
 
     def put(self, app, version, fp, metadata, target='master',
@@ -282,10 +310,10 @@ class Repository(object):
         if version == 'latest' or version.endswith('.meta'):
             raise ValueError('Illegal version: %s' % version)
         artifact_path = os.path.join(app, target, artifact)
-        path = os.path.join(artifact_path, unicode(version))
+        path = os.path.join(artifact_path, version)
         self.store.put(path, fp, metadata)
         latest_path = os.path.join(artifact_path, 'latest')
-        self.store.put(latest_path, StringIO(version + '\n'))
+        self.store.put(latest_path, '%s\n' % version)
 
     def delete(self, app, version, target='master', artifact=None):
         '''
@@ -309,11 +337,11 @@ class Repository(object):
             except ValueError:
                 pass
             if versions:
-                self.store.put(latest_path, StringIO(versions[-1] + '\n'))
+                self.store.put(latest_path, '%s\n' % versions[-1])
             else:
                 self.store.delete(latest_path)
 
-        path = os.path.join(artifact_path, unicode(version))
+        path = os.path.join(artifact_path, version)
         self.store.delete(path, metadata=True)
 
     def list_apps(self):

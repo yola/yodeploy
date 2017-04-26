@@ -15,8 +15,14 @@ import shutil
 import subprocess
 import sys
 import tarfile
-import urllib2
-import urlparse
+
+
+try:  # python 3
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlparse
+except ImportError:  # python 2
+    from urllib2 import Request, urlopen
+    from urlparse import urlparse
 
 
 deploy_settings_fn = '/etc/yola/deploy.conf.py'
@@ -28,16 +34,25 @@ class S3Client(object):
     '''A really simple, NIH, pure-python S3 client'''
     def __init__(self, bucket, access_key, secret_key):
         self.bucket = bucket
-        self.access_key = access_key
-        self.secret_key = secret_key
+
+        # Coerce keys to byte strings for safe use in hashing functions
+        try:
+            self.access_key = access_key.encode()
+        except AttributeError:
+            self.access_key = access_key
+
+        try:
+            self.secret_key = secret_key.encode()
+        except AttributeError:
+            self.secret_key = secret_key
 
     def get(self, key):
         url = 'https://s3.amazonaws.com/%s/%s' % (self.bucket, key)
         log.debug('Downloading %s', url)
-        req = urllib2.Request(url)
+        req = Request(url)
         req.add_header('Date', email.utils.formatdate())
         self._sign_req(req)
-        return urllib2.urlopen(req)
+        return urlopen(req)
 
     def _sign_req(self, req):
         # We don't bother with CanonicalizedAmzHeaders
@@ -47,14 +62,15 @@ class S3Client(object):
                      req.get_header('Content-MD5', ''),
                      req.get_header('Content-Type', ''),
                      req.get_header('Date', ''),
-                     urlparse.urlparse(req.get_full_url()).path]
+                     urlparse(req.get_full_url()).path]
         cleartext = '\n'.join(cleartext)
+        cleartext = cleartext.encode()
 
         mac = hmac.new(self.secret_key, cleartext, hashlib.sha1)
         signature = base64.encodestring(mac.digest()).rstrip()
 
         req.add_header('Authorization',
-                       'AWS %s:%s' % (self.access_key, signature))
+                       b'AWS %s:%s' % (self.access_key, signature))
 
 
 # stolen from yodeploy.config
@@ -89,7 +105,7 @@ except ImportError:
 
 def sha224sum(filename):
     m = hashlib.sha224()
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         m.update(f.read())
     return m.hexdigest()
 
@@ -155,12 +171,12 @@ def get_latest(s3, app, target, artifact, destination):
         os.makedirs(parent)
     f = s3.get(os.path.join(app, target, artifact, 'latest'))
     try:
-        version = f.read().rstrip()
+        version = f.read().decode('utf8').rstrip()
     finally:
         f.close()
     try:
         f1 = s3.get(os.path.join(app, target, artifact, version))
-        with open(destination, 'w') as f2:
+        with open(destination, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
     finally:
         f1.close()

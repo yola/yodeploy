@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import argparse
 import json
 import logging
@@ -121,7 +121,7 @@ def do_download(opts, repository):
         opts.save_as = opts.filename
     with repository.get(opts.app, opts.version, target=opts.target,
                         artifact=opts.filename) as f1:
-        with open(opts.save_as, 'w') as f2:
+        with open(opts.save_as, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 
@@ -131,9 +131,9 @@ def do_versions(opts, repository):
     versions = repository.list_versions(opts.app, target=opts.target,
                                         artifact=opts.filename)
     if versions:
-        print '\n'.join(versions)
+        print('\n'.join(versions))
     else:
-        print >> sys.stderr, 'No versions found'
+        print('No versions found', file=sys.stderr)
         sys.exit(1)
 
 
@@ -142,9 +142,9 @@ def do_list_apps(opts, repository):
 
     apps = repository.list_apps()
     if apps:
-        print '\n'.join(apps)
+        print('\n'.join(apps))
     else:
-        print >> sys.stderr, 'No apps found'
+        print('No apps found', file=sys.stderr)
         sys.exit(1)
 
 
@@ -153,9 +153,9 @@ def do_list_targets(opts, repository):
 
     targets = repository.list_targets(opts.app)
     if targets:
-        print '\n'.join(targets)
+        print('\n'.join(targets))
     else:
-        print >> sys.stderr, 'No targets found'
+        print('No targets found', file=sys.stderr)
         sys.exit(1)
 
 
@@ -164,9 +164,9 @@ def do_list_files(opts, repository):
 
     artifacts = repository.list_artifacts(opts.app, target=opts.target)
     if artifacts:
-        print '\n'.join(artifacts)
+        print('\n'.join(artifacts))
     else:
-        print >> sys.stderr, 'No files found'
+        print('No files found', file=sys.stderr)
         sys.exit(1)
 
 

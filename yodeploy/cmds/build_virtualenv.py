@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import argparse
 import logging
 import os
@@ -75,7 +75,7 @@ def main():
     version = yodeploy.virtualenv.ve_version(
         yodeploy.virtualenv.sha224sum(options.requirement))
     if options.hash:
-        print version
+        print(version)
         return
 
     existing_ve = os.path.exists('virtualenv')

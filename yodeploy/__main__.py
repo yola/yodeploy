@@ -70,7 +70,8 @@ def call_hook(app, target, appdir, version, deploy_settings, repository,
     fake_mod = '_deploy_hooks'
     fn = os.path.join(appdir, 'versions', version, 'deploy', 'hooks.py')
     description = ('.py', 'r', imp.PY_SOURCE)
-    with open(fn) as f:
+
+    with open(fn, 'rb') as f:
         m = imp.load_module(fake_mod, f, fn, description)
     hooks = m.hooks(app, target, appdir, version, deploy_settings,
                     repository)

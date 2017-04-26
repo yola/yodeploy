@@ -1,11 +1,27 @@
 Change Log
 ==========
 
+DEV
+---
+
+* Add experimental support for Python >= 3.4
+* Make `yodeploy.repository.LocalRepository.get()` always returns byte buffers
+* Make `yodeploy.repository.LocalRepository.put()` accept unicode strings,
+  unicode buffers, byte strings, and byte buffers
+* test suite: suffix test-data dir with python version data to avoid
+  cross-environment collisions when running the test suite with cached data
+* test suite: Install a copy of the current yodeploy checkout (in
+  whatever state it's in) into the test virtualenv rather than the latest
+  version from the configured package index
+* test suite: Ensure that the test process does not hang indefinitely due to
+  ThreadedLogStreamServer failures.
+
 0.7.3
 -----
 
 * NOTE: From now YoDeploy requires Python >= 2.7.
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
+
 
 0.7.2
 -----

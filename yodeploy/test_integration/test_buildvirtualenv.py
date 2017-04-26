@@ -1,6 +1,5 @@
 import os
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.test_integration.helpers import build_sample, cleanup_venv
 
@@ -11,7 +10,6 @@ def venv_path(app):
 
 
 class TestAppWithEmptyRequirements(unittest.TestCase):
-
     def setUp(self):
         cleanup_venv('requirements-empty')
         build_sample('requirements-empty')
@@ -34,7 +32,7 @@ class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
         try:
             build_sample('requirements-downgrade')
         except Exception as e:
-            if 'Requirements were incompatible' not in e.message:
+            if 'Requirements were incompatible' not in str(e):
                 raise e
             failed = True
         self.assertTrue(failed)

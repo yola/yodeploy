@@ -1,6 +1,5 @@
 import os
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.test_integration.helpers import build_sample, deploy_sample
 
@@ -23,7 +22,7 @@ class TestConfiguredAppWithConfigTemplate(unittest.TestCase):
         with open(os.path.join(self.deployed_app, 'src', 'config.js')) as f:
             content = f.read().strip()
         expected = 'window.CONFIGURATION = {"conftpl": {"msg": "hi!"}};'
-        self.assertEquals(expected, content)
+        self.assertEqual(expected, content)
 
 
 class TestConfiguredAppWithConfigTemplateToken(unittest.TestCase):
@@ -44,4 +43,4 @@ class TestConfiguredAppWithConfigTemplateToken(unittest.TestCase):
         with open(os.path.join(self.deployed_app, 'src', 'config.js')) as f:
             content = f.read().strip()
         expected = 'window.CONFIGURATION = {"conftpl": {"msg": "snowman!"}};'
-        self.assertEquals(expected, content)
+        self.assertEqual(expected, content)

@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import tarfile
 import time
@@ -9,6 +10,8 @@ from yodeploy.repository import LocalRepositoryStore, Repository
 from yodeploy.tests import TmpDirTestCase
 from yodeploy.virtualenv import create_ve, sha224sum, upload_ve, ve_version
 
+SRC_ROOT = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), '..', '..'))
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'fixtures/')
 
 
@@ -22,10 +25,29 @@ class ApplicationTestCase(TmpDirTestCase):
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
         self.app = Application('test', self.tmppath('config.py'))
-        if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
+
+        self.test_ve_tar_path = self._data_path('deploy-ve/virtualenv.tar.gz')
+        self.test_req_path = self._data_path('deploy-ve/requirements.txt')
+        self.test_ve_path = self._data_path('deploy-ve')
+
+        if not os.path.exists(self.test_ve_tar_path):
             self._create_test_ve()
-        self._deploy_ve_hash = ve_version(sha224sum(
-            'test-data/deploy-ve/requirements.txt'))
+        self._deploy_ve_hash = ve_version(sha224sum(self.test_req_path))
+
+    def _data_path(self, fragment):
+        version_suffix = 'py%s' % platform.python_version()
+        return os.path.join('test-data-%s' % version_suffix, fragment)
+
+    def _prep_wip_yodeploy_for_install(self):
+        """Copy the yodeploy checkout under test to a temp directory.
+
+        Returns the full path of the yodeploy copy.
+        """
+        copy_destination = self.tmppath('yodeploy-lib')
+
+        shutil.copytree(SRC_ROOT, self.tmppath('yodeploy-lib'))
+
+        return copy_destination
 
     def _create_test_ve(self):
         """
@@ -39,13 +61,16 @@ class ApplicationTestCase(TmpDirTestCase):
                     yodeploy.config.find_deploy_config())
             pypi = deploy_settings.build.pypi
 
-        if os.path.exists('test-data/deploy-ve'):
-            shutil.rmtree('test-data/deploy-ve')
-        os.makedirs('test-data/deploy-ve')
-        if not os.path.exists('test-data/deploy-ve/requirements.txt'):
-            with open('test-data/deploy-ve/requirements.txt', 'w') as f:
-                f.write('yodeploy\n')
-        create_ve('test-data/deploy-ve', pypi)
+        if os.path.exists(self.test_ve_path):
+            shutil.rmtree(self.test_ve_path)
+        os.makedirs(self.test_ve_path)
+
+        yodeploy_installable = self._prep_wip_yodeploy_for_install()
+
+        with open(self.test_req_path, 'w') as f:
+            f.write('%s\n' % yodeploy_installable)
+
+        create_ve(self.test_ve_path, pypi, verify_req_install=False)
 
 
 class ApplicationTest(ApplicationTestCase):
@@ -89,7 +114,7 @@ class ApplicationTest(ApplicationTestCase):
     def test_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -102,7 +127,7 @@ class ApplicationTest(ApplicationTestCase):
     def test_double_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -116,7 +141,7 @@ class ApplicationTest(ApplicationTestCase):
     def test_unpack_live(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -160,14 +185,14 @@ class ApplicationTest(ApplicationTestCase):
 
     def test_prepare_hook(self):
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.prepare('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'prepare_hook_output')
 
     def test_deployed(self):
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.deployed('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'deployed_hook_output')
@@ -178,10 +203,10 @@ class ApplicationTest(ApplicationTestCase):
                 os.path.join(FIXTURES_DIR, 'simple_sample_app'), arcname='foo')
 
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
         upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+                  source=self.test_ve_tar_path)
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.deploy('master', self.repo, version)

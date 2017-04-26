@@ -3,13 +3,13 @@ import os
 import subprocess
 import shutil
 import sys
+import unittest
 
 from os.path import join
 
 
 from yodeploy.application import Application
 from yodeploy.deploy import deploy
-from yodeploy.tests import unittest
 from yodeploy.test_integration import deployconf
 from yodeploy.util import ignoring
 
@@ -44,9 +44,13 @@ def cleanup_venv(app_name):
 
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
-    if not hasattr(sys, 'real_prefix'):
+    py2ve = not getattr(sys, 'real_prefix', None)  # python 2.7
+    py3ve = getattr(sys, 'base_prefix', None) != sys.prefix  # py >3.3
+
+    if not py2ve and not py3ve:
         raise unittest.SkipTest("Test requires a virtual environment.")
-    return join(os.path.dirname(sys.executable), '..')
+
+    return os.path.realpath(join(os.path.dirname(sys.executable), '..'))
 
 
 def patch_deploy_venv(patch_with=None):
@@ -79,8 +83,9 @@ def build_sample(app_name, version='1'):
             '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env)
+        stderr=subprocess.PIPE, env=env, universal_newlines=True)
     out, err = p.communicate()
+
     if p.wait() != 0:
         raise Exception(out + err)
 

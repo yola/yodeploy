@@ -1,4 +1,3 @@
-import StringIO
 import logging
 import os
 import pickle
@@ -6,11 +5,22 @@ import socket
 import struct
 import subprocess
 import sys
+import unittest
+
+# StringIO.StringIO does not require unicode strings in Python 2.7, but
+# io.StringIO does. In Python 2, using io.StringIO would not be
+# representative of actual usage in our tests because python 2 uses byte
+# strings by default. In Python 3, io.StringIO is appropriate because it uses
+# unicode strings by default.
+try:
+    from StringIO import StringIO  # python 2.7, allows byte strings
+except ImportError:
+    from io import StringIO  # python 3, requires unicode
 
 from yodeploy.ipc_logging import (
     ExistingSocketHandler, LoggingSocketRequestHandler,
     ThreadedLogStreamServer)
-from yodeploy.tests import HelperScriptConsumer, unittest
+from yodeploy.tests import HelperScriptConsumer
 
 
 class TestExistingSocketHandler(unittest.TestCase):
@@ -33,7 +43,7 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
         # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
@@ -56,7 +66,7 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
         logger.setLevel(logging.WARN)
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
@@ -78,28 +88,33 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
 
 
 class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
+    def setUp(self):
+        super(TestThreadedLogStreamServer, self).setUp()
+        self.tlss = ThreadedLogStreamServer()
+        self.addCleanup(self.tlss.shutdown)
+
     def test_integration(self):
         logger = logging.getLogger('test')
         logger.propegate = False
-        buffer_ = StringIO.StringIO()
+        buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
-        tlss = ThreadedLogStreamServer()
-
         p = subprocess.Popen((
-                'python',
+                sys.executable,
                 self.get_helper_path('tlss_user.py'),
-                str(tlss.remote_socket.fileno())
+                str(self.tlss.remote_socket.fileno())
             ), env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': ':'.join(sys.path),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False,
+            universal_newlines=True)
         out, err = p.communicate()
-        self.assertEqual(p.wait(), 0, 'Subprocess outputted: ' + out + err)
+
+        self.assertEqual(
+            p.wait(), 0, 'Subprocess outputted: %s%s' % (out, err))
 
         handler.flush()
         logger.removeHandler(handler)
         logger.propegate = True
         self.assertTrue(buffer_.getvalue())
-        tlss.shutdown()

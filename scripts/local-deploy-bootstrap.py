@@ -8,7 +8,7 @@
 #    - Installs scripts to ~/bin
 #  deployconfigs
 #    - Configures configs/hostname.py
-
+from __future__ import print_function
 import contextlib
 import errno
 import logging
@@ -21,11 +21,19 @@ import socket
 import subprocess
 import sys
 import tarfile
-import urllib2
-import urlparse
+
+try:  # python 3
+    from urllib.request import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urllib.parse import urljoin, urlparse, urlunparse
+except ImportError:  # python 2
+    from urllib2 import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urlparse import urljoin, urlparse, urlunparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import yodeploy.config
+
+import yodeploy.config  # noqa
 
 
 GIT_REPO = 'git@github.com:yola/%s.git'
@@ -35,18 +43,26 @@ GIT_MIRRORS = (
 
 log = logging.getLogger('local-bootstrap')
 
+try:
+    # overrwrite unsafe python 2 input method with raw_input, which does not
+    # eval user input.
+    input = raw_input
+except NameError:
+    # in python 3 raw_input is already renamed to input
+    pass
+
 
 def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
-        print
-        input_ = raw_input('%s [Y/n] ' % message)
+        print()
+        input_ = input('%s [Y/n] ' % message)
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
         if input_ in ('n', 'no'):
             return False
-        print 'Invalid selection'
+        print('Invalid selection')
 
 
 def abort(message):
@@ -102,7 +118,7 @@ def check_environment():
         log.info("The YOLA_SRC environment variable exists. Following it")
     else:
         if 'YOLA_SRC' not in os.environ:
-            input_ = raw_input('Where do you keep your Yola GIT checkouts? '
+            input_ = input('Where do you keep your Yola GIT checkouts? '
                                '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
@@ -144,7 +160,7 @@ def call(cmd, *args, **kwargs):
     log.debug('Calling %s', ' '.join(cmd))
     try:
         return subprocess.call(cmd, *args, **kwargs)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             return 127
         raise
@@ -168,7 +184,7 @@ def git_mirror_available():
         our_netrc = None
 
     for name, url in GIT_MIRRORS:
-        parsed = urlparse.urlparse(url)
+        parsed = urlparse(url)
         if parsed.scheme:
             host = parsed.hostname
             port = parsed.scheme
@@ -209,7 +225,8 @@ def clone(app, yola_src, branch='master'):
 
     if (os.path.isdir(appdir)
             and not os.path.isdir(os.path.join(appdir, '.git'))):
-        if confirm("%s exists but isn't a git repository"):
+        if confirm("%s exists but isn't a git repository.\nDelete it?"
+                   % appdir):
             shutil.rmtree(appdir)
 
     mirror = git_mirror_available()
@@ -246,12 +263,20 @@ def deploy_settings():
     return yodeploy.config.load_settings(deploy_settings_location())
 
 
-def bootstrap_virtualenv(cmd):
+def bootstrap_virtualenv(virtualenv_path=None):
+    """Bootstrap a virtualenv.
+
+    virtualenv_path should be the path to a virtualenv.py file to be used for
+    bootstrap_ve execution. If left unspecified, bootstrap_virtualenv will
+    attempt to use whatever virtualenv command exists on the user's path.
+
     """
-    Bootstrap a virtualenv
-    cmd specifies the location of virtualenv.py
-    """
-    check_call((cmd, 'bootstrap_ve'))
+    cmd = ('virtualenv', '--python={}'.format(sys.executable), 'bootstrap_ve')
+
+    if virtualenv_path:
+        cmd = (sys.executable, virtualenv_path, 'bootstrap_ve')
+
+    check_call(cmd)
 
     packages = []
     with open('requirements.txt') as f:
@@ -283,21 +308,21 @@ def urlopener_with_auth(url):
     open it.
     Uses urllib2, so SSL certs aren't verified.
     """
-    opener = urllib2.build_opener()
-    parsed = urlparse.urlparse(url)
+    opener = build_opener()
+    parsed = urlparse(url)
     if parsed.username and parsed.password:
         host = parsed.hostname
         if parsed.port:
             host += ':%i' % parsed.port
         stripped_auth = (parsed[0], host) + parsed[2:]
-        url = urlparse.urlunparse(stripped_auth)
+        url = urlunparse(stripped_auth)
 
-        passwd_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        base_url = urlparse.urlunparse((parsed[0], host, '', '', '', ''))
+        passwd_mgr = HTTPPasswordMgrWithDefaultRealm()
+        base_url = urlunparse((parsed[0], host, '', '', '', ''))
         passwd_mgr.add_password(realm=None, uri=base_url,
                                 user=parsed.username, passwd=parsed.password)
-        auth_handler = urllib2.HTTPBasicAuthHandler(passwd_mgr)
-        opener = urllib2.build_opener(auth_handler)
+        auth_handler = HTTPBasicAuthHandler(passwd_mgr)
+        opener = build_opener(auth_handler)
     return url, opener
 
 
@@ -316,11 +341,11 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     href_re = re.compile(r'<a href="(.+?)">')
     f = opener.open(os.path.join(pypi, app))
     try:
-        for match in href_re.finditer(f.read()):
+        for match in href_re.finditer(f.read().decode('utf-8')):
             path = match.group(1).split('#', 1)[0]
             name = os.path.basename(path)
             if name == expected_name:
-                url = urlparse.urljoin(pypi, path)
+                url = urljoin(pypi, path)
                 break
         else:
             raise Exception('%s version %s not found on PyPI' % (app, version))
@@ -330,7 +355,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     log.debug('Downloading %s', url)
     f_in = opener.open(url)
     try:
-        with open(expected_name, 'w') as f_out:
+        with open(expected_name, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     finally:
         f_in.close()
@@ -357,7 +382,7 @@ def build_virtualenv(bootstrap=False):
 
     # Bootstrap a virtualenv with easy_install
     if binary_available('virtualenv'):
-        bootstrap_virtualenv('virtualenv')
+        bootstrap_virtualenv()
     else:
         version = find_required_version('virtualenv')
         pypi = deploy_settings().build.pypi
@@ -367,7 +392,7 @@ def build_virtualenv(bootstrap=False):
         tar.close()
         os.unlink(fn)
         virtualenv_py = 'virtualenv-%s/virtualenv.py' % version
-        os.chmod(virtualenv_py, 0755)
+        os.chmod(virtualenv_py, 0o755)
         bootstrap_virtualenv(virtualenv_py)
         shutil.rmtree('virtualenv-%s' % version)
 
@@ -385,7 +410,7 @@ def write_wrapper(script, ve, args=None):
         script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
         f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
-    os.chmod(wrapper_name, 0755)
+    os.chmod(wrapper_name, 0o755)
 
 
 def setup_deployconfigs(yola_src):

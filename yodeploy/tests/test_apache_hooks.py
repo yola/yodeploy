@@ -1,4 +1,4 @@
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp

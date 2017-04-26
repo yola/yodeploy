@@ -6,8 +6,9 @@ import pwd
 import stat
 import subprocess
 import sys
+import unittest
 
-from yodeploy.tests import HelperScriptConsumer, TmpDirTestCase, unittest
+from yodeploy.tests import HelperScriptConsumer, TmpDirTestCase
 from yodeploy.util import (
     chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
@@ -36,9 +37,9 @@ class TestTouch(TmpDirTestCase):
         self.assertTMPPExists('foo')
 
     def test_perm(self):
-        touch(self.tmppath('foo'), perm=0641)
+        touch(self.tmppath('foo'), perm=0o641)
         s = os.stat(self.tmppath('foo'))
-        self.assertEqual(stat.S_IMODE(s.st_mode), 0641)
+        self.assertEqual(stat.S_IMODE(s.st_mode), 0o641)
 
     def test_uid(self):
         # We probably aren't root...
@@ -77,6 +78,7 @@ class TestExtractTar(TmpDirTestCase, HelperScriptConsumer):
             'PATH': os.environ['PATH'],
             'PYTHONPATH': ':'.join(sys.path),
         }
+
         subprocess.check_call((
             'fakeroot',
             'python',

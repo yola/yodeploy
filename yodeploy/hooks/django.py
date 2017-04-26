@@ -41,7 +41,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 continue
             with ignoring(errno.EEXIST):
                 os.mkdir(os.path.dirname(logfile))
-            touch(logfile, self.log_user, self.log_group, 0640)
+            touch(logfile, self.log_user, self.log_group, 0o640)
 
     def call_compress(self):
         if not self.compress:

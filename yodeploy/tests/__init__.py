@@ -1,15 +1,8 @@
 import os
 import shutil
-import sys
 import tarfile
 import tempfile
-
-unittest = None
-if sys.version_info >= (2, 7):
-    import unittest
-    hush_pyflakes = unittest
-else:
-    import unittest2 as unittest
+import unittest
 
 
 class TmpDirTestCase(unittest.TestCase):
@@ -36,7 +29,7 @@ class TmpDirTestCase(unittest.TestCase):
         os.chdir(self.tmppath('create_tar_workdir'))
         roots = set()
         try:
-            for pathname, data in contents.iteritems():
+            for pathname, data in contents.items():
                 if '/' in pathname:
                     if not os.path.exists(os.path.dirname(pathname)):
                         os.makedirs(os.path.dirname(pathname))

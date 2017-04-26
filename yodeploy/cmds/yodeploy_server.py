@@ -38,6 +38,5 @@ if __name__ == '__main__':
     context = SSL.Context(SSL.SSLv23_METHOD)
     context.use_certificate_chain_file(flask_app.config.server.ssl.cert_chain)
     context.use_privatekey_file(flask_app.config.server.ssl.key)
-    flask_app.config.deploy_config_fn = find_deploy_config()
     log.debug('Starting yodeploy server')
     flask_app.run(host=opts.listen, port=opts.port, ssl_context=context)

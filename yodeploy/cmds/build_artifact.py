@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import argparse
 import copy
 import json
@@ -8,16 +8,22 @@ import shutil
 import socket
 import subprocess
 import sys
-import urllib2
 from xml.etree import ElementTree
+
+try:
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import Request, urlopen, URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yoconfigurator.base import write_config
-from yoconfigurator.filter import filter_config
-from yoconfigurator.smush import config_sources, smush_config
-import yodeploy.config
-import yodeploy.repository
+from yoconfigurator.base import write_config  # noqa
+from yoconfigurator.filter import filter_config  # noqa
+from yoconfigurator.smush import config_sources, smush_config  # noqa
+import yodeploy.config  # noqa
+import yodeploy.repository  # noqa
+from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
 class Builder(object):
@@ -70,16 +76,16 @@ class Builder(object):
             'description': description,
             'context': context,
         }
-        req = urllib2.Request(
+        req = Request(
             url=url,
             data=json.dumps(data),
             headers={
                 'Authorization': 'token %s' % settings.oauth_token,
             })
         try:
-            urllib2.urlopen(req)
-        except urllib2.URLError, e:
-            print >> sys.stderr, "Failed to notify GitHub: %s" % e
+            urlopen(req)
+        except URLError as e:
+            print('Failed to notify GitHub: %s' % e, file=sys.stderr)
 
     def prepare(self):
         pass
@@ -117,7 +123,7 @@ class Builder(object):
             if os.path.isfile(report_path):
                 test_tree = ElementTree.parse(report_path)
                 test_suite = test_tree.find('testsuite') or test_tree.getroot()
-                for (k, v) in test_suite.attrib.iteritems():
+                for (k, v) in test_suite.attrib.items():
                     if k in results:
                         results[k] += int(v)
 
@@ -140,20 +146,20 @@ class Builder(object):
 
     def summary(self):
         print_banner('Summary')
-        print 'App: %s' % self.app
-        print 'Target: %s' % self.target
-        print 'Version: %s' % self.version
-        print 'Branch: %s' % self.branch
-        print 'Commit: %s' % self.commit
-        print 'Commit message: %s' % self.commit_msg
+        print('App: %s' % self.app)
+        print('Target: %s' % self.target)
+        print('Version: %s' % self.version)
+        print('Branch: %s' % self.branch)
+        print('Commit: %s' % self.commit)
+        print('Commit message: %s' % self.commit_msg)
         jenkins_tag = ''
         if self.tag:
-            print 'Tag: %s' % self.tag
+            print('Tag: %s' % self.tag)
             jenkins_tag = ' (tag: %s)' % self.tag
-        print
-        print ('Jenkins description: %s:%.8s%s "%s"'
-               % (self.branch.replace('origin/', ''), self.commit,
-                  jenkins_tag, self.commit_msg))
+        print()
+        print('Jenkins description: %s:%.8s%s "%s"' % (
+            self.branch.replace('origin/', ''), self.commit, jenkins_tag,
+            self.commit_msg))
 
 
 class BuildCompat1(Builder):
@@ -173,10 +179,10 @@ class BuildCompat1(Builder):
                                   self.deploy_settings.build.deploy_content_server)
         self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
                                                    % self.distname)
-        print 'Environment:'
-        print ' DISTNAME=%s' % self.distname
-        print ' DEPLOYSERVER=%s' % self.dcs
-        print ' ARTIFACT=%s' % self.artifact
+        print('Environment:')
+        print(' DISTNAME=%s' % self.distname)
+        print(' DEPLOYSERVER=%s' % self.dcs)
+        print(' ARTIFACT=%s' % self.artifact)
 
     def build_env(self):
         env = super(BuildCompat1, self).build_env()
@@ -251,10 +257,10 @@ class BuildCompat3(Builder):
         if self.tag:
             metadata['vcs_tag'] = self.tag
 
-        with open(artifact) as f:
+        with open(artifact, 'rb') as f:
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
-        print 'Uploaded'
+        print('Uploaded')
 
 
 class BuildCompat4(BuildCompat3):
@@ -331,28 +337,16 @@ def check_call(*args, **kwargs):
             raise
 
 
-def check_output(*args, **kwargs):
-    '''
-    Backport of subprocess.check_output, with enough features for this module
-    '''
-    p = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
-    output = p.communicate()[0]
-    ret = p.poll()
-    if ret:
-        raise subprocess.CalledProcessError(ret, args)
-    return output
-
-
 def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
         'ascii': {
-            'ul': '+',
-            'ur': '+',
-            'dl': '+',
-            'dr': '+',
-            'h': '-',
-            'v': '|',
+            'ul': u'+',
+            'ur': u'+',
+            'dl': u'+',
+            'dr': u'+',
+            'h': u'-',
+            'v': u'|',
         },
         'light': {
             'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
@@ -388,7 +382,7 @@ def print_box(lines, border='light'):
         output.append(borders['v'] + line.ljust(width) + borders['v'])
     output.append(borders['ur'] + borders['h'] * width + borders['ul'])
 
-    print '\n'.join(line.encode('utf-8') for line in output)
+    print(*output, sep='\n')
 
 
 def print_banner(message, width=79, position='left', **kwargs):
@@ -408,7 +402,7 @@ def print_banner(message, width=79, position='left', **kwargs):
 
 
 def abort(message):
-    print >> sys.stderr, message
+    print(message, file=sys.stderr)
     print_banner('Aborted')
     sys.exit(1)
 
@@ -425,7 +419,9 @@ class GitHelper(object):
     def commit(self):
         commit = os.environ.get('GIT_COMMIT')
         if not commit:
-            commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+            commit = subprocess.check_output(
+                ('git', 'rev-parse', 'HEAD'), universal_newlines=True)
+            commit = commit.strip()
         return commit
 
     @property
@@ -434,7 +430,9 @@ class GitHelper(object):
         if branch:
             return branch
         git_branch = ('git', 'branch', '-r', '--contains', 'HEAD')
-        rbranches = check_output(git_branch)
+        rbranches = subprocess.check_output(
+            git_branch, universal_newlines=True)
+
         for rbranch in rbranches.splitlines():
             if ' -> ' in rbranch:
                 continue
@@ -445,14 +443,23 @@ class GitHelper(object):
     @property
     def commit_msg(self):
         git_show = ('git', 'show', '-s', '--format=%s', self.commit)
-        msg = check_output(git_show).strip()
-        # amazon gets unhappy when you attach non-ascii meta
-        ascii_msg = msg.decode('utf-8').encode('ascii', 'replace')
-        return ascii_msg
+        # using universal_newlines below would introduce a string type
+        # inconsitency between python 2/3, so we deliberately don't use it
+        # so that check_output always returns a byte string here.
+        msg = subprocess.check_output(git_show).strip().decode('utf-8')
+
+        # amazon gets unhappy when you attach non-ascii meta, so we convert
+        # it to an ascii string causing us to drop all unicode characters
+        # (they become ?), but then we change the string back to a unicode
+        # string so that it's json.dump friendly in python 3.
+        msg = msg.encode('ascii', 'replace').decode('ascii')
+        return msg
 
     @property
     def tag(self):
-        tags = check_output(('git', 'tag', '--contains', self.commit))
+        tags = subprocess.check_output(
+            ('git', 'tag', '--contains', self.commit), universal_newlines=True)
+
         tag = None
         for line in tags.splitlines():
             line = line.strip()
@@ -464,6 +471,8 @@ class GitHelper(object):
 
 
 def main():
+    ensure_unicode_compatible()
+
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
 
@@ -471,7 +480,7 @@ def main():
     if os.path.exists('deploy/compat'):
         with open('deploy/compat') as f:
             compat = int(f.read().strip())
-    print 'Detected build compat level %s' % compat
+    print('Detected build compat level %s' % compat)
     try:
         BuilderClass = {
             1: BuildCompat1,
@@ -479,8 +488,8 @@ def main():
             4: BuildCompat4,
         }[compat]
     except KeyError:
-        print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
-                              'are supported')
+        print('Only legacy and yodeploy compat >=3 apps are supported',
+              file=sys.stderr)
         sys.exit(1)
 
     deploy_settings = yodeploy.config.load_settings(opts.config)

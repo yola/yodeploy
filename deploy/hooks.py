@@ -22,7 +22,7 @@ class Hooks(ConfiguratedApp, PythonApp, UpstartApp):
                 os.unlink(wrapper_name)
             with open(wrapper_name, 'w') as f:
                 f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
-            os.chmod(wrapper_name, 0755)
+            os.chmod(wrapper_name, 0o755)
 
         logdir = '/var/log/deploy'
         if not os.path.exists(logdir):

@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 def sha224sum(filename):
     m = hashlib.sha224()
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         m.update(f.read())
     return m.hexdigest()
 
@@ -44,7 +44,7 @@ def download_ve(repository, app, ve_version, target='master',
                 dest='virtualenv.tar.gz'):
     artifact = 'virtualenv-%s.tar.gz' % ve_version
     with repository.get(app, target=target, artifact=artifact) as f1:
-        with open(dest, 'w') as f2:
+        with open(dest, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 
@@ -59,11 +59,13 @@ def upload_ve(repository, app, ve_version, target='master',
             log.error('Skipping: already exists')
             return
         version = str(int(versions[-1]) + 1)
-    with open(source) as f:
+    with open(source, 'rb') as f:
         repository.put(app, version, f, {}, target, artifact)
 
 
-def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
+def create_ve(
+        app_dir, pypi=None, req_file='requirements.txt',
+        verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
 
@@ -101,7 +103,7 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
         ] + pypi + [requirement]
         p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
         output, _ = p.communicate()
-        for line in output.splitlines():
+        for line in output.decode('utf-8').splitlines():
             line = line.strip()
             sub_log.info(line)
             if line.startswith('Removing'):
@@ -114,8 +116,9 @@ def create_ve(app_dir, pypi=None, req_file='requirements.txt'):
 
         log.info('Installed %s', requirement)
 
-    log.info('Verifying requirements were met')
-    check_requirements(ve_dir, requirements)
+    if verify_req_install:
+        log.info('Verifying requirements were met')
+        check_requirements(ve_dir, requirements)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
@@ -150,7 +153,7 @@ def check_requirements(ve_dir, requirements):
     p = subprocess.Popen(
         os.path.join(ve_dir, 'bin', 'python'),
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, _ = p.communicate(script)
+    out, _ = p.communicate(script.encode('utf-8'))
 
     if p.returncode != 0:
         log.error(out or 'Requirements check failed for unknown reasons')
