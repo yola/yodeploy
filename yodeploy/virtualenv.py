@@ -55,26 +55,14 @@ def create_ve(
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
+    req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
     virtualenv.create_environment(ve_dir, site_packages=False)
-
-    with open(os.path.join(app_dir, req_file), 'r') as f:
-        requirements = []
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('-'):
-                continue
-            if line.startswith('#'):
-                continue
-            requirements.append(line)
-
-    install_requirements(ve_dir, pypi, requirements)
+    install_requirements(ve_dir, pypi, req_file)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
-        check_requirements(ve_dir, requirements)
+        check_requirements(ve_dir, req_file)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
@@ -91,39 +79,47 @@ def create_ve(
         os.chdir(cwd)
 
 
-def install_requirements(ve_dir, pypi, requirements):
-    sub_log = logging.getLogger(__name__ + '.easy_install')
+def install_requirements(ve_dir, pypi, req_file):
+    sub_log = logging.getLogger(__name__ + '.pip')
 
-    if pypi is None:
-        pypi = []
-    else:
-        pypi = ['--index-url', pypi]
+    log.info('Installing requirements')
 
-    for requirement in requirements:
-        log.info('Preparing to install %s', requirement)
+    cmd = [
+        os.path.join('bin', 'python'), '-m', 'pip', 'install',
+        '-r', req_file,
+    ]
 
-        cmd = [
-            os.path.join('bin', 'python'),
-            os.path.join('bin', 'easy_install'), '--always-unzip'
-        ] + pypi + [requirement]
+    if pypi:
+        cmd += ['--index-url', pypi]
 
-        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
-        for line in iter(p.stdout.readline, b''):
-            line = line.decode('utf-8').strip()
-            sub_log.info('%s', line)
-            if line.startswith('Removing'):
-                log.error('Requirements were incompatible: %s', line)
-                sys.exit(1)
-
-        if p.wait() != 0:
-            log.error('easy_install exited non-zero (%i)', p.returncode)
+    p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
+    for line in iter(p.stdout.readline, b''):
+        line = line.decode('utf-8').strip()
+        sub_log.info('%s', line)
+        if line.startswith('Removing'):
+            log.error('Requirements were incompatible: %s', line)
             sys.exit(1)
 
-        log.info('Installed %s', requirement)
+    if p.wait() != 0:
+        log.error('pip exited non-zero (%i)', p.returncode)
+        sys.exit(1)
 
 
-def check_requirements(ve_dir, requirements):
-    """Given a ve root, and a list of requirements, ensure that they are met"""
+def check_requirements(ve_dir, req_file):
+    """Given a ve root, and a requriments file, ensure that they are met"""
+
+    with open(req_file, 'r') as f:
+        requirements = []
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('-'):
+                continue
+            if line.startswith('#'):
+                continue
+            requirements.append(line)
+
     script = (
         'import sys, pkg_resources\n'
         'for req in %r:\n'
