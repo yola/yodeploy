@@ -74,12 +74,6 @@ def create_ve(
     else:
         pypi = ['--index-url', pypi]
 
-    # Monkey patch a logger into virtualenv, usually created in main()
-    # Newer virtualenvs won't need this
-    if not hasattr(virtualenv, 'logger'):
-        virtualenv.logger = virtualenv.Logger([
-            (virtualenv.Logger.level_for_integer(2), sys.stdout)])
-
     virtualenv.create_environment(ve_dir, site_packages=False)
     with open(os.path.join(app_dir, req_file), 'r') as f:
         requirements = []
