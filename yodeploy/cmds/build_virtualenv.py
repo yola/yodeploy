@@ -72,8 +72,9 @@ def main():
     deploy_settings = yodeploy.config.load_settings(options.config)
     repository = yodeploy.repository.get_repository(deploy_settings)
 
-    version = yodeploy.virtualenv.ve_version(
-        yodeploy.virtualenv.sha224sum(options.requirement))
+    ve_hash = yodeploy.virtualenv.sha224sum(options.requirement)
+    platform = deploy_settings.artifacts.platform
+    version = yodeploy.virtualenv.ve_version(ve_hash, platform)
     if options.hash:
         print(version)
         return
@@ -104,7 +105,7 @@ def main():
 
     if not os.path.isdir('virtualenv'):
         yodeploy.virtualenv.create_ve(
-            '.',
+            '.', platform,
             pypi=deploy_settings.build.pypi,
             req_file=options.requirement)
 

@@ -48,17 +48,18 @@ class Application(object):
                        if version != 'unpack'),
                       key=version_sort_key)
 
-    def deploy_ve(self, target, repository, version):
+    def deploy_ve(self, target, repository, app_version):
         '''Unpack a virtualenv for the deploy hooks, and return its location
         on the FS
         '''
-        deploy_req_fn = os.path.join(self.appdir, 'versions', version,
+        deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
-        ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
+        hash_ = yodeploy.virtualenv.sha224sum(deploy_req_fn)
+        platform = self.settings.artifacts.platform
+        version = yodeploy.virtualenv.ve_version(hash_, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
                                'virtualenvs')
-        ve_dir = os.path.join(ves_dir, ve_hash)
+        ve_dir = os.path.join(ves_dir, version)
         if os.path.exists(ve_dir):
             return ve_dir
         ve_working = os.path.join(ves_dir, 'unpack')
@@ -67,8 +68,8 @@ class Application(object):
         ve_unpack_root = os.path.join(ve_working, 'virtualenv')
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
         with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
-            log.debug('Deploying hook virtualenv %s', ve_hash)
-            yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
+            log.debug('Deploying hook virtualenv %s', version)
+            yodeploy.virtualenv.download_ve(repository, 'deploy', version,
                                             target, tarball)
             extract_tar(tarball, ve_unpack_root)
             if os.path.exists(ve_dir):

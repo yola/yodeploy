@@ -21,10 +21,8 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def ve_version(req_hash):
-    return '%s-%s-%s' % (sysconfig.get_python_version(),
-                         sysconfig.get_platform(),
-                         req_hash)
+def ve_version(req_hash, platform):
+    return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
 
 
 def download_ve(repository, app, ve_version, target='master',
@@ -51,7 +49,7 @@ def upload_ve(repository, app, ve_version, target='master',
 
 
 def create_ve(
-        app_dir, pypi=None, req_file='requirements.txt',
+        app_dir, platform, pypi=None, req_file='requirements.txt',
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
@@ -65,8 +63,10 @@ def create_ve(
         check_requirements(ve_dir)
 
     relocateable_ve(ve_dir)
+    hash_ = sha224sum(os.path.join(app_dir, req_file))
+    version = ve_version(hash_, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
-        f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
+        f.write(version)
 
     log.info('Building virtualenv tarball')
     cwd = os.getcwd()
