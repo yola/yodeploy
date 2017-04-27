@@ -62,7 +62,7 @@ def create_ve(
 
     if verify_req_install:
         log.info('Verifying requirements were met')
-        check_requirements(ve_dir, req_file)
+        check_requirements(ve_dir)
 
     relocateable_ve(ve_dir)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
@@ -96,49 +96,22 @@ def install_requirements(ve_dir, pypi, req_file):
     for line in iter(p.stdout.readline, b''):
         line = line.decode('utf-8').strip()
         sub_log.info('%s', line)
-        if line.startswith('Removing'):
-            log.error('Requirements were incompatible: %s', line)
-            sys.exit(1)
 
     if p.wait() != 0:
         log.error('pip exited non-zero (%i)', p.returncode)
         sys.exit(1)
 
 
-def check_requirements(ve_dir, req_file):
-    """Given a ve root, and a requriments file, ensure that they are met"""
-
-    with open(req_file, 'r') as f:
-        requirements = []
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('-'):
-                continue
-            if line.startswith('#'):
-                continue
-            requirements.append(line)
-
-    script = (
-        'import sys, pkg_resources\n'
-        'for req in %r:\n'
-        '  try:\n'
-        '    pkg_resources.get_distribution(req)\n'
-        '  except pkg_resources.DistributionNotFound:\n'
-        '    pass\n'
-        '  except pkg_resources.VersionConflict as e:\n'
-        '    print(\n'
-        '      "Incompatible requirement: %%s\\n" %% e)\n'
-        '    sys.exit(1)\n'
-    ) % (requirements,)
-
+def check_requirements(ve_dir):
+    """run pip check"""
     p = subprocess.Popen(
-        os.path.join(ve_dir, 'bin', 'python'),
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, _ = p.communicate(script.encode('utf-8'))
+        (os.path.join(ve_dir, 'bin', 'python'), '-m', 'pip', 'check'),
+        stdout=subprocess.PIPE)
+    out, _ = p.communicate()
 
-    if p.returncode != 0:
+    if p.returncode == 0:
+        log.info(out)
+    else:
         log.error(out or 'Requirements check failed for unknown reasons')
         sys.exit(1)
 
