@@ -57,6 +57,7 @@ def create_ve(
     ve_dir = os.path.join(app_dir, 'virtualenv')
 
     virtualenv.create_environment(ve_dir, site_packages=False)
+
     with open(os.path.join(app_dir, req_file), 'r') as f:
         requirements = []
         for line in f:
@@ -69,7 +70,35 @@ def create_ve(
                 continue
             requirements.append(line)
 
+    install_requirements(ve_dir, pypi, requirements)
+
+    if verify_req_install:
+        log.info('Verifying requirements were met')
+        check_requirements(ve_dir, requirements)
+
+    relocateable_ve(ve_dir)
+    with open(os.path.join(ve_dir, '.hash'), 'w') as f:
+        f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
+
+    log.info('Building virtualenv tarball')
+    cwd = os.getcwd()
+    os.chdir(app_dir)
+    t = tarfile.open('virtualenv.tar.gz', 'w:gz')
+    try:
+        t.add('virtualenv')
+    finally:
+        t.close()
+        os.chdir(cwd)
+
+
+def install_requirements(ve_dir, pypi, requirements):
     sub_log = logging.getLogger(__name__ + '.easy_install')
+
+    if pypi is None:
+        pypi = []
+    else:
+        pypi = ['--index-url', pypi]
+
     for requirement in requirements:
         log.info('Preparing to install %s', requirement)
 
@@ -91,24 +120,6 @@ def create_ve(
             sys.exit(1)
 
         log.info('Installed %s', requirement)
-
-    if verify_req_install:
-        log.info('Verifying requirements were met')
-        check_requirements(ve_dir, requirements)
-
-    relocateable_ve(ve_dir)
-    with open(os.path.join(ve_dir, '.hash'), 'w') as f:
-        f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
-
-    log.info('Building virtualenv tarball')
-    cwd = os.getcwd()
-    os.chdir(app_dir)
-    t = tarfile.open('virtualenv.tar.gz', 'w:gz')
-    try:
-        t.add('virtualenv')
-    finally:
-        t.close()
-        os.chdir(cwd)
 
 
 def check_requirements(ve_dir, requirements):
