@@ -56,11 +56,6 @@ def create_ve(
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
 
-    if pypi is None:
-        pypi = []
-    else:
-        pypi = ['--index-url', pypi]
-
     virtualenv.create_environment(ve_dir, site_packages=False)
     with open(os.path.join(app_dir, req_file), 'r') as f:
         requirements = []
@@ -145,6 +140,8 @@ def relocateable_ve(ve_dir):
     log.debug('Making virtualenv relocatable')
     virtualenv.make_environment_relocatable(ve_dir)
 
+    fix_local_symlinks(ve_dir)
+
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
     activate = []
@@ -192,3 +189,19 @@ def relocateable_ve(ve_dir):
             activate.append(line)
     with open(os.path.join(ve_dir, 'bin', 'activate'), 'w') as f:
         f.write('\n'.join(activate))
+
+
+def fix_local_symlinks(ve_dir):
+    """Make symlinks in the local dir relative.
+
+    The symlinks in the local dir should just point (relatively) at the
+    equivalent directories outside the local tree, for relocateability.
+    """
+    local = os.path.join(ve_dir, 'local')
+    if not os.path.exists(local):
+        return
+    for fn in os.listdir(local):
+        symlink = os.path.join(local, fn)
+        target = os.path.join('..', fn)
+        os.unlink(symlink)
+        os.symlink(target, symlink)
