@@ -67,6 +67,7 @@ def create_ve(
     version = ve_version(hash_, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(version)
+        f.write('\n')
 
     log.info('Building virtualenv tarball')
     cwd = os.getcwd()
