@@ -141,6 +141,7 @@ def relocateable_ve(ve_dir):
     virtualenv.make_environment_relocatable(ve_dir)
 
     fix_local_symlinks(ve_dir)
+    remove_fragile_symlinks(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
@@ -205,3 +206,23 @@ def fix_local_symlinks(ve_dir):
         target = os.path.join('..', fn)
         os.unlink(symlink)
         os.symlink(target, symlink)
+
+
+def remove_fragile_symlinks(ve_dir):
+    """Remove symlinks to parent virtualenv.
+
+    When we create a virtualenv with a Python from another virtualenv, we don't
+    want to leave symlinks pointing back to the virtualenv we used.  In a
+    production environment, it probably won't be there.
+    """
+    if getattr(sys, 'real_prefix', sys.prefix) == sys.prefix:
+        return
+    ve_prefix = sys.prefix
+    home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(ve_dir)
+    for fn in os.listdir(lib_dir):
+        path = os.path.join(lib_dir, fn)
+        if os.path.islink(path):
+            dest = os.readlink(path)
+            if dest.startswith(ve_prefix):
+                log.debug('Removing fragile symlink %s -> %s', path, dest)
+                os.unlink(path)
