@@ -6,21 +6,8 @@ import os
 import subprocess
 import sys
 import shutil
+import sysconfig
 import tarfile
-
-try:
-    import sysconfig
-    hush_pyflakes = sysconfig
-except ImportError:
-    class sysconfig:
-        @classmethod
-        def get_python_version(cls):
-            return '%i.%i' % sys.version_info[:2]
-
-        @classmethod
-        def get_platform(cls):
-            import distutils.util
-            return distutils.util.get_platform()
 
 import virtualenv
 
