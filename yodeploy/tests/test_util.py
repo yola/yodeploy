@@ -5,10 +5,10 @@ import os
 import pwd
 import stat
 import subprocess
-import sys
 import unittest
 
-from yodeploy.tests import HelperScriptConsumer, TmpDirTestCase
+from yodeploy.tests import (
+    HelperScriptConsumer, TmpDirTestCase, yodeploy_location)
 from yodeploy.util import (
     chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
@@ -76,7 +76,7 @@ class TestExtractTar(TmpDirTestCase, HelperScriptConsumer):
 
         env = {
             'PATH': os.environ['PATH'],
-            'PYTHONPATH': ':'.join(sys.path),
+            'PYTHONPATH': yodeploy_location(),
         }
 
         subprocess.check_call((

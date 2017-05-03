@@ -28,8 +28,8 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
-                 deploy_settings, repository, build_virtualenvs,
-                 upload_virtualenvs):
+                 deploy_settings, deploy_settings_file, repository,
+                 build_virtualenvs, upload_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -39,6 +39,7 @@ class Builder(object):
         self.branch = branch
         self.tag = tag
         self.deploy_settings = deploy_settings
+        self.deploy_settings_file = deploy_settings_file
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
@@ -227,9 +228,11 @@ class BuildCompat3(Builder):
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
-                                   '--target', self.target, '--download']
+                                   '--target', self.target, '--download',
+                                   '--config', self.deploy_settings_file]
         build_app_virtualenv = [python, build_ve, '-a', self.app,
-                                '--target', self.target, '--download']
+                                '--target', self.target, '--download',
+                                '--config', self.deploy_settings_file]
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
@@ -511,6 +514,7 @@ def main():
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
+                           deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
                            upload_virtualenvs=upload_virtualenvs)

@@ -6,21 +6,8 @@ import os
 import subprocess
 import sys
 import shutil
+import sysconfig
 import tarfile
-
-try:
-    import sysconfig
-    hush_pyflakes = sysconfig
-except ImportError:
-    class sysconfig:
-        @classmethod
-        def get_python_version(cls):
-            return '%i.%i' % sys.version_info[:2]
-
-        @classmethod
-        def get_platform(cls):
-            import distutils.util
-            return distutils.util.get_platform()
 
 import virtualenv
 
@@ -69,18 +56,8 @@ def create_ve(
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
 
-    if pypi is None:
-        pypi = []
-    else:
-        pypi = ['--index-url', pypi]
-
-    # Monkey patch a logger into virtualenv, usually created in main()
-    # Newer virtualenvs won't need this
-    if not hasattr(virtualenv, 'logger'):
-        virtualenv.logger = virtualenv.Logger([
-            (virtualenv.Logger.level_for_integer(2), sys.stdout)])
-
     virtualenv.create_environment(ve_dir, site_packages=False)
+
     with open(os.path.join(app_dir, req_file), 'r') as f:
         requirements = []
         for line in f:
@@ -93,28 +70,7 @@ def create_ve(
                 continue
             requirements.append(line)
 
-    sub_log = logging.getLogger(__name__ + '.easy_install')
-    for requirement in requirements:
-        log.info('Preparing to install %s', requirement)
-
-        cmd = [
-            os.path.join('bin', 'python'),
-            os.path.join('bin', 'easy_install'), '--always-unzip'
-        ] + pypi + [requirement]
-        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
-        output, _ = p.communicate()
-        for line in output.decode('utf-8').splitlines():
-            line = line.strip()
-            sub_log.info(line)
-            if line.startswith('Removing'):
-                log.error('Requirements were incompatible: %s', line)
-                sys.exit(1)
-
-        if p.returncode != 0:
-            log.error('easy_install exited non-zero (%i)', p.returncode)
-            sys.exit(1)
-
-        log.info('Installed %s', requirement)
+    install_requirements(ve_dir, pypi, requirements)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
@@ -133,6 +89,37 @@ def create_ve(
     finally:
         t.close()
         os.chdir(cwd)
+
+
+def install_requirements(ve_dir, pypi, requirements):
+    sub_log = logging.getLogger(__name__ + '.easy_install')
+
+    if pypi is None:
+        pypi = []
+    else:
+        pypi = ['--index-url', pypi]
+
+    for requirement in requirements:
+        log.info('Preparing to install %s', requirement)
+
+        cmd = [
+            os.path.join('bin', 'python'),
+            os.path.join('bin', 'easy_install'), '--always-unzip'
+        ] + pypi + [requirement]
+
+        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
+        for line in iter(p.stdout.readline, b''):
+            line = line.decode('utf-8').strip()
+            sub_log.info('%s', line)
+            if line.startswith('Removing'):
+                log.error('Requirements were incompatible: %s', line)
+                sys.exit(1)
+
+        if p.wait() != 0:
+            log.error('easy_install exited non-zero (%i)', p.returncode)
+            sys.exit(1)
+
+        log.info('Installed %s', requirement)
 
 
 def check_requirements(ve_dir, requirements):
@@ -163,6 +150,9 @@ def check_requirements(ve_dir, requirements):
 def relocateable_ve(ve_dir):
     log.debug('Making virtualenv relocatable')
     virtualenv.make_environment_relocatable(ve_dir)
+
+    fix_local_symlinks(ve_dir)
+    remove_fragile_symlinks(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
@@ -211,3 +201,43 @@ def relocateable_ve(ve_dir):
             activate.append(line)
     with open(os.path.join(ve_dir, 'bin', 'activate'), 'w') as f:
         f.write('\n'.join(activate))
+
+
+def fix_local_symlinks(ve_dir):
+    """Make symlinks in the local dir relative.
+
+    The symlinks in the local dir should just point (relatively) at the
+    equivalent directories outside the local tree, for relocateability.
+    """
+    local = os.path.join(ve_dir, 'local')
+    if not os.path.exists(local):
+        return
+    for fn in os.listdir(local):
+        symlink = os.path.join(local, fn)
+        target = os.path.join('..', fn)
+        os.unlink(symlink)
+        os.symlink(target, symlink)
+
+
+def remove_fragile_symlinks(ve_dir):
+    """Remove symlinks to parent virtualenv.
+
+    When we create a virtualenv with a Python from another virtualenv, we don't
+    want to leave symlinks pointing back to the virtualenv we used.  In a
+    production environment, it probably won't be there.
+    """
+    if getattr(sys, 'real_prefix', sys.prefix) == sys.prefix:
+        return
+    ve_prefix = sys.prefix
+    home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(ve_dir)
+    for fn in os.listdir(lib_dir):
+        path = os.path.join(lib_dir, fn)
+        if not os.path.islink(path):
+            continue
+
+        dest = os.readlink(path)
+        if not dest.startswith(ve_prefix):
+            continue
+
+        log.debug('Removing fragile symlink %s -> %s', path, dest)
+        os.unlink(path)

@@ -87,13 +87,11 @@ class Application(object):
                                'compat')) as f:
             compat = int(f.read())
         if compat == 3:
-            module = 'yola.deploy.__main__'
+            module = 'yola.deploy'
         elif compat == 4:
-            module = 'yodeploy.__main__'
+            module = 'yodeploy'
 
         ve = self.deploy_ve(target, repository, version)
-        # .__main__ is needed for silly Python 2.6
-        # See http://bugs.python.org/issue2751
         tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
                '-m', module,

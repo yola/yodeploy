@@ -31,6 +31,7 @@ deploy_settings = AttrDict(
             report=False,
         ),
         configs_dir='',
+        pypi=None,
     ),
 
     deployconfigs=AttrDict(
