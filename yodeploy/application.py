@@ -16,11 +16,11 @@ log = logging.getLogger(__name__)
 
 
 class Application(object):
-    '''A deployable application.
+    """A deployable application.
 
     The deploy can be driven piece by piece, or by the deploy() function which
     will do it all in the right order.
-    '''
+    """
 
     def __init__(self, app, settings_file):
         self.app = app
@@ -49,9 +49,11 @@ class Application(object):
                       key=version_sort_key)
 
     def deploy_ve(self, target, repository, app_version):
-        '''Unpack a virtualenv for the deploy hooks, and return its location
-        on the FS
-        '''
+        """Prepare the deploy virtualenv.
+
+        Unpack a virtualenv for the deploy hooks, and return its location on
+        the FS.
+        """
         deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
         hash_ = yodeploy.virtualenv.sha224sum(deploy_req_fn)
@@ -129,7 +131,7 @@ class Application(object):
         log.info('Deployed %s/%s', self.app, version)
 
     def unpack(self, target, repository, version):
-        '''First stage of deployment'''
+        """First stage of deployment"""
         assert self.lock.held
         log.debug('Unpacking %s/%s', self.app, version)
 
@@ -158,13 +160,13 @@ class Application(object):
                   staging)
 
     def prepare(self, target, repository, version):
-        '''Post-unpack, pre-swing hook'''
+        """Post-unpack, pre-swing hook"""
         assert self.lock.held
         log.debug('Preparing %s/%s', self.app, version)
         self.hook('prepare', target, repository, version)
 
     def swing_symlink(self, version):
-        '''Make version live'''
+        """Make version live"""
         assert self.lock.held
         log.debug('Swinging %s/%s', self.app, version)
         # rename is atomic, symlink isn't
@@ -176,16 +178,17 @@ class Application(object):
         os.rename(temp_link, link)
 
     def deployed(self, target, repository, version):
-        '''Post-swing hook'''
+        """Post-swing hook"""
         assert self.lock.held
         log.debug('Deployed hook %s/%s', self.app, version)
         self.hook('deployed', target, repository, version)
 
     def gc(self, max_versions):
-        '''
+        """Garbage-collect artifacts.
+
         Remove all deployed versions except the most recent max_versions, and
         any live verisons.
-        '''
+        """
         with self.lock:
             old_versions = set(self.deployed_versions[:-max_versions])
             if self.live_version:

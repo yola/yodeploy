@@ -104,7 +104,7 @@ def install_requirements(ve_dir, pypi, req_file):
 
 
 def check_requirements(ve_dir):
-    """run pip check"""
+    """Run pip check"""
     p = subprocess.Popen(
         (os.path.join(ve_dir, 'bin', 'python'), '-m', 'pip', 'check'),
         stdout=subprocess.PIPE)
