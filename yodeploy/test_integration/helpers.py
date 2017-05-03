@@ -72,7 +72,6 @@ def build_sample(app_name, version='1'):
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     env = {
         'PATH': os.environ['PATH'],
-        'PYTHONPATH': ':'.join(sys.path),
         'BUILD_NUMBER': version,
         'GIT_BRANCH': 'master',
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
