@@ -106,16 +106,16 @@ def install_requirements(ve_dir, pypi, requirements):
             os.path.join('bin', 'python'),
             os.path.join('bin', 'easy_install'), '--always-unzip'
         ] + pypi + [requirement]
+
         p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
-        output, _ = p.communicate()
-        for line in output.decode('utf-8').splitlines():
-            line = line.strip()
-            sub_log.info(line)
+        for line in iter(p.stdout.readline, b''):
+            line = line.decode('utf-8').strip()
+            sub_log.info('%s', line)
             if line.startswith('Removing'):
                 log.error('Requirements were incompatible: %s', line)
                 sys.exit(1)
 
-        if p.returncode != 0:
+        if p.wait() != 0:
             log.error('easy_install exited non-zero (%i)', p.returncode)
             sys.exit(1)
 
