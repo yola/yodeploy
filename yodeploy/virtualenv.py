@@ -21,22 +21,24 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def ve_version(req_hash, platform):
+def get_id(filename, platform):
+    """Calculate the ID of a virtualenv for the given requirements.txt"""
+    req_hash = sha224sum(filename)
     return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
 
 
-def download_ve(repository, app, ve_version, target='master',
+def download_ve(repository, app, virtualenv_id, target='master',
                 dest='virtualenv.tar.gz'):
-    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    artifact = 'virtualenv-%s.tar.gz' % virtualenv_id
     with repository.get(app, target=target, artifact=artifact) as f1:
         with open(dest, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 
-def upload_ve(repository, app, ve_version, target='master',
+def upload_ve(repository, app, virtualenv_id, target='master',
               source='virtualenv.tar.gz', overwrite=False):
-    log.debug('Uploading virtualenv %s for %s', ve_version, app)
-    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    log.debug('Uploading virtualenv %s for %s', virtualenv_id, app)
+    artifact = 'virtualenv-%s.tar.gz' % virtualenv_id
     versions = repository.list_versions(app, target, artifact)
     version = '1'
     if versions:
@@ -63,10 +65,9 @@ def create_ve(
         check_requirements(ve_dir)
 
     relocateable_ve(ve_dir)
-    hash_ = sha224sum(os.path.join(app_dir, req_file))
-    version = ve_version(hash_, platform)
+    ve_id = get_id(os.path.join(app_dir, req_file), platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
-        f.write(version)
+        f.write(ve_id)
         f.write('\n')
 
     log.info('Building virtualenv tarball')

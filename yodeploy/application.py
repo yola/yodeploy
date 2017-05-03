@@ -6,7 +6,7 @@ import subprocess
 
 import yodeploy.config
 import yodeploy.ipc_logging
-import yodeploy.virtualenv
+from yodeploy import virtualenv
 from yodeploy.locking import LockFile, SpinLockFile
 from yodeploy.repository import version_sort_key
 from yodeploy.util import extract_tar, ignoring
@@ -56,12 +56,11 @@ class Application(object):
         """
         deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        hash_ = yodeploy.virtualenv.sha224sum(deploy_req_fn)
         platform = self.settings.artifacts.platform
-        version = yodeploy.virtualenv.ve_version(hash_, platform)
+        ve_id = virtualenv.get_id(deploy_req_fn, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
                                'virtualenvs')
-        ve_dir = os.path.join(ves_dir, version)
+        ve_dir = os.path.join(ves_dir, ve_id)
         if os.path.exists(ve_dir):
             return ve_dir
         ve_working = os.path.join(ves_dir, 'unpack')
@@ -70,9 +69,9 @@ class Application(object):
         ve_unpack_root = os.path.join(ve_working, 'virtualenv')
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
         with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
-            log.debug('Deploying hook virtualenv %s', version)
-            yodeploy.virtualenv.download_ve(repository, 'deploy', version,
-                                            target, tarball)
+            log.debug('Deploying hook virtualenv %s', ve_id)
+            virtualenv.download_ve(
+                repository, 'deploy', ve_id, target, tarball)
             extract_tar(tarball, ve_unpack_root)
             if os.path.exists(ve_dir):
                 shutil.rmtree(ve_dir)
