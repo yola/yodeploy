@@ -37,7 +37,6 @@ def clear(app_name):
 def cleanup_venv(app_name):
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     rmdir(join(tests_dir, 'filesys', 'artifacts', app_name))
-    rmdir(join('/srv/deploy/data/artifacts', app_name))
     rmdir(join(app_dir, 'virtualenv'))
     rm(join(app_dir, 'virtualenv.tar.gz'))
 
