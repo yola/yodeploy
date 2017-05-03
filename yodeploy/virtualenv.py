@@ -232,8 +232,12 @@ def remove_fragile_symlinks(ve_dir):
     home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(ve_dir)
     for fn in os.listdir(lib_dir):
         path = os.path.join(lib_dir, fn)
-        if os.path.islink(path):
-            dest = os.readlink(path)
-            if dest.startswith(ve_prefix):
-                log.debug('Removing fragile symlink %s -> %s', path, dest)
-                os.unlink(path)
+        if not os.path.islink(path):
+            continue
+
+        dest = os.readlink(path)
+        if not dest.startswith(ve_prefix):
+            continue
+
+        log.debug('Removing fragile symlink %s -> %s', path, dest)
+        os.unlink(path)
