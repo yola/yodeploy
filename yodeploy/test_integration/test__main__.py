@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-from yodeploy.tests import TmpDirTestCase
+from yodeploy.tests import TmpDirTestCase, yodeploy_location
 
 
 class TestHookery(TmpDirTestCase):
@@ -49,7 +49,7 @@ deploy_settings = AttrDict(
                 'foo',
             ), env={
                 'PATH': os.environ['PATH'],
-                'PYTHONPATH': ':'.join(sys.path),
+                'PYTHONPATH': yodeploy_location(),
             }, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             universal_newlines=True)
         out, err = p.communicate()

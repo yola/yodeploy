@@ -20,7 +20,7 @@ except ImportError:
 from yodeploy.ipc_logging import (
     ExistingSocketHandler, LoggingSocketRequestHandler,
     ThreadedLogStreamServer)
-from yodeploy.tests import HelperScriptConsumer
+from yodeploy.tests import HelperScriptConsumer, yodeploy_location
 
 
 class TestExistingSocketHandler(unittest.TestCase):
@@ -106,7 +106,7 @@ class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
                 str(self.tlss.remote_socket.fileno())
             ), env={
                 'PATH': os.environ['PATH'],
-                'PYTHONPATH': ':'.join(sys.path),
+                'PYTHONPATH': yodeploy_location(),
             }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False,
             universal_newlines=True)
         out, err = p.communicate()
