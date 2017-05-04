@@ -79,6 +79,28 @@ def binary_available(name):
     return False
 
 
+def setup_profile():
+    """Check ~/.profile for a .bashrc source, adding it if necessary"""
+    create_profile = None
+
+    for profile in ('~/.bash_profile', '~/.bash_login', '~/.profile'):
+        fn = os.path.expanduser(profile)
+        if not os.path.isfile(fn):
+            continue
+        if confirm("%s exists. Does it source ~/.bashrc?" % profile):
+            return
+        create_profile = fn
+        break
+    else:
+        if confirm("You don't seem to have a .profile.\n"
+                   "Create it, sourcing .bashrc?"):
+            create_profile = os.path.expanduser('~/.profile')
+
+    if create_profile:
+        with open(create_profile, 'a') as f:
+            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
+
+
 def check_environment():
     """
     Check that our basic tools exist
@@ -97,19 +119,7 @@ def check_environment():
             bashrc_additions.append('export PATH=~/"bin:$PATH"')
             os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    profiles = [profile for profile in
-                ('~/.bash_profile', '~/.bash_login', '~/.profile')
-                if os.path.isfile(os.path.expanduser(profile))]
-    profile = None
-    if profiles:
-        if not confirm("%s exists. Does it source ~/.bashrc?" % profiles[0]):
-            profile = os.path.expanduser(profiles[0])
-    elif confirm("You don't seem to have a .profile.\n"
-                 "Create it, sourcing .bashrc?"):
-        profile = os.path.expanduser('~/.profile')
-    if profile:
-        with open(profile, 'a') as f:
-            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
+    setup_profile()
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
