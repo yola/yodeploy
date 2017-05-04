@@ -133,7 +133,7 @@ def check_environment():
     else:
         if 'YOLA_SRC' not in os.environ:
             input_ = input('Where do you keep your Yola GIT checkouts? '
-                               '[Default: ~/src/]: ')
+                           '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
                 input_ = '~/src'
@@ -152,8 +152,8 @@ def check_environment():
                 os.mkdir(yola_src)
 
     if bashrc_additions:
-        bashrc_additions = ['', "# Added by Yola's local-bootstrap"
-                           ] + bashrc_additions + ['']
+        bashrc_additions = [
+            '', "# Added by Yola's local-bootstrap"] + bashrc_additions + ['']
         with open(os.path.expanduser('~/.bashrc'), 'a') as f:
             f.write('\n'.join(bashrc_additions))
 
