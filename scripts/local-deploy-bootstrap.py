@@ -74,8 +74,9 @@ def abort(message):
 def binary_available(name):
     """Check if a program is available in PATH"""
     for dir_ in os.environ.get('PATH', '').split(':'):
-        if os.access(os.path.join(dir_, name), os.X_OK):
-            return True
+        fn = os.path.join(dir_, name)
+        if os.access(fn, os.X_OK):
+            return fn
     return False
 
 
@@ -415,7 +416,12 @@ def build_virtualenv(bootstrap=False):
 def write_wrapper(script, ve, args=None):
     """Install a wrapper for script in ~/bin"""
     name = os.path.basename(script).rsplit('.', 1)[0].replace('_', '-')
-    wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
+    # Re-use existing paths
+    wrapper_name = binary_available(name)
+    if not wrapper_name:
+        wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
     if args:
         script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
