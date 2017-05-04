@@ -90,7 +90,8 @@ def setup_profile():
 
         with open(fn) as f:
             for line in f:
-                if line.strip() in ('. "$HOME/.bashrc"', '. ~/.bashrc'):
+                if re.match(r'^\s*(\.|source)\s+"?(~|$HOME)/\.bashrc"?\s*$',
+                            line):
                     return
 
         create_profile = fn
