@@ -6,7 +6,7 @@ import subprocess
 
 import yodeploy.config
 import yodeploy.ipc_logging
-import yodeploy.virtualenv
+from yodeploy import virtualenv
 from yodeploy.locking import LockFile, SpinLockFile
 from yodeploy.repository import version_sort_key
 from yodeploy.util import extract_tar, ignoring
@@ -16,11 +16,11 @@ log = logging.getLogger(__name__)
 
 
 class Application(object):
-    '''A deployable application.
+    """A deployable application.
 
     The deploy can be driven piece by piece, or by the deploy() function which
     will do it all in the right order.
-    '''
+    """
 
     def __init__(self, app, settings_file):
         self.app = app
@@ -48,17 +48,19 @@ class Application(object):
                        if version != 'unpack'),
                       key=version_sort_key)
 
-    def deploy_ve(self, target, repository, version):
-        '''Unpack a virtualenv for the deploy hooks, and return its location
-        on the FS
-        '''
-        deploy_req_fn = os.path.join(self.appdir, 'versions', version,
+    def deploy_ve(self, target, repository, app_version):
+        """Prepare the deploy virtualenv.
+
+        Unpack a virtualenv for the deploy hooks, and return its location on
+        the FS.
+        """
+        deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
-        ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
+        platform = self.settings.artifacts.platform
+        ve_id = virtualenv.get_id(deploy_req_fn, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
                                'virtualenvs')
-        ve_dir = os.path.join(ves_dir, ve_hash)
+        ve_dir = os.path.join(ves_dir, ve_id)
         if os.path.exists(ve_dir):
             return ve_dir
         ve_working = os.path.join(ves_dir, 'unpack')
@@ -67,9 +69,9 @@ class Application(object):
         ve_unpack_root = os.path.join(ve_working, 'virtualenv')
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
         with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
-            log.debug('Deploying hook virtualenv %s', ve_hash)
-            yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
-                                            target, tarball)
+            log.debug('Deploying hook virtualenv %s', ve_id)
+            virtualenv.download_ve(
+                repository, 'deploy', ve_id, target, tarball)
             extract_tar(tarball, ve_unpack_root)
             if os.path.exists(ve_dir):
                 shutil.rmtree(ve_dir)
@@ -128,7 +130,7 @@ class Application(object):
         log.info('Deployed %s/%s', self.app, version)
 
     def unpack(self, target, repository, version):
-        '''First stage of deployment'''
+        """First stage of deployment"""
         assert self.lock.held
         log.debug('Unpacking %s/%s', self.app, version)
 
@@ -157,13 +159,13 @@ class Application(object):
                   staging)
 
     def prepare(self, target, repository, version):
-        '''Post-unpack, pre-swing hook'''
+        """Post-unpack, pre-swing hook"""
         assert self.lock.held
         log.debug('Preparing %s/%s', self.app, version)
         self.hook('prepare', target, repository, version)
 
     def swing_symlink(self, version):
-        '''Make version live'''
+        """Make version live"""
         assert self.lock.held
         log.debug('Swinging %s/%s', self.app, version)
         # rename is atomic, symlink isn't
@@ -175,16 +177,17 @@ class Application(object):
         os.rename(temp_link, link)
 
     def deployed(self, target, repository, version):
-        '''Post-swing hook'''
+        """Post-swing hook"""
         assert self.lock.held
         log.debug('Deployed hook %s/%s', self.app, version)
         self.hook('deployed', target, repository, version)
 
     def gc(self, max_versions):
-        '''
+        """Garbage-collect artifacts.
+
         Remove all deployed versions except the most recent max_versions, and
         any live verisons.
-        '''
+        """
         with self.lock:
             old_versions = set(self.deployed_versions[:-max_versions])
             if self.live_version:

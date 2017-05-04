@@ -4,11 +4,11 @@ import shutil
 import tarfile
 import time
 
+from yodeploy import virtualenv
 from yodeploy.application import Application
 from yodeploy.locking import LockedException
 from yodeploy.repository import LocalRepositoryStore, Repository
 from yodeploy.tests import TmpDirTestCase
-from yodeploy.virtualenv import create_ve, sha224sum, upload_ve, ve_version
 
 SRC_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -32,7 +32,7 @@ class ApplicationTestCase(TmpDirTestCase):
 
         if not os.path.exists(self.test_ve_tar_path):
             self._create_test_ve()
-        self._deploy_ve_hash = ve_version(sha224sum(self.test_req_path))
+        self._deploy_ve_id = virtualenv.get_id(self.test_req_path, 'test')
 
     def _data_path(self, fragment):
         version_suffix = 'py%s' % platform.python_version()
@@ -70,7 +70,8 @@ class ApplicationTestCase(TmpDirTestCase):
         with open(self.test_req_path, 'w') as f:
             f.write('%s\n' % yodeploy_installable)
 
-        create_ve(self.test_ve_path, pypi, verify_req_install=False)
+        virtualenv.create_ve(
+            self.test_ve_path, 'test', pypi, verify_req_install=False)
 
 
 class ApplicationTest(ApplicationTestCase):
@@ -184,15 +185,15 @@ class ApplicationTest(ApplicationTestCase):
         self.assertEqual(self.app.live_version, 'bar')
 
     def test_prepare_hook(self):
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source=self.test_ve_tar_path)
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.prepare('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'prepare_hook_output')
 
     def test_deployed(self):
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source=self.test_ve_tar_path)
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.deployed('master', self.repo, 'foo')
         self.assertTMPPExists('srv', 'test', 'deployed_hook_output')
@@ -205,8 +206,8 @@ class ApplicationTest(ApplicationTestCase):
         version = '1'
         with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {'deploy_compat': '3'})
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source=self.test_ve_tar_path)
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.deploy('master', self.repo, version)

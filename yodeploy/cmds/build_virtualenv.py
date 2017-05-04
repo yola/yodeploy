@@ -8,10 +8,10 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+from yodeploy import virtualenv
 import yodeploy.config
 import yodeploy.repository
 import yodeploy.util
-import yodeploy.virtualenv
 
 log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
@@ -33,11 +33,11 @@ def main():
                         help='Target to store/retrieve virtualenvs from')
     parser.add_argument('--hash',
                         action='store_true',
-                        help="Only determine the virtualenv's version")
+                        help="Only determine the virtualenv's id")
     parser.add_argument('-u', '--upload',
                         action='store_true',
                         help="Upload the resultant virtualenv to the "
-                             "repository, if there isn't one of this version "
+                             "repository, if there isn't one of this id "
                              "there already")
     parser.add_argument('-d', '--download',
                         action='store_true',
@@ -72,10 +72,10 @@ def main():
     deploy_settings = yodeploy.config.load_settings(options.config)
     repository = yodeploy.repository.get_repository(deploy_settings)
 
-    version = yodeploy.virtualenv.ve_version(
-        yodeploy.virtualenv.sha224sum(options.requirement))
+    platform = deploy_settings.artifacts.platform
+    ve_id = virtualenv.get_id(options.requirement, platform)
     if options.hash:
-        print(version)
+        print(ve_id)
         return
 
     existing_ve = os.path.exists('virtualenv')
@@ -84,7 +84,7 @@ def main():
             existing_ve = f.read().strip()
 
     if existing_ve:
-        if existing_ve == version and not options.force:
+        if existing_ve == ve_id and not options.force:
             log.info('Existing virtualenv matches requirements.txt')
             options.download = False
         else:
@@ -93,8 +93,8 @@ def main():
     if options.download:
         downloaded = False
         try:
-            yodeploy.virtualenv.download_ve(repository, options.app,
-                                            version, options.target)
+            virtualenv.download_ve(
+                repository, options.app, ve_id, options.target)
             downloaded = True
         except KeyError:
             log.warn('No existing virtualenv, building...')
@@ -103,14 +103,14 @@ def main():
             yodeploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')
 
     if not os.path.isdir('virtualenv'):
-        yodeploy.virtualenv.create_ve(
-            '.',
+        virtualenv.create_ve(
+            '.', platform,
             pypi=deploy_settings.build.pypi,
             req_file=options.requirement)
 
     if options.upload:
-        yodeploy.virtualenv.upload_ve(
-            repository, options.app, version,
+        virtualenv.upload_ve(
+            repository, options.app, ve_id,
             options.target, overwrite=options.force)
 
 

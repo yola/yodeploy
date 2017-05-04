@@ -28,11 +28,5 @@ class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
         cleanup_venv('requirements-downgrade')
 
     def test_fails_to_build(self):
-        failed = False
-        try:
+        with self.assertRaises(Exception):
             build_sample('requirements-downgrade')
-        except Exception as e:
-            if 'Requirements were incompatible' not in str(e):
-                raise e
-            failed = True
-        self.assertTrue(failed)

@@ -81,7 +81,7 @@ def build_sample(app_name, version='1'):
             '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env, universal_newlines=True)
+        stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
 
     if p.wait() != 0:

@@ -278,18 +278,12 @@ def bootstrap_virtualenv(virtualenv_path=None):
 
     check_call(cmd)
 
-    packages = []
-    with open('requirements.txt') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('#') or not line:
-                continue
-            packages.append(line)
-
-    check_call(['bootstrap_ve/bin/python',
-                'bootstrap_ve/bin/easy_install',
-                '-i', deploy_settings().build.pypi,
-               ] + packages)
+    check_call([
+        'bootstrap_ve/bin/python',
+        '-m', 'pip', 'install',
+        '--index-url', deploy_settings().build.pypi,
+        '-r', 'requirements.txt'
+    ])
 
 
 def find_required_version(package):
@@ -380,7 +374,7 @@ def build_virtualenv(bootstrap=False):
              '-m', 'yodeploy.cmds.build_virtualenv')) == 0:
         return
 
-    # Bootstrap a virtualenv with easy_install
+    # Bootstrap a virtualenv
     if binary_available('virtualenv'):
         bootstrap_virtualenv()
     else:

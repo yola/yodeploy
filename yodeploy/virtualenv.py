@@ -21,24 +21,24 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def ve_version(req_hash):
-    return '%s-%s-%s' % (sysconfig.get_python_version(),
-                         sysconfig.get_platform(),
-                         req_hash)
+def get_id(filename, platform):
+    """Calculate the ID of a virtualenv for the given requirements.txt"""
+    req_hash = sha224sum(filename)
+    return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
 
 
-def download_ve(repository, app, ve_version, target='master',
+def download_ve(repository, app, virtualenv_id, target='master',
                 dest='virtualenv.tar.gz'):
-    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    artifact = 'virtualenv-%s.tar.gz' % virtualenv_id
     with repository.get(app, target=target, artifact=artifact) as f1:
         with open(dest, 'wb') as f2:
             shutil.copyfileobj(f1, f2)
 
 
-def upload_ve(repository, app, ve_version, target='master',
+def upload_ve(repository, app, virtualenv_id, target='master',
               source='virtualenv.tar.gz', overwrite=False):
-    log.debug('Uploading virtualenv %s for %s', ve_version, app)
-    artifact = 'virtualenv-%s.tar.gz' % ve_version
+    log.debug('Uploading virtualenv %s for %s', virtualenv_id, app)
+    artifact = 'virtualenv-%s.tar.gz' % virtualenv_id
     versions = repository.list_versions(app, target, artifact)
     version = '1'
     if versions:
@@ -51,34 +51,24 @@ def upload_ve(repository, app, ve_version, target='master',
 
 
 def create_ve(
-        app_dir, pypi=None, req_file='requirements.txt',
+        app_dir, platform, pypi=None, req_file='requirements.txt',
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
+    req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
     virtualenv.create_environment(ve_dir, site_packages=False)
-
-    with open(os.path.join(app_dir, req_file), 'r') as f:
-        requirements = []
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('-'):
-                continue
-            if line.startswith('#'):
-                continue
-            requirements.append(line)
-
-    install_requirements(ve_dir, pypi, requirements)
+    install_requirements(ve_dir, pypi, req_file)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
-        check_requirements(ve_dir, requirements)
+        check_requirements(ve_dir)
 
     relocateable_ve(ve_dir)
+    ve_id = get_id(os.path.join(app_dir, req_file), platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
-        f.write(ve_version(sha224sum(os.path.join(app_dir, req_file))))
+        f.write(ve_id)
+        f.write('\n')
 
     log.info('Building virtualenv tarball')
     cwd = os.getcwd()
@@ -91,58 +81,39 @@ def create_ve(
         os.chdir(cwd)
 
 
-def install_requirements(ve_dir, pypi, requirements):
-    sub_log = logging.getLogger(__name__ + '.easy_install')
+def install_requirements(ve_dir, pypi, req_file):
+    sub_log = logging.getLogger(__name__ + '.pip')
 
-    if pypi is None:
-        pypi = []
-    else:
-        pypi = ['--index-url', pypi]
+    log.info('Installing requirements')
 
-    for requirement in requirements:
-        log.info('Preparing to install %s', requirement)
+    cmd = [
+        os.path.join('bin', 'python'), '-m', 'pip', 'install',
+        '-r', req_file,
+    ]
 
-        cmd = [
-            os.path.join('bin', 'python'),
-            os.path.join('bin', 'easy_install'), '--always-unzip'
-        ] + pypi + [requirement]
+    if pypi:
+        cmd += ['--index-url', pypi]
 
-        p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
-        for line in iter(p.stdout.readline, b''):
-            line = line.decode('utf-8').strip()
-            sub_log.info('%s', line)
-            if line.startswith('Removing'):
-                log.error('Requirements were incompatible: %s', line)
-                sys.exit(1)
+    p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
+    for line in iter(p.stdout.readline, b''):
+        line = line.decode('utf-8').strip()
+        sub_log.info('%s', line)
 
-        if p.wait() != 0:
-            log.error('easy_install exited non-zero (%i)', p.returncode)
-            sys.exit(1)
-
-        log.info('Installed %s', requirement)
+    if p.wait() != 0:
+        log.error('pip exited non-zero (%i)', p.returncode)
+        sys.exit(1)
 
 
-def check_requirements(ve_dir, requirements):
-    """Given a ve root, and a list of requirements, ensure that they are met"""
-    script = (
-        'import sys, pkg_resources\n'
-        'for req in %r:\n'
-        '  try:\n'
-        '    pkg_resources.get_distribution(req)\n'
-        '  except pkg_resources.DistributionNotFound:\n'
-        '    pass\n'
-        '  except pkg_resources.VersionConflict as e:\n'
-        '    print(\n'
-        '      "Incompatible requirement: %%s\\n" %% e)\n'
-        '    sys.exit(1)\n'
-    ) % (requirements,)
-
+def check_requirements(ve_dir):
+    """Run pip check"""
     p = subprocess.Popen(
-        os.path.join(ve_dir, 'bin', 'python'),
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    out, _ = p.communicate(script.encode('utf-8'))
+        (os.path.join(ve_dir, 'bin', 'python'), '-m', 'pip', 'check'),
+        stdout=subprocess.PIPE)
+    out, _ = p.communicate()
 
-    if p.returncode != 0:
+    if p.returncode == 0:
+        log.info(out)
+    else:
         log.error(out or 'Requirements check failed for unknown reasons')
         sys.exit(1)
 
