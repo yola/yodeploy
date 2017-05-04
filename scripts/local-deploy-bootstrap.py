@@ -431,9 +431,9 @@ def setup_deployconfigs(yola_src):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
 
-        shutil.copyfile(os.path.join(yola_src, 'deployconfigs', 'other',
-                                     'yodeploy.conf.py'),
-                        deploy_settings_fn)
+        os.symlink(os.path.join(yola_src, 'deployconfigs', 'other',
+                                'yodeploy.conf.py'),
+                   deploy_settings_fn)
 
 
 def setup_yodeploy(yola_src):
