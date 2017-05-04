@@ -87,8 +87,12 @@ def setup_profile():
         fn = os.path.expanduser(profile)
         if not os.path.isfile(fn):
             continue
-        if confirm("%s exists. Does it source ~/.bashrc?" % profile):
-            return
+
+        with open(fn) as f:
+            for line in f:
+                if line.strip() in ('. "$HOME/.bashrc"', '. ~/.bashrc'):
+                    return
+
         create_profile = fn
         break
     else:
