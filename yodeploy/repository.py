@@ -211,17 +211,26 @@ class S3RepositoryStore(object):
             raise KeyError('No such object: %s' % path)
         return k.metadata
 
-    def put(self, path, fp, metadata=None):
+    def put(self, path, data, metadata=None):
         '''
-        Store a file (fp).
+        Store a File object, stream, unicode string, or byte string.
         Optionally attach metadata to it.
         '''
+        # Coerce strings to in-memory Byte streams.
+        if isinstance(data, string_types):
+            data = BytesIO(data.encode())
+
+        # Coerce python 3 explicit byte strings
+        if isinstance(data, bytes):
+            data = BytesIO(data)
+
         k = self.bucket.new_key(path)
         if metadata:
             k.update_metadata(metadata)
-        k.set_contents_from_file(fp,
-                reduced_redundancy=self.reduced_redundancy,
-                encrypt_key=self.encrypted)
+        k.set_contents_from_file(
+            data,
+            reduced_redundancy=self.reduced_redundancy,
+            encrypt_key=self.encrypted)
 
     def delete(self, path, metadata=False):
         '''
