@@ -183,7 +183,9 @@ class S3RepositoryStore(object):
 
     def __init__(self, bucket, access_key, secret_key, reduced_redundancy,
                  encrypted):
-        s3 = boto.connect_s3(access_key, secret_key)
+        s3 = boto.connect_s3(
+            access_key, secret_key,
+            calling_format='boto.s3.connection.OrdinaryCallingFormat')
         self.bucket = s3.get_bucket(bucket)
         self.reduced_redundancy = reduced_redundancy
         self.encrypted = encrypted
