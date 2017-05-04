@@ -7,7 +7,7 @@
 #  yoconfigurator:
 #    - Installs scripts to ~/bin
 #  deployconfigs
-#    - Configures configs/hostname.py
+#    - Configures yodeploy.conf.py
 from __future__ import print_function
 import contextlib
 import errno
@@ -74,9 +74,37 @@ def abort(message):
 def binary_available(name):
     """Check if a program is available in PATH"""
     for dir_ in os.environ.get('PATH', '').split(':'):
-        if os.access(os.path.join(dir_, name), os.X_OK):
-            return True
+        fn = os.path.join(dir_, name)
+        if os.access(fn, os.X_OK):
+            return fn
     return False
+
+
+def setup_profile():
+    """Check ~/.profile for a .bashrc source, adding it if necessary"""
+    create_profile = None
+
+    for profile in ('~/.bash_profile', '~/.bash_login', '~/.profile'):
+        fn = os.path.expanduser(profile)
+        if not os.path.isfile(fn):
+            continue
+
+        with open(fn) as f:
+            for line in f:
+                if re.match(r'^\s*(\.|source)\s+"?(~|$HOME)/\.bashrc"?\s*$',
+                            line):
+                    return
+
+        create_profile = fn
+        break
+    else:
+        if confirm("You don't seem to have a .profile.\n"
+                   "Create it, sourcing .bashrc?"):
+            create_profile = os.path.expanduser('~/.profile')
+
+    if create_profile:
+        with open(create_profile, 'a') as f:
+            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
 
 
 def check_environment():
@@ -87,29 +115,18 @@ def check_environment():
     if not binary_available('git'):
         abort('We require git to be installed')
 
-    bin_ = os.path.expanduser('~/bin')
     bashrc_additions = []
-    if not os.path.isdir(bin_):
-        if confirm("You don't seem to have a ~/bin directory.\n"
-                   "Create it, and add a line to your .bashrc to add it to "
-                   "your PATH?"):
-            os.mkdir(bin_)
-            bashrc_additions.append('export PATH=~/"bin:$PATH"')
-            os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
+    if not binary_available('build-virtualenv'):
+        bin_ = os.path.expanduser('~/bin')
+        if not os.path.isdir(bin_):
+            if confirm("You don't seem to have a ~/bin directory.\n"
+                       "Create it, and add a line to your .bashrc to add it "
+                       "to your PATH?"):
+                os.mkdir(bin_)
+                bashrc_additions.append('export PATH=~/"bin:$PATH"')
+                os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    profiles = [profile for profile in
-                ('~/.bash_profile', '~/.bash_login', '~/.profile')
-                if os.path.isfile(os.path.expanduser(profile))]
-    profile = None
-    if profiles:
-        if not confirm("%s exists. Does it source ~/.bashrc?" % profiles[0]):
-            profile = os.path.expanduser(profiles[0])
-    elif confirm("You don't seem to have a .profile.\n"
-                 "Create it, sourcing .bashrc?"):
-        profile = os.path.expanduser('~/.profile')
-    if profile:
-        with open(profile, 'a') as f:
-            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
+        setup_profile()
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
@@ -119,7 +136,7 @@ def check_environment():
     else:
         if 'YOLA_SRC' not in os.environ:
             input_ = input('Where do you keep your Yola GIT checkouts? '
-                               '[Default: ~/src/]: ')
+                           '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
                 input_ = '~/src'
@@ -138,8 +155,8 @@ def check_environment():
                 os.mkdir(yola_src)
 
     if bashrc_additions:
-        bashrc_additions = ['', "# Added by Yola's local-bootstrap"
-                           ] + bashrc_additions + ['']
+        bashrc_additions = [
+            '', "# Added by Yola's local-bootstrap"] + bashrc_additions + ['']
         with open(os.path.expanduser('~/.bashrc'), 'a') as f:
             f.write('\n'.join(bashrc_additions))
 
@@ -399,7 +416,12 @@ def build_virtualenv(bootstrap=False):
 def write_wrapper(script, ve, args=None):
     """Install a wrapper for script in ~/bin"""
     name = os.path.basename(script).rsplit('.', 1)[0].replace('_', '-')
-    wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
+    # Re-use existing paths
+    wrapper_name = binary_available(name)
+    if not wrapper_name:
+        wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
     if args:
         script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
@@ -417,9 +439,9 @@ def setup_deployconfigs(yola_src):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
 
-        shutil.copyfile(os.path.join(yola_src, 'deployconfigs', 'other',
-                                     'yodeploy.conf.py'),
-                        deploy_settings_fn)
+        os.symlink(os.path.join(yola_src, 'deployconfigs', 'other',
+                                'yodeploy.conf.py'),
+                   deploy_settings_fn)
 
 
 def setup_yodeploy(yola_src):
