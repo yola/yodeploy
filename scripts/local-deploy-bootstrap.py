@@ -114,17 +114,18 @@ def check_environment():
     if not binary_available('git'):
         abort('We require git to be installed')
 
-    bin_ = os.path.expanduser('~/bin')
     bashrc_additions = []
-    if not os.path.isdir(bin_):
-        if confirm("You don't seem to have a ~/bin directory.\n"
-                   "Create it, and add a line to your .bashrc to add it to "
-                   "your PATH?"):
-            os.mkdir(bin_)
-            bashrc_additions.append('export PATH=~/"bin:$PATH"')
-            os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
+    if not binary_available('build-virtualenv'):
+        bin_ = os.path.expanduser('~/bin')
+        if not os.path.isdir(bin_):
+            if confirm("You don't seem to have a ~/bin directory.\n"
+                       "Create it, and add a line to your .bashrc to add it "
+                       "to your PATH?"):
+                os.mkdir(bin_)
+                bashrc_additions.append('export PATH=~/"bin:$PATH"')
+                os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    setup_profile()
+        setup_profile()
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
