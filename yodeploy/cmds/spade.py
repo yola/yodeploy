@@ -109,7 +109,7 @@ def do_upload(opts, repository):
             meta = json.load(f)
     if not opts.save_as:
         opts.save_as = os.path.basename(opts.filename)
-    with open(opts.filename) as f:
+    with open(opts.filename, 'rb') as f:
         repository.put(opts.app, opts.version, f, meta, target=opts.target,
                        artifact=opts.save_as)
 
