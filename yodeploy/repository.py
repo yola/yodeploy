@@ -20,17 +20,18 @@ except NameError:
 
 
 def version_sort_key(version):
-    '''
-    key function for a simple string sort that orders embedded integers
+    """Key function for comparing versions
+
+    A simple string sort that orders embedded integers.
     e.g. c1 > b10 > b2 > b > a
-    '''
+    """
     parts = re.split(r'(?u)([0-9]+)', version)
     parts[1::2] = [int(part) for part in parts[1::2]]
     return parts
 
 
 def get_repository(deploy_settings):
-    '''Create the Repository specified in deploy_settings'''
+    """Create the Repository specified in deploy_settings"""
     store = deploy_settings.artifacts.store
     StoreClass = STORES[store]
     store_settings = deploy_settings.artifacts.store_settings[store]
@@ -38,7 +39,7 @@ def get_repository(deploy_settings):
 
 
 def _register_store(name):
-    '''Register a store class in STORES'''
+    """Register a store class in STORES"""
     def wrapped_register_store(class_):
         STORES[name] = class_
         return class_
@@ -47,7 +48,7 @@ def _register_store(name):
 
 
 class RepositoryFile(object):
-    '''File object wrapper that has a metadata attraibute'''
+    """File object wrapper that has a metadata attraibute"""
 
     def __init__(self, f, metadata=None):
         self._f = f
@@ -66,7 +67,7 @@ class RepositoryFile(object):
 
 @_register_store('local')
 class LocalRepositoryStore(object):
-    '''Store artifacts on local machine'''
+    """Store artifacts on local machine"""
 
     def __init__(self, directory):
         if not os.path.isdir(directory):
@@ -74,10 +75,10 @@ class LocalRepositoryStore(object):
         self.root = directory
 
     def get(self, path, metadata=False):
-        '''
-        Retrieve a file.
+        """Retrieve a file.
+
         If metadata is True, metadata will be returned as well, in a tuple.
-        '''
+        """
         fn = os.path.join(self.root, path)
         if not os.path.exists(fn):
             raise KeyError('No such object: %s' % path)
@@ -88,9 +89,7 @@ class LocalRepositoryStore(object):
         return open(fn, 'rb')
 
     def get_metadata(self, path):
-        '''
-        Retrieve a file's metadata
-        '''
+        """Retrieve a file's metadata"""
         fn = os.path.join(self.root, path)
         meta_fn = fn + '.meta'
         if not os.path.exists(fn):
@@ -103,8 +102,7 @@ class LocalRepositoryStore(object):
             return json.load(f)
 
     def put(self, path, data, metadata=None):
-        """
-        Store a File object, stream, unicode string, or byte string.
+        """Store a File object, stream, unicode string, or byte string.
 
         Optionally attach metadata to it.
         """
@@ -139,10 +137,10 @@ class LocalRepositoryStore(object):
             shutil.copyfileobj(data, f)
 
     def delete(self, path, metadata=False):
-        '''
-        Delete a file.
-        If metadata is True, this file has metadata that should be removed too
-        '''
+        """Delete a file.
+
+        If metadata is True, this file has metadata that should be removed too.
+        """
         fn = os.path.join(self.root, path)
         try:
             os.unlink(fn)
@@ -155,11 +153,11 @@ class LocalRepositoryStore(object):
                 os.unlink(fn + '.meta')
 
     def list(self, path=None, files=False, dirs=True):
-        '''
-        List the contents of path.
+        """List the contents of path.
+
         Files will be listed when files is True.
         Directories will be listed when dirs is True.
-        '''
+        """
         if path:
             directory = os.path.join(self.root, path)
         else:
@@ -179,7 +177,7 @@ class LocalRepositoryStore(object):
 
 @_register_store('s3')
 class S3RepositoryStore(object):
-    '''Store artifacts on S3'''
+    """Store artifacts on S3"""
 
     def __init__(self, bucket, access_key, secret_key, reduced_redundancy,
                  encrypted):
@@ -191,10 +189,10 @@ class S3RepositoryStore(object):
         self.encrypted = encrypted
 
     def get(self, path, metadata=False):
-        '''
-        Retrieve a file.
+        """Retrieve a file.
+
         If metadata is True, metadata will be returned as well, in a tuple.
-        '''
+        """
         k = self.bucket.get_key(path)
         if k is None:
             raise KeyError('No such object: %s' % path)
@@ -205,19 +203,17 @@ class S3RepositoryStore(object):
         return f
 
     def get_metadata(self, path):
-        '''
-        Retrieve a file's metadata.
-        '''
+        """Retrieve a file's metadata."""
         k = self.bucket.get_key(path)
         if k is None:
             raise KeyError('No such object: %s' % path)
         return k.metadata
 
     def put(self, path, data, metadata=None):
-        '''
-        Store a File object, stream, unicode string, or byte string.
+        """Store a File object, stream, unicode string, or byte string.
+
         Optionally attach metadata to it.
-        '''
+        """
         # Coerce strings to in-memory Byte streams.
         if isinstance(data, string_types):
             data = BytesIO(data.encode())
@@ -235,19 +231,19 @@ class S3RepositoryStore(object):
             encrypt_key=self.encrypted)
 
     def delete(self, path, metadata=False):
-        '''
-        Delete a file.
+        """Delete a file.
+
         If metadata is True, this file has metadata that should be removed too
-        '''
+        """
         k = self.bucket.get_key(path)
         k.delete()
 
     def list(self, path=None, files=False, dirs=True):
-        '''
-        List the contents of path.
+        """List the contents of path.
+
         Files will be listed when files is True.
         Directories will be listed when dirs is True.
-        '''
+        """
         if not path:
             path = ''
         if path and path[-1] != '/':
@@ -265,16 +261,16 @@ class S3RepositoryStore(object):
 
 
 class Repository(object):
-    '''An artifact repository'''
+    """An artifact repository"""
 
     def __init__(self, store):
         self.store = store
 
     def get(self, app, version=None, target='master', artifact=None):
-        '''
-        Return an open file for the requested artifact.
+        """Return an open file for the requested artifact.
+
         The metadata will be attached as a 'metadata' attribute.
-        '''
+        """
         if not artifact:
             artifact = u'%s.tar.gz' % app
         artifact_path = os.path.join(app, target, artifact)
@@ -296,9 +292,7 @@ class Repository(object):
             return f.read().strip().decode()
 
     def get_metadata(self, app, version=None, target='master', artifact=None):
-        '''
-        Return just the metadata for the requested artifact.
-        '''
+        """Return just the metadata for the requested artifact."""
         if not artifact:
             artifact = u'%s.tar.gz' % app
 
@@ -313,9 +307,7 @@ class Repository(object):
 
     def put(self, app, version, fp, metadata, target='master',
             artifact=None):
-        '''
-        Store an object (fp) in the repository.
-        '''
+        """Store an object (fp) in the repository."""
         if not artifact:
             artifact = u'%s.tar.gz' % app
         if version == 'latest' or version.endswith('.meta'):
@@ -327,9 +319,7 @@ class Repository(object):
         self.store.put(latest_path, '%s\n' % version)
 
     def delete(self, app, version, target='master', artifact=None):
-        '''
-        Delete an object from the repository.
-        '''
+        """Delete an object from the repository."""
         if not artifact:
             artifact = u'%s.tar.gz' % app
         artifact_path = os.path.join(app, target, artifact)
@@ -376,10 +366,11 @@ class Repository(object):
         return sorted(versions, key=version_sort_key)
 
     def gc(self, max_versions=10):
-        '''
+        """Garbage collect old versions
+
         Delete all but the most recent max_versions versions of each artifact
-        in the repository
-        '''
+        in the repository.
+        """
         for app in self.list_apps():
             for target in self.list_targets(app):
                 for artifact in self.list_artifacts(app, target):
