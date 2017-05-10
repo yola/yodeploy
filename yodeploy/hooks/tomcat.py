@@ -37,7 +37,8 @@ class TomcatServlet(ConfiguratedApp):
 
     def migrate(self):
         log.info('Running flyway migrations')
-        subprocess.check_call(('java', '-cp',
+        subprocess.check_call((
+            'java', '-cp',
             ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
                       self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
             self.database_migration_class))
