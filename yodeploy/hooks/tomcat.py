@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 class TomcatServlet(ConfiguratedApp):
     migrate_on_deploy = False
-    vhost_snippet_path = '/etc/apache2/yola.d/services'
     vhost_path = '/etc/apache2/sites-enabled'
     parallel_deploy_timeout = 60
     database_migration_class = 'com.yola.yodeploy.flywaydb.Migrator'
@@ -30,11 +29,6 @@ class TomcatServlet(ConfiguratedApp):
         if self.template_exists('apache2/vhost.conf.template'):
             self.template('apache2/vhost.conf.template',
                     os.path.join(self.vhost_path, self.app))
-        if self.template_exists('apache2/vhost-snippet.conf.template'):
-            if not os.path.exists(self.vhost_snippet_path):
-                os.makedirs(self.vhost_snippet_path)
-            self.template('apache2/vhost-snippet.conf.template',
-                    os.path.join(self.vhost_snippet_path, self.app + '.conf'))
 
     def migrate(self):
         log.info('Running flyway migrations')
