@@ -5,9 +5,21 @@ DEV
 ---
 
 * Add experimental support for Python >= 3.4
-* Make `yodeploy.repository.LocalRepository.get()` always returns byte buffers
-* Make `yodeploy.repository.LocalRepository.put()` accept unicode strings,
-  unicode buffers, byte strings, and byte buffers
+* Python apps:
+  - The platform name (used for differentiating virtualenvs) now comes
+    from yodeploy's settings: `artifacts.platform`.
+  - virtualenvs are built with `pip`.
+* `TomcatServlet`:
+  - Drop Tomcat 6 support.
+  - Add (preliminary) Tomcat 8 support.
+  - Append `.conf` to vhosts (cleaning up old vhosts in the process).
+* Internal API changes to `yodeploy.virtualenv`:
+  - `ve_version()` is replaced with `ve_id()`.
+  - `create_ve()` requires a `platform` argument.
+* Internal API changes to `yodeploy.repository` repositories:
+  - `.get()` always returns byte buffers
+  - `put()` accept unicode strings, unicode buffers, byte strings, and
+     byte buffers.
 * test suite: suffix test-data dir with python version data to avoid
   cross-environment collisions when running the test suite with cached data
 * test suite: Install a copy of the current yodeploy checkout (in
