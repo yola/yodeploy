@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-DEV
----
+0.8.0
+-----
 
 * Add experimental support for Python >= 3.4
 * Python apps:
