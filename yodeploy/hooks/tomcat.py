@@ -27,8 +27,13 @@ class TomcatServlet(ConfiguratedApp):
         if self.migrate_on_deploy:
             self.migrate()
         if self.template_exists('apache2/vhost.conf.template'):
-            self.template('apache2/vhost.conf.template',
-                    os.path.join(self.vhost_path, self.app))
+            dest = os.path.join(self.vhost_path, '%s.conf' % self.app)
+            self.template('apache2/vhost.conf.template', dest)
+
+        # clean up old vhosts, yodeploy <= v0.7.3 did not append `.conf`
+        old_vhost = os.path.join(self.vhost_path, self.app)
+        if os.path.exists(old_vhost):
+            os.unlink(old_vhost)
 
     def migrate(self):
         log.info('Running flyway migrations')
