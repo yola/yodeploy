@@ -57,15 +57,6 @@ class TomcatServlet(ConfiguratedApp):
         if not os.path.isdir(contexts):
             os.mkdir(contexts)
 
-        ubuntu_version = platform.linux_distribution()[1]
-        tomcat = 'tomcat7' if ubuntu_version >= '12.04' else 'tomcat6'
-        if tomcat == 'tomcat6':
-            dest = os.path.join(contexts, 'ROOT')
-            if os.path.exists(dest):
-                os.unlink(dest)
-            os.symlink(self.deploy_path(self.app), dest)
-            return
-
         # Tomcat does string comparisons.
         # Versions aren't strictly numeric, local builds will have a .n
         # appended. So:
@@ -95,7 +86,10 @@ class TomcatServlet(ConfiguratedApp):
 
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
-        uid = pwd.getpwnam('tomcat7').pw_uid
+        ubuntu_version = platform.linux_distribution()[1]
+        tomcat = 'tomcat8' if ubuntu_version >= '16.04' else 'tomcat7'
+        uid = pwd.getpwnam(tomcat).pw_uid
+
         os.chown(contexts, uid, -1)
 
         # Build a hard linkfarm in the tomcat-contexts directory.
