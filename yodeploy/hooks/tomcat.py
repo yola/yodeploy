@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 class TomcatServlet(ConfiguratedApp):
     migrate_on_deploy = False
-    vhost_snippet_path = '/etc/apache2/yola.d/services'
     vhost_path = '/etc/apache2/sites-enabled'
     parallel_deploy_timeout = 60
     database_migration_class = 'com.yola.yodeploy.flywaydb.Migrator'
@@ -28,17 +27,18 @@ class TomcatServlet(ConfiguratedApp):
         if self.migrate_on_deploy:
             self.migrate()
         if self.template_exists('apache2/vhost.conf.template'):
-            self.template('apache2/vhost.conf.template',
-                    os.path.join(self.vhost_path, self.app))
-        if self.template_exists('apache2/vhost-snippet.conf.template'):
-            if not os.path.exists(self.vhost_snippet_path):
-                os.makedirs(self.vhost_snippet_path)
-            self.template('apache2/vhost-snippet.conf.template',
-                    os.path.join(self.vhost_snippet_path, self.app + '.conf'))
+            dest = os.path.join(self.vhost_path, '%s.conf' % self.app)
+            self.template('apache2/vhost.conf.template', dest)
+
+        # clean up old vhosts, yodeploy <= v0.7.3 did not append `.conf`
+        old_vhost = os.path.join(self.vhost_path, self.app)
+        if os.path.exists(old_vhost):
+            os.unlink(old_vhost)
 
     def migrate(self):
         log.info('Running flyway migrations')
-        subprocess.check_call(('java', '-cp',
+        subprocess.check_call((
+            'java', '-cp',
             ':'.join((self.deploy_path('%s/WEB-INF/classes' % self.app),
                       self.deploy_path('%s/WEB-INF/lib/*' % self.app))),
             self.database_migration_class))
@@ -57,15 +57,6 @@ class TomcatServlet(ConfiguratedApp):
         contexts = os.path.join(self.root, 'tomcat-contexts')
         if not os.path.isdir(contexts):
             os.mkdir(contexts)
-
-        ubuntu_version = platform.linux_distribution()[1]
-        tomcat = 'tomcat7' if ubuntu_version >= '12.04' else 'tomcat6'
-        if tomcat == 'tomcat6':
-            dest = os.path.join(contexts, 'ROOT')
-            if os.path.exists(dest):
-                os.unlink(dest)
-            os.symlink(self.deploy_path(self.app), dest)
-            return
 
         # Tomcat does string comparisons.
         # Versions aren't strictly numeric, local builds will have a .n
@@ -96,7 +87,10 @@ class TomcatServlet(ConfiguratedApp):
 
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
-        uid = pwd.getpwnam('tomcat7').pw_uid
+        ubuntu_version = platform.linux_distribution()[1]
+        tomcat = 'tomcat8' if ubuntu_version >= '16.04' else 'tomcat7'
+        uid = pwd.getpwnam(tomcat).pw_uid
+
         os.chown(contexts, uid, -1)
 
         # Build a hard linkfarm in the tomcat-contexts directory.
