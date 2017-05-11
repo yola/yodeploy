@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tarfile
 
 
@@ -88,21 +89,6 @@ def load_settings(fn):
 
 # stolen from yodeploy.virtualenv
 
-try:
-    import sysconfig
-    hush_pyflakes = sysconfig
-except ImportError:
-    class sysconfig:
-        @classmethod
-        def get_python_version(cls):
-            return '%i.%i' % sys.version_info[:2]
-
-        @classmethod
-        def get_platform(cls):
-            import distutils.util
-            return distutils.util.get_platform()
-
-
 def sha224sum(filename):
     m = hashlib.sha224()
     with open(filename, 'rb') as f:
@@ -110,10 +96,10 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def ve_version(req_hash):
-    return '%s-%s-%s' % (sysconfig.get_python_version(),
-                         sysconfig.get_platform(),
-                         req_hash)
+def get_id(filename, platform):
+    """Calculate the ID of a virtualenv for the given requirements.txt"""
+    req_hash = sha224sum(filename)
+    return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
 
 
 # stolen from yodeploy.util
@@ -195,25 +181,26 @@ def get_app(s3, target):
     return version
 
 
-def get_deploy_ve(s3, target, version):
+def get_deploy_ve(s3, target, version, platform):
     '''Grab and unpack the deploy virtualenv'''
-    ve_name = ve_version(sha224sum(app_path('versions', version, 'deploy',
-                                            'requirements.txt')))
-    tarball_name = 'virtualenv-%s.tar.gz' % ve_name
+    ve_id = get_id(
+        app_path('versions', version, 'deploy', 'requirements.txt'),
+        platform)
+    tarball_name = 'virtualenv-%s.tar.gz' % ve_id
     log.info('Downloading the deploy virtualenv tarball')
     tarball = app_path('virtualenvs', 'unpack', tarball_name, app='deploy')
     get_latest(s3, 'deploy', target, tarball_name, tarball)
 
     log.info('Extracting the deploy virtualenv tarball')
-    mkdir_and_extract_tar(tarball, app_path('virtualenvs', ve_name,
+    mkdir_and_extract_tar(tarball, app_path('virtualenvs', ve_id,
                                             app='deploy'))
-    return ve_name
+    return ve_id
 
 
-def hook(hook_name, version, target, dve_name):
+def hook(hook_name, version, target, dve_id):
     '''Call deploy hooks'''
     log.info('Calling hook: %s', hook_name)
-    deploy_python = app_path('virtualenvs', dve_name, 'bin', 'python',
+    deploy_python = app_path('virtualenvs', dve_id, 'bin', 'python',
                              app='deploy')
 
     with open(app_path('versions', version, 'deploy', 'compat')) as f:
@@ -270,10 +257,11 @@ def main():
 
     log.info('Bootstrapping yodeploy')
     version = get_app(s3, opts.target)
-    ve_name = get_deploy_ve(s3, opts.target, version)
-    hook('prepare', version, opts.target, ve_name)
+    ve_id = get_deploy_ve(
+        s3, opts.target, version, deploy_settings.artifacts.platform)
+    hook('prepare', version, opts.target, ve_id)
     os.symlink('versions/%s' % version, app_path('live'))
-    hook('deployed', version, opts.target, ve_name)
+    hook('deployed', version, opts.target, ve_id)
 
 
 if __name__ == '__main__':
