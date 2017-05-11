@@ -5,8 +5,6 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from OpenSSL import SSL
-
 from yodeploy.config import find_deploy_config
 from yodeploy.deploy import configure_logging
 from yodeploy.flask_app.app import create_app
@@ -35,8 +33,7 @@ if __name__ == '__main__':
     flask_app = create_app(find_deploy_config())
     opts = parse_args(flask_app)
     configure_logging(opts.debug, flask_app.config.server.logging)
-    context = SSL.Context(SSL.SSLv23_METHOD)
-    context.use_certificate_chain_file(flask_app.config.server.ssl.cert_chain)
-    context.use_privatekey_file(flask_app.config.server.ssl.key)
+    context = (flask_app.config.server.ssl.cert_chain,
+               flask_app.config.server.ssl.key)
     log.debug('Starting yodeploy server')
     flask_app.run(host=opts.listen, port=opts.port, ssl_context=context)
