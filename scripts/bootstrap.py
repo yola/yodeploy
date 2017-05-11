@@ -32,7 +32,7 @@ log = logging.getLogger('bootstrap')
 
 
 class S3Client(object):
-    '''A really simple, NIH, pure-python S3 client'''
+    """A really simple, NIH, pure-python S3 client"""
     def __init__(self, bucket, access_key, secret_key):
         self.bucket = bucket
 
@@ -77,9 +77,7 @@ class S3Client(object):
 # stolen from yodeploy.config
 
 def load_settings(fn):
-    '''
-    Load deploy_settings from the specified filename
-    '''
+    """Load deploy_settings from the specified filename"""
     fake_mod = '_deploy_settings'
     description = ('.py', 'r', imp.PY_SOURCE)
     with open(fn) as f:
@@ -105,10 +103,11 @@ def get_id(filename, platform):
 # stolen from yodeploy.util
 
 def extract_tar(tarball, root):
-    '''Ensure that tarball only has one root directory.
+    """Ensure that tarball only has one root directory.
+
     Extract it into the parent directory of root, and rename the extracted
     directory to root.
-    '''
+    """
     workdir = os.path.dirname(root)
     tar = tarfile.open(tarball, 'r')
     try:
@@ -132,7 +131,7 @@ def extract_tar(tarball, root):
 # Local functions
 
 def mkdir_and_extract_tar(tarball, destination):
-    '''Extract a tarball to destination'''
+    """Extract a tarball to destination"""
     parent = os.path.dirname(destination)
     if not os.path.exists(parent):
         os.makedirs(parent)
@@ -142,16 +141,16 @@ def mkdir_and_extract_tar(tarball, destination):
 
 
 def app_path(*args, **kwargs):
-    '''Convenience function for joining paths to /srv/yodeploy'''
+    """Convenience function for joining paths to /srv/yodeploy"""
     app = kwargs.pop('app', 'yodeploy')
     assert not kwargs
     return os.path.join(deploy_base, app, *args)
 
 
 def get_latest(s3, app, target, artifact, destination):
-    '''
+    """
     Grab the latest version of an artifact from an S3 yodeploy repository
-    '''
+    """
     parent = os.path.dirname(destination)
     if not os.path.exists(parent):
         os.makedirs(parent)
@@ -170,7 +169,7 @@ def get_latest(s3, app, target, artifact, destination):
 
 
 def get_app(s3, target):
-    '''Grab and unpack the app'''
+    """Grab and unpack the app"""
     log.info('Downloading the app tarball')
     tarball = app_path('versions', 'unpack', 'yodeploy.tar.gz')
     version = get_latest(s3, 'yodeploy', target, 'yodeploy.tar.gz',
@@ -182,7 +181,7 @@ def get_app(s3, target):
 
 
 def get_deploy_ve(s3, target, version, platform):
-    '''Grab and unpack the deploy virtualenv'''
+    """Grab and unpack the deploy virtualenv"""
     ve_id = get_id(
         app_path('versions', version, 'deploy', 'requirements.txt'),
         platform)
@@ -198,7 +197,7 @@ def get_deploy_ve(s3, target, version, platform):
 
 
 def hook(hook_name, version, target, dve_id):
-    '''Call deploy hooks'''
+    """Call deploy hooks"""
     log.info('Calling hook: %s', hook_name)
     deploy_python = app_path('virtualenvs', dve_id, 'bin', 'python',
                              app='deploy')
