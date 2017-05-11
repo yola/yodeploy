@@ -125,9 +125,6 @@ class Upstart(Manager):
 
 
 class DaemonApp(TemplatedApp):
-    def __init__(self, *args, **kwargs):
-        super(TemplatedApp, self).__init__(*args, **kwargs)
-
     def deployed(self):
         super(TemplatedApp, self).deployed()
         self.configure_daemons()
