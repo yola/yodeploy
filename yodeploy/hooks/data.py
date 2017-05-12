@@ -8,9 +8,6 @@ log = logging.getLogger(__name__)
 
 
 class DataDirApp(DeployHook):
-    def __init__(self, *args, **kwargs):
-        super(DataDirApp, self).__init__(*args, **kwargs)
-
     def prepare(self):
         super(DataDirApp, self).prepare()
         self.datadir_prepare()

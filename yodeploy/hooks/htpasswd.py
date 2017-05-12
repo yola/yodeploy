@@ -64,9 +64,6 @@ class AuthenticatedApp(ConfiguratedApp):
 
     HTPASSWD_DIR = '/etc/yola/htpasswd'
 
-    def __init__(self, *args, **kwargs):
-        super(AuthenticatedApp, self).__init__(*args, **kwargs)
-
     def prepare(self):
         super(AuthenticatedApp, self).prepare()
         self.auth_prepare()
