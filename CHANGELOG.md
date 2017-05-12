@@ -13,6 +13,8 @@ Change Log
   - Drop Tomcat 6 support.
   - Add (preliminary) Tomcat 8 support.
   - Append `.conf` to vhosts (cleaning up old vhosts in the process).
+* `UpstartApp` and `SupervisordApp`: Replaced with `DaemonApp`, which
+  behaves identically, and will use the same templates.
 * Internal API changes to `yodeploy.virtualenv`:
   - `ve_version()` is replaced with `ve_id()`.
   - `create_ve()` requires a `platform` argument.
