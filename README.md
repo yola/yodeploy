@@ -72,24 +72,6 @@ source.
 3. yola.deploy 0.3.x. **No longer supported**.
 4. yodeploy >= 0.4 (after the rename).
 
-Building and uploading
-----------------------
-
-You can upload this to yolapi by running:
-
-  python setup.py sdist upload -r https://yolapi.yola.net/pypi/
-
-
-Local Deploy Bootstrap
-----------------------
-
-When running `build-virtualenv`, watch output, ensure easy_install does not
-downgrade any installed packages:
-
-    Removing suds 0.4.1-htj.yola1   <-- oh no, removing yola specific release
-    Adding suds 0.3.9
-
-
 Testing
 -------
 
