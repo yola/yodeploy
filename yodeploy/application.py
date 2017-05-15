@@ -85,18 +85,10 @@ class Application(object):
         if not os.path.isfile(fn):
             return
 
-        with open(os.path.join(self.appdir, 'versions', version, 'deploy',
-                               'compat')) as f:
-            compat = int(f.read())
-        if compat == 3:
-            module = 'yola.deploy'
-        elif compat == 4:
-            module = 'yodeploy'
-
         ve = self.deploy_ve(target, repository, version)
         tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
-               '-m', module,
+               '-m', 'yodeploy',
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,
@@ -144,7 +136,7 @@ class Application(object):
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
 
         with repository.get(self.app, version, target) as f1:
-            if f1.metadata.get('deploy_compat') not in ('3', '4'):
+            if f1.metadata.get('deploy_compat') not in ('4',):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % f1.metadata.get('deploy_compat', 1))
             with open(tarball, 'wb') as f2:

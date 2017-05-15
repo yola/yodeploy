@@ -116,7 +116,7 @@ class ApplicationTest(ApplicationTestCase):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
         with open(self.tmppath('test.tar.gz'), 'rb') as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         with self.app.lock:
@@ -129,7 +129,7 @@ class ApplicationTest(ApplicationTestCase):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
         with open(self.tmppath('test.tar.gz'), 'rb') as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         with self.app.lock:
@@ -205,7 +205,7 @@ class ApplicationTest(ApplicationTestCase):
 
         version = '1'
         with open(self.tmppath('test.tar.gz'), 'rb') as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
         virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
                              source=self.test_ve_tar_path)
         os.unlink(self.tmppath('test.tar.gz'))

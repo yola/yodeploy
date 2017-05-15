@@ -67,9 +67,9 @@ Artifacts have a 'deploy_compat' attribute, defining the deployment
 system they were designed for. It is defined in `deploy/compat` in the
 source.
 
-1. Yola's legacy deployment system (Duncan Deploy)
-2. The legacy repository with yola.deploy < 0.3
-3. yola.deploy 0.3.x.
+1. Yola's legacy deployment system. **No longer supported**.
+2. The legacy repository with yola.deploy < 0.3. **No longer supported**.
+3. yola.deploy 0.3.x. **No longer supported**.
 4. yodeploy >= 0.4 (after the rename).
 
 Building and uploading

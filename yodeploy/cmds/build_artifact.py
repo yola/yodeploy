@@ -163,45 +163,8 @@ class Builder(object):
             self.commit_msg))
 
 
-class BuildCompat1(Builder):
-    """The old shell deploy system"""
-
-    def dcs_target(self):
-        if self.deploy_settings.artifacts.environment == 'integration':
-            return 'integration'
-        if self.target == 'master':
-            return 'trunk'
-        return self.target
-
-    def prepare(self):
-        # Legacy config
-        self.distname = os.environ.get('DISTNAME', self.app)
-        self.dcs = os.environ.get('DEPLOYSERVER',
-                                  self.deploy_settings.build.deploy_content_server)
-        self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
-                                                   % self.distname)
-        print('Environment:')
-        print(' DISTNAME=%s' % self.distname)
-        print(' DEPLOYSERVER=%s' % self.dcs)
-        print(' ARTIFACT=%s' % self.artifact)
-
-    def build_env(self):
-        env = super(BuildCompat1, self).build_env()
-        env['DISTNAME'] = self.distname
-        env['DEPLOYSERVER'] = self.dcs
-        env['ARTIFACT'] = self.artifact
-        return env
-
-    def upload(self):
-        print_banner('Upload')
-        check_call(' '.join(('./scripts/upload.sh', '%s-%s' % (self.app,
-                                                               self.dcs_target()),
-                             self.version, self.artifact)),
-                   shell=True, env=self.build_env(), abort='Upload script failed')
-
-
-class BuildCompat3(Builder):
-    compat = 3
+class BuildCompat4(Builder):
+    compat = 4
 
     def configure(self):
         build_settings = self.deploy_settings.build
@@ -264,10 +227,6 @@ class BuildCompat3(Builder):
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
         print('Uploaded')
-
-
-class BuildCompat4(BuildCompat3):
-    compat = 4
 
 
 def parse_args(default_app):
@@ -486,12 +445,10 @@ def main():
     print('Detected build compat level %s' % compat)
     try:
         BuilderClass = {
-            1: BuildCompat1,
-            3: BuildCompat3,
             4: BuildCompat4,
         }[compat]
     except KeyError:
-        print('Only legacy and yodeploy compat >=3 apps are supported',
+        print('Only legacy and yodeploy compat >=4 apps are supported',
               file=sys.stderr)
         sys.exit(1)
 
