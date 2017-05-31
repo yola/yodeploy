@@ -148,7 +148,7 @@ class Application(object):
 
         with repository.get(self.app, version, target) as f1:
             self.compat = int(f1.metadata.get('deploy_compat', 1))
-            if self.compat not in (4,):
+            if self.compat not in (4, 5):
                 raise Exception('Unsupported artifact: compat level %s'
                                 % self.compat)
             with open(tarball, 'wb') as f2:

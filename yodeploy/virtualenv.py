@@ -26,7 +26,14 @@ def get_python_version(compat):
 
     Based on the compat level.
     """
-    return '2.7'
+    if compat < 5:
+        return '2.7'
+    if sys.version_info.major == 3:
+        return sysconfig.get_python_version()
+    return subprocess.check_output((
+        'python3', '-c',
+        'import sysconfig; print(sysconfig.get_python_version())'
+    )).strip()
 
 
 def get_id(filename, python_version, platform):

@@ -114,7 +114,8 @@ class Builder(object):
                                                     'build_virtualenv'))
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
-                                   '--config', self.deploy_settings_file]
+                                   '--config', self.deploy_settings_file,
+                                   '--compat=%i' % self.compat]
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file]
@@ -223,6 +224,8 @@ class BuildCompat4(Builder):
     compat = 4
 
 
+class BuildCompat5(Builder):
+    compat = 5
 
 
 def parse_args(default_app):
@@ -442,6 +445,7 @@ def main():
     try:
         BuilderClass = {
             4: BuildCompat4,
+            5: BuildCompat5,
         }[compat]
     except KeyError:
         print('Only legacy and yodeploy compat >=4 apps are supported',
