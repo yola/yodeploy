@@ -88,8 +88,50 @@ class Builder(object):
         except URLError as e:
             print('Failed to notify GitHub: %s' % e, file=sys.stderr)
 
+    def configure(self):
+        build_settings = self.deploy_settings.build
+        configs_dirs = [build_settings.configs_dir]
+        app_conf_dir = os.path.join('deploy', 'configuration')
+        sources = config_sources(self.app, build_settings.environment,
+                                 build_settings.cluster,
+                                 configs_dirs, app_conf_dir, build=True)
+        config = smush_config(sources,
+                              initial={'yoconfigurator': {
+                                  'app': self.app,
+                                  'environment': build_settings.environment,
+                              }})
+        write_config(config, '.')
+
+        # public configuration
+        public_filter_pathname = os.path.join(app_conf_dir, 'public-data.py')
+        public_config = filter_config(config, public_filter_pathname)
+        if public_config:
+            write_config(public_config, '.', 'configuration_public.json')
+
     def prepare(self):
-        pass
+        python = os.path.abspath(sys.executable)
+        build_ve = os.path.abspath(__file__.replace('build_artifact',
+                                                    'build_virtualenv'))
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+                                   '--target', self.target, '--download',
+                                   '--config', self.deploy_settings_file]
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
+                                '--target', self.target, '--download',
+                                '--config', self.deploy_settings_file]
+        if self.upload_virtualenvs:
+            build_deploy_virtualenv.append('--upload')
+            build_app_virtualenv.append('--upload')
+
+        if self.build_virtualenvs:
+            print_banner('Build deploy virtualenv')
+            check_call(build_deploy_virtualenv, cwd='deploy',
+                       abort='build-virtualenv failed')
+            shutil.rmtree('deploy/virtualenv')
+            os.unlink('deploy/virtualenv.tar.gz')
+        if os.path.exists('requirements.txt'):
+            print_banner('Build app virtualenv')
+            check_call(build_app_virtualenv, abort='build-virtualenv failed')
+        self.configure()
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
@@ -143,7 +185,21 @@ class Builder(object):
             abort(msg)
 
     def upload(self):
-        raise NotImplemented()
+        print_banner('Upload')
+        artifact = 'dist/%s.tar.gz' % self.app
+        metadata = {
+            'build_number': self.version,
+            'commit_msg': self.commit_msg,
+            'commit': self.commit,
+            'deploy_compat': str(self.compat),
+        }
+        if self.tag:
+            metadata['vcs_tag'] = self.tag
+
+        with open(artifact, 'rb') as f:
+            self.repository.put(self.app, self.version, f, metadata,
+                                target=self.target)
+        print('Uploaded')
 
     def summary(self):
         print_banner('Summary')
@@ -166,67 +222,7 @@ class Builder(object):
 class BuildCompat4(Builder):
     compat = 4
 
-    def configure(self):
-        build_settings = self.deploy_settings.build
-        configs_dirs = [build_settings.configs_dir]
-        app_conf_dir = os.path.join('deploy', 'configuration')
-        sources = config_sources(self.app, build_settings.environment,
-                                 build_settings.cluster,
-                                 configs_dirs, app_conf_dir, build=True)
-        config = smush_config(sources,
-                              initial={'yoconfigurator': {
-                                  'app': self.app,
-                                  'environment': build_settings.environment,
-                             }})
-        write_config(config, '.')
 
-        # public configuration
-        public_filter_pathname = os.path.join(app_conf_dir, 'public-data.py')
-        public_config = filter_config(config, public_filter_pathname)
-        if public_config:
-            write_config(public_config, '.', 'configuration_public.json')
-
-    def prepare(self):
-        python = os.path.abspath(sys.executable)
-        build_ve = os.path.abspath(__file__.replace('build_artifact',
-                                                    'build_virtualenv'))
-        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
-                                   '--target', self.target, '--download',
-                                   '--config', self.deploy_settings_file]
-        build_app_virtualenv = [python, build_ve, '-a', self.app,
-                                '--target', self.target, '--download',
-                                '--config', self.deploy_settings_file]
-        if self.upload_virtualenvs:
-            build_deploy_virtualenv.append('--upload')
-            build_app_virtualenv.append('--upload')
-
-        if self.build_virtualenvs:
-            print_banner('Build deploy virtualenv')
-            check_call(build_deploy_virtualenv, cwd='deploy',
-                       abort='build-virtualenv failed')
-            shutil.rmtree('deploy/virtualenv')
-            os.unlink('deploy/virtualenv.tar.gz')
-        if os.path.exists('requirements.txt'):
-            print_banner('Build app virtualenv')
-            check_call(build_app_virtualenv, abort='build-virtualenv failed')
-        self.configure()
-
-    def upload(self):
-        print_banner('Upload')
-        artifact = 'dist/%s.tar.gz' % self.app
-        metadata = {
-            'build_number': self.version,
-            'commit_msg': self.commit_msg,
-            'commit': self.commit,
-            'deploy_compat': str(self.compat),
-        }
-        if self.tag:
-            metadata['vcs_tag'] = self.tag
-
-        with open(artifact, 'rb') as f:
-            self.repository.put(self.app, self.version, f, metadata,
-                                target=self.target)
-        print('Uploaded')
 
 
 def parse_args(default_app):
