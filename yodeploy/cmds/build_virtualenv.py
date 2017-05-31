@@ -51,6 +51,9 @@ def main():
     parser.add_argument('-r', '--requirement', metavar='FILE',
                         default='requirements.txt',
                         help='Install from the given requirements file.')
+    parser.add_argument('--compat', metavar='LEVEL', type=int,
+                        help='Assume the specified compat level. '
+                             '(Defaults to reading deploy/compat)')
 
     options = parser.parse_args()
     if not os.path.isfile(options.requirement):
@@ -72,8 +75,13 @@ def main():
     deploy_settings = yodeploy.config.load_settings(options.config)
     repository = yodeploy.repository.get_repository(deploy_settings)
 
+    if not options.compat:
+        with open('deploy/compat') as f:
+            options.compat = int(f.read())
+
+    python_version = virtualenv.get_python_version(options.compat)
     platform = deploy_settings.artifacts.platform
-    ve_id = virtualenv.get_id(options.requirement, platform)
+    ve_id = virtualenv.get_id(options.requirement, python_version, platform)
     if options.hash:
         print(ve_id)
         return
@@ -104,7 +112,7 @@ def main():
 
     if not os.path.isdir('virtualenv'):
         virtualenv.create_ve(
-            '.', platform,
+            '.', python_version, platform,
             pypi=deploy_settings.build.pypi,
             req_file=options.requirement)
 

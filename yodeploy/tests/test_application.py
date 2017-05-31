@@ -1,6 +1,7 @@
 import os
 import platform
 import shutil
+import sysconfig
 import tarfile
 import time
 
@@ -32,7 +33,8 @@ class ApplicationTestCase(TmpDirTestCase):
 
         if not os.path.exists(self.test_ve_tar_path):
             self._create_test_ve()
-        self._deploy_ve_id = virtualenv.get_id(self.test_req_path, 'test')
+        self._deploy_ve_id = virtualenv.get_id(
+            self.test_req_path, sysconfig.get_python_version(), 'test')
 
     def _data_path(self, fragment):
         version_suffix = 'py%s' % platform.python_version()
@@ -71,7 +73,8 @@ class ApplicationTestCase(TmpDirTestCase):
             f.write('%s\n' % yodeploy_installable)
 
         virtualenv.create_ve(
-            self.test_ve_path, 'test', pypi, verify_req_install=False)
+            self.test_ve_path, sysconfig.get_python_version(), 'test', pypi,
+            verify_req_install=False)
 
 
 class ApplicationTest(ApplicationTestCase):

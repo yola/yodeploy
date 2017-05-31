@@ -21,10 +21,18 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def get_id(filename, platform):
+def get_python_version(compat):
+    """Return the version of Python that an app will use.
+
+    Based on the compat level.
+    """
+    return '2.7'
+
+
+def get_id(filename, python_version, platform):
     """Calculate the ID of a virtualenv for the given requirements.txt"""
     req_hash = sha224sum(filename)
-    return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
+    return '%s-%s-%s' % (python_version, platform, req_hash)
 
 
 def download_ve(repository, app, virtualenv_id, target='master',
@@ -51,7 +59,8 @@ def upload_ve(repository, app, virtualenv_id, target='master',
 
 
 def create_ve(
-        app_dir, platform, pypi=None, req_file='requirements.txt',
+        app_dir, python_version, platform, pypi=None,
+        req_file='requirements.txt',
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
@@ -65,7 +74,7 @@ def create_ve(
         check_requirements(ve_dir)
 
     relocateable_ve(ve_dir)
-    ve_id = get_id(os.path.join(app_dir, req_file), platform)
+    ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(ve_id)
         f.write('\n')
