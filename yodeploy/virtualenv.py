@@ -73,14 +73,27 @@ def create_ve(
     ve_dir = os.path.join(app_dir, 'virtualenv')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
-    virtualenv.create_environment(ve_dir, site_packages=False)
+    # The venv module makes a lot of our reclocateability problems go away, so
+    # we only use the virtualenv library on Python 2.
+    if python_version.startswith('3.'):
+        subprocess.check_call((
+            'python%s' % python_version, '-m', 'venv', ve_dir))
+    elif python_version == sysconfig.get_python_version():
+        virtualenv.create_environment(ve_dir, site_packages=False)
+    else:
+        subprocess.check_call((
+            sys.executable, virtualenv.__file__.rstrip('c'),
+            '-p', 'python%s' % python_version,
+            '--no-site-packages', ve_dir))
+
     install_requirements(ve_dir, pypi, req_file)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
         check_requirements(ve_dir)
 
-    relocateable_ve(ve_dir)
+    relocateable_ve(ve_dir, python_version)
+
     ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(ve_id)
@@ -134,12 +147,17 @@ def check_requirements(ve_dir):
         sys.exit(1)
 
 
-def relocateable_ve(ve_dir):
+def relocateable_ve(ve_dir, python_version):
     log.debug('Making virtualenv relocatable')
-    virtualenv.make_environment_relocatable(ve_dir)
 
-    fix_local_symlinks(ve_dir)
-    remove_fragile_symlinks(ve_dir)
+    # Python 3 venv virtualenvs don't have these problems
+    if python_version == '2.7':
+        # TODO: Turn virtualenv library calls into subprocess calls, when
+        # executed under Python 3
+        virtualenv.make_environment_relocatable(ve_dir)
+
+        fix_local_symlinks(ve_dir)
+        remove_fragile_symlinks(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
