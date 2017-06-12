@@ -86,7 +86,8 @@ def create_ve(
             '-p', 'python%s' % python_version,
             '--no-site-packages', ve_dir))
 
-    install_requirements(ve_dir, pypi, req_file)
+    log.info('Installing requirements')
+    pip_install(ve_dir, pypi, '-r', req_file)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
@@ -110,18 +111,13 @@ def create_ve(
         os.chdir(cwd)
 
 
-def install_requirements(ve_dir, pypi, req_file):
+def pip_install(ve_dir, pypi, *arguments):
     sub_log = logging.getLogger(__name__ + '.pip')
 
-    log.info('Installing requirements')
-
-    cmd = [
-        os.path.join('bin', 'python'), '-m', 'pip', 'install',
-        '-r', req_file,
-    ]
-
+    cmd = [os.path.join('bin', 'python'), '-m', 'pip', 'install']
     if pypi:
         cmd += ['--index-url', pypi]
+    cmd += arguments
 
     p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
     for line in iter(p.stdout.readline, b''):
