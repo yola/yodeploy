@@ -151,7 +151,8 @@ def check_requirements(ve_dir):
 
 
 def relocateable_ve(ve_dir, python_version):
-    # We can only do this for Python 2 under Python 2
+    # We can only call into the virtualenv module for operating on a
+    # Python 2 virtualenv, in Python 2.
     if sys.version_info.major == 3 and python_version == '2.7':
         cmd = [
             os.path.join(ve_dir, 'bin', 'python'), '-c',
