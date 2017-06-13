@@ -30,6 +30,7 @@ class Application(object):
         if not os.path.isdir(self.appdir):
             os.makedirs(self.appdir)
         self.lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
+        self.compat = self.live_compat
 
     @property
     def live_version(self):
@@ -40,6 +41,15 @@ class Application(object):
         dest = os.readlink(live_link).split('/')
         if len(dest) == 2 and dest[0] == 'versions':
             return dest[1]
+
+    @property
+    def live_compat(self):
+        """Currently deployed version's compat level"""
+        compat_file = os.path.join(self.appdir, 'live', 'deploy', 'compat')
+        if not os.path.exists(compat_file):
+            return None
+        with open(compat_file) as f:
+            return int(f.read())
 
     @property
     def deployed_versions(self):
@@ -56,8 +66,9 @@ class Application(object):
         """
         deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
+        python_version = virtualenv.get_python_version(self.compat)
         platform = self.settings.artifacts.platform
-        ve_id = virtualenv.get_id(deploy_req_fn, platform)
+        ve_id = virtualenv.get_id(deploy_req_fn, python_version, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
                                'virtualenvs')
         ve_dir = os.path.join(ves_dir, ve_id)
@@ -136,9 +147,10 @@ class Application(object):
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
 
         with repository.get(self.app, version, target) as f1:
-            if f1.metadata.get('deploy_compat') not in ('4',):
+            self.compat = int(f1.metadata.get('deploy_compat', 1))
+            if self.compat not in (4, 5):
                 raise Exception('Unsupported artifact: compat level %s'
-                                % f1.metadata.get('deploy_compat', 1))
+                                % self.compat)
             with open(tarball, 'wb') as f2:
                 shutil.copyfileobj(f1, f2)
 

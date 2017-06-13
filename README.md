@@ -71,6 +71,7 @@ source.
 2. The legacy repository with yola.deploy < 0.3. **No longer supported**.
 3. yola.deploy 0.3.x. **No longer supported**.
 4. yodeploy >= 0.4 (after the rename).
+5. Python 3 apps with yodeploy >= 0.8.1.
 
 Testing
 -------

@@ -21,10 +21,25 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def get_id(filename, platform):
+def get_python_version(compat):
+    """Return the version of Python that an app will use.
+
+    Based on the compat level.
+    """
+    if compat < 5:
+        return '2.7'
+    if sys.version_info.major == 3:
+        return sysconfig.get_python_version()
+    return subprocess.check_output((
+        'python3', '-c',
+        'import sysconfig; print(sysconfig.get_python_version())'
+    )).strip()
+
+
+def get_id(filename, python_version, platform):
     """Calculate the ID of a virtualenv for the given requirements.txt"""
     req_hash = sha224sum(filename)
-    return '%s-%s-%s' % (sysconfig.get_python_version(), platform, req_hash)
+    return '%s-%s-%s' % (python_version, platform, req_hash)
 
 
 def download_ve(repository, app, virtualenv_id, target='master',
@@ -51,21 +66,43 @@ def upload_ve(repository, app, virtualenv_id, target='master',
 
 
 def create_ve(
-        app_dir, platform, pypi=None, req_file='requirements.txt',
+        app_dir, python_version, platform, pypi=None,
+        req_file='requirements.txt',
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
+    ve_python = os.path.join(ve_dir, 'bin', 'python')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
-    virtualenv.create_environment(ve_dir, site_packages=False)
-    install_requirements(ve_dir, pypi, req_file)
+    # The venv module makes a lot of our reclocateability problems go away, so
+    # we only use the virtualenv library on Python 2.
+    if python_version.startswith('3.'):
+        subprocess.check_call((
+            'python%s' % python_version, '-m', 'venv', ve_dir))
+        pip_version = subprocess.check_output((
+            ve_python, '-c', 'import ensurepip; print(ensurepip.version())'))
+        if pip_version < '9.':
+            pip_install(ve_dir, pypi, '-U', 'pip')
+        pip_install(ve_dir, pypi, 'wheel')
+
+    elif python_version == sysconfig.get_python_version():
+        virtualenv.create_environment(ve_dir, site_packages=False)
+    else:
+        subprocess.check_call((
+            sys.executable, virtualenv.__file__.rstrip('c'),
+            '-p', 'python%s' % python_version,
+            '--no-site-packages', ve_dir))
+
+    log.info('Installing requirements')
+    pip_install(ve_dir, pypi, '-r', req_file)
 
     if verify_req_install:
         log.info('Verifying requirements were met')
         check_requirements(ve_dir)
 
-    relocateable_ve(ve_dir)
-    ve_id = get_id(os.path.join(app_dir, req_file), platform)
+    relocateable_ve(ve_dir, python_version)
+
+    ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
         f.write(ve_id)
         f.write('\n')
@@ -81,18 +118,13 @@ def create_ve(
         os.chdir(cwd)
 
 
-def install_requirements(ve_dir, pypi, req_file):
+def pip_install(ve_dir, pypi, *arguments):
     sub_log = logging.getLogger(__name__ + '.pip')
 
-    log.info('Installing requirements')
-
-    cmd = [
-        os.path.join('bin', 'python'), '-m', 'pip', 'install',
-        '-r', req_file,
-    ]
-
+    cmd = [os.path.join('bin', 'python'), '-m', 'pip', 'install']
     if pypi:
         cmd += ['--index-url', pypi]
+    cmd += arguments
 
     p = subprocess.Popen(cmd, cwd=ve_dir, stdout=subprocess.PIPE)
     for line in iter(p.stdout.readline, b''):
@@ -118,12 +150,32 @@ def check_requirements(ve_dir):
         sys.exit(1)
 
 
-def relocateable_ve(ve_dir):
-    log.debug('Making virtualenv relocatable')
-    virtualenv.make_environment_relocatable(ve_dir)
+def relocateable_ve(ve_dir, python_version):
+    # We can only call into the virtualenv module for operating on a
+    # Python 2 virtualenv, in Python 2.
+    if sys.version_info.major == 3 and python_version == '2.7':
+        cmd = [
+            os.path.join(ve_dir, 'bin', 'python'), '-c',
+            'import sys; sys.path.append("%(ve_path)s"); '
+            'sys.path.append("%(my_path)s"); '
+            'from yodeploy import virtualenv; '
+            'virtualenv.relocateable_ve("%(ve_dir)s", "%(python_version)s")'
+            % {
+                've_path': os.path.dirname(virtualenv.__file__),
+                'my_path': os.path.join(os.path.dirname(__file__), '..'),
+                've_dir': ve_dir,
+                'python_version': python_version,
+            }]
+        subprocess.check_call(cmd)
+        return
 
-    fix_local_symlinks(ve_dir)
-    remove_fragile_symlinks(ve_dir)
+    log.debug('Making virtualenv relocatable')
+
+    # Python 3 venv virtualenvs don't have these problems
+    if python_version == '2.7':
+        virtualenv.make_environment_relocatable(ve_dir)
+        fix_local_symlinks(ve_dir)
+        remove_fragile_symlinks(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236

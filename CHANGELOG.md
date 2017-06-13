@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+dev
+---
+
+* Add compat 5 for pure Python 3 apps.
+* Internal API changes to `yodeploy.virtualenv`:
+  - Added `get_python_version`, to return the Python version that an app
+    will run under.
+  - `get_id`, `create_ve`, `relocateable_ve` now require a
+    `python_version` argument.
+  - Replaced `install_requirements` with `pip_install`.
+
 0.8.0
 -----
 
