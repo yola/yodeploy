@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-dev
----
+0.8.1
+-----
 
 * Add compat 5 for pure Python 3 apps.
 * Internal API changes to `yodeploy.virtualenv`:
