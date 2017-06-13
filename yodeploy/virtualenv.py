@@ -148,14 +148,28 @@ def check_requirements(ve_dir):
 
 
 def relocateable_ve(ve_dir, python_version):
+    # We can only do this for Python 2 under Python 2
+    if sys.version_info.major == 3 and python_version == '2.7':
+        cmd = [
+            os.path.join(ve_dir, 'bin', 'python'), '-c',
+            'import sys; sys.path.append("%(ve_path)s"); '
+            'sys.path.append("%(my_path)s"); '
+            'from yodeploy import virtualenv; '
+            'virtualenv.relocateable_ve("%(ve_dir)s", "%(python_version)s")'
+            % {
+                've_path': os.path.dirname(virtualenv.__file__),
+                'my_path': os.path.join(os.path.dirname(__file__), '..'),
+                've_dir': ve_dir,
+                'python_version': python_version,
+            }]
+        subprocess.check_call(cmd)
+        return
+
     log.debug('Making virtualenv relocatable')
 
     # Python 3 venv virtualenvs don't have these problems
     if python_version == '2.7':
-        # TODO: Turn virtualenv library calls into subprocess calls, when
-        # executed under Python 3
         virtualenv.make_environment_relocatable(ve_dir)
-
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir)
 
