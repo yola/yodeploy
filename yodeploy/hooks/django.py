@@ -95,10 +95,10 @@ class DjangoApp(ApacheHostedApp, PythonApp):
 
     @property
     def django_version(self):
-        return tuple(parse_version(self.manage_py('version')))
+        return parse_version(self.manage_py('version'))
 
     def run_migrate_commands(self):
-        if self.django_version >= (1, 7,):
+        if self.django_version >= parse_version('1.7.0'):
             self.manage_py('migrate', '--noinput')
         else:
             self.manage_py('syncdb', '--noinput')
