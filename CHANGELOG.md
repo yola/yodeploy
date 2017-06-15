@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.8.2
+-----
+
+* `DjangoApp`: Correctly detect Django version used. Until now yodeploy
+  has incorrectly assumed >= 1.7, when performing migrations.
+
 0.8.1
 -----
 
