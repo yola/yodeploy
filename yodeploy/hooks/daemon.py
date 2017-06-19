@@ -10,7 +10,7 @@ my-celery-worker.service.template
 """
 
 import logging
-import os.path
+import os
 import subprocess
 
 from yodeploy.hooks.templating import TemplatedApp
@@ -32,10 +32,17 @@ class Manager(object):
 
     def install_daemons(self):
         for name, template, target in self.iter_templates():
-            log.info('Creating and restarting %s %s daemon', name, self.name)
-            self.app.template(template, target)
-            self.reload()
-            self.restart(name)
+            if self.app.is_daemon_enabled(name):
+                log.info('Creating and restarting %s %s daemon',
+                         name, self.name)
+                self.app.template(template, target)
+                self.reload()
+                self.restart(name)
+            elif os.path.exists(target):
+                log.info('Removing %s %s daemon', name, self.name)
+                self.destroy(name)
+                os.unlink(target)
+                self.reload()
             self.installed_daemons = True
 
     def iter_templates(self):
@@ -53,6 +60,9 @@ class Manager(object):
         raise NotImplemented
 
     def restart(self, task):
+        raise NotImplemented
+
+    def destroy(self, task):
         raise NotImplemented
 
     @property
@@ -81,6 +91,9 @@ class Supervisor(Manager):
         except subprocess.CalledProcessError:
             log.error('Unable to restart %s supervisord task', task)
 
+    def destroy(self, task):
+        subprocess.call(('supervisorctl', 'stop', task))
+
 
 class SystemD(Manager):
     name = 'systemd'
@@ -105,6 +118,16 @@ class SystemD(Manager):
         except subprocess.CalledProcessError:
             log.error('Unable to restart %s systemd task', task)
 
+    def destroy(self, task):
+        try:
+            subprocess.check_call(('systemctl', 'disable', task))
+        except subprocess.CalledProcessError:
+            log.error('Unable to uninstall %s systemd task', task)
+        try:
+            subprocess.check_call(('systemctl', 'stop', task))
+        except subprocess.CalledProcessError:
+            log.error('Unable to stop %s systemd task', task)
+
 
 class Upstart(Manager):
     name = 'upstart'
@@ -122,6 +145,9 @@ class Upstart(Manager):
             subprocess.check_call(('service', task, 'start'))
         except subprocess.CalledProcessError:
             log.error('Unable to restart %s upstart task', task)
+
+    def destroy(self, task):
+        subprocess.call(('service', task, 'stop'))
 
 
 class DaemonApp(TemplatedApp):
@@ -146,3 +172,6 @@ class DaemonApp(TemplatedApp):
                    for service in (supervisor, systemd, upstart)):
             log.warning("Couldn't find any daemon templates to install for %s",
                         self.app)
+
+    def is_daemon_enabled(self, name):
+        return True
