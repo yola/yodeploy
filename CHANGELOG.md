@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.8.3
+-----
+
+* Add `is_daemon_enabled` method to `DaemonApp`, to allow customising
+  which daemons are installed.
+
 0.8.2
 -----
 
