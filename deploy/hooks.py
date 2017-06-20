@@ -11,7 +11,7 @@ class Hooks(ConfiguratedApp, PythonApp, DaemonApp):
 
         # Install our scripts into /usr/local/bin
         for fn in os.listdir(self.deploy_path('yodeploy', 'cmds')):
-            if fn.startswith('_') or fn.endswith('.pyc'):
+            if fn.startswith('_') or not fn.endswith('.py'):
                 continue
             name = fn.rsplit('.', 1)[0].replace('_', '-')
             wrapper_name = os.path.join('/usr/local/bin', name)
