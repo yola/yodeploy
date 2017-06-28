@@ -375,7 +375,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
 
 
 def infer_compat_version():
-    """Return appropriate compat level for the python version running the bootstrap"""
+    """Return appropriate compat level for the python version"""
     if sys.version_info.major == 2:
         return 4
     elif sys.version_info.major == 3:
