@@ -374,14 +374,26 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     return expected_name
 
 
-def build_virtualenv(bootstrap=False):
+def infer_compat_version():
+    """Return appropriate compat level for the python version running the bootstrap"""
+    if sys.version_info.major == 2:
+        return 4
+    elif sys.version_info.major == 3:
+        return 5
+
+
+def build_virtualenv(bootstrap=False, compat=None):
     """Build a virtualenv for CWD, bootstrapping if necessary"""
     if not binary_available('build-virtualenv') and not bootstrap:
         raise Exception("build-virtualenv can't be found on PATH")
 
     # Already bootstrapped
-    if call(('build-virtualenv',)) == 0:
-        return
+    if compat:
+        if call(('build-virtualenv', '--compat={}'.format(compat))) == 0:
+            return
+    else:
+        if call('build-virtualenv') == 0:
+            return
 
     if not bootstrap:
         raise Exception('build-virtualenv failed')
@@ -463,7 +475,7 @@ def setup_yoconfigurator(yola_src):
     """Configure yoconfigurator"""
     root = os.path.join(yola_src, 'yoconfigurator')
     with chdir(root):
-        build_virtualenv()
+        build_virtualenv(compat=infer_compat_version())
 
     # Install our single wrapper script
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')
