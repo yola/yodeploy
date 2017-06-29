@@ -388,12 +388,12 @@ def build_virtualenv(bootstrap=False, compat=None):
         raise Exception("build-virtualenv can't be found on PATH")
 
     # Already bootstrapped
+    command = ['build-virtualenv']
     if compat:
-        if call(('build-virtualenv', '--compat={}'.format(compat))) == 0:
-            return
-    else:
-        if call('build-virtualenv') == 0:
-            return
+        command.append('--compat={}'.format(compat))
+
+    if call(command) == 0:
+        return
 
     if not bootstrap:
         raise Exception('build-virtualenv failed')
