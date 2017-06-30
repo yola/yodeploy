@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.8.4
+-----
+
+* `TomcatServlet`: Support apps that don't have Apache vhosts.
+
 0.8.3
 -----
 
