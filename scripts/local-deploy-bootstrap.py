@@ -376,10 +376,11 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
 
 def infer_compat_version():
     """Return appropriate compat level for the python version"""
-    if sys.version_info.major == 2:
-        return 4
-    elif sys.version_info.major == 3:
-        return 5
+    major_version_to_compat = {
+        2: 4,
+        3: 5,
+    }
+    return major_version_to_compat[sys.version_info.major]
 
 
 def build_virtualenv(bootstrap=False, compat=None):
