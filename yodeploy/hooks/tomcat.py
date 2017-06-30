@@ -26,7 +26,7 @@ class TomcatServlet(ConfiguratedApp):
     def prepare_tomcat(self):
         if self.migrate_on_deploy:
             self.migrate()
-        if self.template_exists('apache2/vhost.conf.template'):
+        if self.has_apache_vhost:
             dest = os.path.join(self.vhost_path, '%s.conf' % self.app)
             self.template('apache2/vhost.conf.template', dest)
 
@@ -34,6 +34,10 @@ class TomcatServlet(ConfiguratedApp):
         old_vhost = os.path.join(self.vhost_path, self.app)
         if os.path.exists(old_vhost):
             os.unlink(old_vhost)
+
+    @property
+    def has_apache_vhost(self):
+        return self.template_exists('apache2/vhost.conf.template')
 
     def migrate(self):
         log.info('Running flyway migrations')
@@ -48,11 +52,12 @@ class TomcatServlet(ConfiguratedApp):
         self.tomcat_deploy()
 
     def tomcat_deploy(self):
-        try:
-            subprocess.check_call(('service', 'apache2', 'reload'))
-        except subprocess.CalledProcessError:
-            log.exception('Unable to reload apache2')
-            sys.exit(1)
+        if self.has_apache_vhost:
+            try:
+                subprocess.check_call(('service', 'apache2', 'reload'))
+            except subprocess.CalledProcessError:
+                log.exception('Unable to reload apache2')
+                sys.exit(1)
 
         contexts = os.path.join(self.root, 'tomcat-contexts')
         if not os.path.isdir(contexts):
