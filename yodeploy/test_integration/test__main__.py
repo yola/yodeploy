@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-from yodeploy.tests import TmpDirTestCase
+from yodeploy.tests import TmpDirTestCase, yodeploy_location
 
 
 class TestHookery(TmpDirTestCase):
@@ -40,10 +40,8 @@ deploy_settings = AttrDict(
     ),
 )
 """ % self.tmpdir)
-        # .__main__ is needed for silly Python 2.6
-        # See http://bugs.python.org/issue2751
         p = subprocess.Popen((
-                'python', '-m', 'yodeploy.__main__',
+                sys.executable, '-m', 'yodeploy',
                 '--config', self.tmppath('config.py'),
                 '--app', 'test',
                 '--hook', 'prepare',
@@ -51,8 +49,11 @@ deploy_settings = AttrDict(
                 'foo',
             ), env={
                 'PATH': os.environ['PATH'],
-                'PYTHONPATH': ':'.join(sys.path),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                'PYTHONPATH': yodeploy_location(),
+            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         out, err = p.communicate()
-        self.assertEqual(p.wait(), 0, 'Subprocess outputted: ' + out + err)
+
+        self.assertEqual(
+            p.wait(), 0, 'Subprocess outputted: %s%s' % (out, err))
         self.assertTMPPExists('test', 'hello')

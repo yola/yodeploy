@@ -5,9 +5,10 @@ import os
 import pwd
 import stat
 import subprocess
-import sys
+import unittest
 
-from yodeploy.tests import unittest, TmpDirTestCase
+from yodeploy.tests import (
+    HelperScriptConsumer, TmpDirTestCase, yodeploy_location)
 from yodeploy.util import (
     chown_r, delete_dir_content, extract_tar, ignoring, touch)
 
@@ -36,9 +37,9 @@ class TestTouch(TmpDirTestCase):
         self.assertTMPPExists('foo')
 
     def test_perm(self):
-        touch(self.tmppath('foo'), perm=0641)
+        touch(self.tmppath('foo'), perm=0o641)
         s = os.stat(self.tmppath('foo'))
-        self.assertEqual(stat.S_IMODE(s.st_mode), 0641)
+        self.assertEqual(stat.S_IMODE(s.st_mode), 0o641)
 
     def test_uid(self):
         # We probably aren't root...
@@ -50,7 +51,7 @@ class TestTouch(TmpDirTestCase):
         self.assertEqual(s.st_gid, os.getgid())
 
 
-class TestExtractTar(TmpDirTestCase):
+class TestExtractTar(TmpDirTestCase, HelperScriptConsumer):
     def test_simple(self):
         self.create_tar('test.tar.gz', 'foo/bar', 'foo/baz')
         extract_tar(self.tmppath('test.tar.gz'), self.tmppath('extracted'))
@@ -75,19 +76,16 @@ class TestExtractTar(TmpDirTestCase):
 
         env = {
             'PATH': os.environ['PATH'],
-            'PYTHONPATH': ':'.join(sys.path),
+            'PYTHONPATH': yodeploy_location(),
         }
+
         subprocess.check_call((
             'fakeroot',
             'python',
-            '-c', (
-                'import yodeploy.util, os; '
-                'yodeploy.util.extract_tar("%s", "%s"); '
-                's = os.stat("%s"); '
-                'assert s.st_uid == 0; '
-                'assert s.st_gid == 0'
-            ) % (self.tmppath('test.tar.gz'), self.tmppath('extracted'),
-                 self.tmppath('extracted/bar'))
+            self.get_helper_path('permission_squash_checker.py'),
+            self.tmppath('test.tar.gz'),
+            self.tmppath('extracted'),
+            self.tmppath('extracted/bar')
         ), env=env)
 
 

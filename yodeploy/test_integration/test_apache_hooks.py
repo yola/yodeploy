@@ -1,6 +1,5 @@
 import os
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.test_integration.helpers import (
     build_sample, deploy_sample, rmdir)
@@ -20,7 +19,8 @@ class ApacheTestCase(unittest.TestCase):
 
     def assertDeployed(self, fn):
         deployed_file = os.path.join(os.path.dirname(__file__), 'filesys', fn)
-        self.assertTrue(os.path.exists(deployed_file))
+        self.assertTrue(os.path.exists(deployed_file),
+                        msg='%s does not exist' % deployed_file)
 
 
 class TestApacheHostedAppDeployment(ApacheTestCase):

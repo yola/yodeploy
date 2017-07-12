@@ -1,15 +1,8 @@
 import os
 import shutil
-import sys
 import tarfile
 import tempfile
-
-unittest = None
-if sys.version_info >= (2, 7):
-    import unittest
-    hush_pyflakes = unittest
-else:
-    import unittest2 as unittest
+import unittest
 
 
 class TmpDirTestCase(unittest.TestCase):
@@ -36,7 +29,7 @@ class TmpDirTestCase(unittest.TestCase):
         os.chdir(self.tmppath('create_tar_workdir'))
         roots = set()
         try:
-            for pathname, data in contents.iteritems():
+            for pathname, data in contents.items():
                 if '/' in pathname:
                     if not os.path.exists(os.path.dirname(pathname)):
                         os.makedirs(os.path.dirname(pathname))
@@ -69,3 +62,16 @@ class TmpDirTestCase(unittest.TestCase):
     def assertTMPPContents(self, contents, *fragments):
         with open(self.tmppath(*fragments)) as f:
             self.assertEqual(f.read(), contents)
+
+
+class HelperScriptConsumer(object):
+    """Mixin thats adds helpers for calling test script subprocesses."""
+
+    def get_helper_path(self, name):
+        helpers = os.path.join(os.path.dirname(__file__), 'helper_scripts')
+        return os.path.join(helpers, name)
+
+
+def yodeploy_location():
+    import yodeploy
+    return os.path.dirname(os.path.abspath(yodeploy.__path__[0]))

@@ -1,45 +1,55 @@
 import os
+import platform
 import shutil
+import sysconfig
+import tarfile
 import time
 
+from yodeploy import virtualenv
 from yodeploy.application import Application
 from yodeploy.locking import LockedException
 from yodeploy.repository import LocalRepositoryStore, Repository
 from yodeploy.tests import TmpDirTestCase
-from yodeploy.virtualenv import create_ve, sha224sum, upload_ve, ve_version
+
+SRC_ROOT = os.path.realpath(
+    os.path.join(os.path.dirname(__file__), '..', '..'))
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'fixtures/')
 
 
-class ApplicationTest(TmpDirTestCase):
-
+class ApplicationTestCase(TmpDirTestCase):
     def setUp(self):
-        super(ApplicationTest, self).setUp()
-        with open(self.tmppath('config.py'), 'w') as f:
-            f.write("""
-class AttrDict(dict):
-    __getattr__ = dict.__getitem__
+        super(ApplicationTestCase, self).setUp()
 
-deploy_settings = AttrDict(
-    artifacts=AttrDict(
-        store='local',
-        store_settings=AttrDict(
-            local=AttrDict(
-                directory='%s',
-            ),
-        ),
-    ),
-    paths=AttrDict(
-        apps='%s',
-    ),
-)
-""" % (self.tmppath('artifacts'), self.tmppath('srv')))
+        shutil.copy(
+            os.path.join(FIXTURES_DIR, 'config.py'), self.tmppath('config.py'))
 
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
         self.app = Application('test', self.tmppath('config.py'))
-        if not os.path.exists('test-data/deploy-ve/virtualenv.tar.gz'):
+
+        self.test_ve_tar_path = self._data_path('deploy-ve/virtualenv.tar.gz')
+        self.test_req_path = self._data_path('deploy-ve/requirements.txt')
+        self.test_ve_path = self._data_path('deploy-ve')
+
+        if not os.path.exists(self.test_ve_tar_path):
             self._create_test_ve()
-        self._deploy_ve_hash = ve_version(sha224sum(
-            'test-data/deploy-ve/requirements.txt'))
+        self._deploy_ve_id = virtualenv.get_id(
+            self.test_req_path, sysconfig.get_python_version(), 'test')
+
+    def _data_path(self, fragment):
+        version_suffix = 'py%s' % platform.python_version()
+        return os.path.join('test-data-%s' % version_suffix, fragment)
+
+    def _prep_wip_yodeploy_for_install(self):
+        """Copy the yodeploy checkout under test to a temp directory.
+
+        Returns the full path of the yodeploy copy.
+        """
+        copy_destination = self.tmppath('yodeploy-lib')
+
+        shutil.copytree(SRC_ROOT, self.tmppath('yodeploy-lib'))
+
+        return copy_destination
 
     def _create_test_ve(self):
         """
@@ -53,13 +63,31 @@ deploy_settings = AttrDict(
                     yodeploy.config.find_deploy_config())
             pypi = deploy_settings.build.pypi
 
-        if os.path.exists('test-data/deploy-ve'):
-            shutil.rmtree('test-data/deploy-ve')
-        os.makedirs('test-data/deploy-ve')
-        if not os.path.exists('test-data/deploy-ve/requirements.txt'):
-            with open('test-data/deploy-ve/requirements.txt', 'w') as f:
-                f.write('yodeploy\n')
-        create_ve('test-data/deploy-ve', pypi)
+        if os.path.exists(self.test_ve_path):
+            shutil.rmtree(self.test_ve_path)
+        os.makedirs(self.test_ve_path)
+
+        yodeploy_installable = self._prep_wip_yodeploy_for_install()
+
+        with open(self.test_req_path, 'w') as f:
+            f.write('%s\n' % yodeploy_installable)
+
+        virtualenv.create_ve(
+            self.test_ve_path, sysconfig.get_python_version(), 'test', pypi,
+            verify_req_install=False)
+
+
+class ApplicationTest(ApplicationTestCase):
+    def setUp(self):
+        super(ApplicationTest, self).setUp()
+
+        sample_app = os.path.join(FIXTURES_DIR, 'simple_sample_app')
+
+        # Simulate multiple installed versions of the sample app fixture.
+        shutil.copytree(
+            sample_app, self.tmppath('srv', 'test', 'versions', 'foo'))
+        shutil.copytree(
+            sample_app, self.tmppath('srv', 'test', 'versions', 'bar'))
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
@@ -70,16 +98,13 @@ deploy_settings = AttrDict(
         self.assertTrue(self.app.live_version is None)
 
     def test_live_version(self):
-        self.mkdir('srv', 'test', 'versions', 'foobar')
-        os.symlink(os.path.join('versions', 'foobar'),
+        os.symlink(os.path.join('versions', 'bar'),
                    self.tmppath('srv', 'test', 'live'))
-        self.assertEqual(self.app.live_version, 'foobar')
+        self.assertEqual(self.app.live_version, 'bar')
 
     def test_deployed_versions(self):
-        self.mkdir('srv', 'test', 'versions', '1')
-        self.mkdir('srv', 'test', 'versions', '2')
         self.mkdir('srv', 'test', 'versions', 'unpack')
-        self.assertEqual(self.app.deployed_versions, ['1', '2'])
+        self.assertEqual(self.app.deployed_versions, ['bar', 'foo'])
 
     def test_locking(self):
         with self.app.lock:
@@ -93,8 +118,8 @@ deploy_settings = AttrDict(
     def test_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         with self.app.lock:
@@ -106,8 +131,8 @@ deploy_settings = AttrDict(
     def test_double_unpack(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
         os.unlink(self.tmppath('test.tar.gz'))
 
         with self.app.lock:
@@ -120,7 +145,7 @@ deploy_settings = AttrDict(
     def test_unpack_live(self):
         self.create_tar('test.tar.gz', 'foo/bar')
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
             self.repo.put('test', version, f, {})
         os.unlink(self.tmppath('test.tar.gz'))
 
@@ -133,17 +158,13 @@ deploy_settings = AttrDict(
             self.app.unpack('master', self.repo, version)
 
     def test_swing_symlink_create(self):
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foobar'))
-
         with self.app.lock:
-            self.app.swing_symlink('foobar')
+            self.app.swing_symlink('bar')
 
         self.assertTMPPExists('srv', 'test', 'live')
-        self.assertEqual(self.app.live_version, 'foobar')
+        self.assertEqual(self.app.live_version, 'bar')
 
     def test_swing_symlink_overwrite(self):
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo'))
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'bar'))
         os.symlink(os.path.join('versions', 'foo'),
                    self.tmppath('srv', 'test', 'live'))
 
@@ -156,8 +177,6 @@ deploy_settings = AttrDict(
         self.assertEqual(self.app.live_version, 'bar')
 
     def test_swing_symlink_stale_live_new(self):
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo'))
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'bar'))
         os.symlink(os.path.join('versions', 'foo'),
                    self.tmppath('srv', 'test', 'live.new'))
 
@@ -169,123 +188,71 @@ deploy_settings = AttrDict(
         self.assertEqual(self.app.live_version, 'bar')
 
     def test_prepare_hook(self):
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy'))
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'hooks.py'), 'w') as f:
-            f.write("""import os
-
-from yodeploy.hooks.base import DeployHook
-
-
-class Hooks(DeployHook):
-    def prepare(self):
-        open(os.path.join(self.root, 'hello'), 'w').close()
-
-
-hooks = Hooks
-""")
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'requirements.txt'), 'w') as f:
-            f.write('yodeploy\n')
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'compat'), 'w') as f:
-            f.write('4\n')
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.prepare('master', self.repo, 'foo')
-        self.assertTMPPExists('srv', 'test', 'hello')
+        self.assertTMPPExists('srv', 'test', 'prepare_hook_output')
 
     def test_deployed(self):
-        os.makedirs(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy'))
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'hooks.py'), 'w') as f:
-            f.write("""import os
-
-from yodeploy.hooks.base import DeployHook
-
-
-class Hooks(DeployHook):
-    def deployed(self):
-        open(os.path.join(self.root, 'hello'), 'w').close()
-
-
-hooks = Hooks
-""")
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'requirements.txt'), 'w') as f:
-            f.write('yodeploy\n')
-        with open(self.tmppath('srv', 'test', 'versions', 'foo', 'deploy',
-                               'compat'), 'w') as f:
-            f.write('4\n')
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         with self.app.lock:
             self.app.deployed('master', self.repo, 'foo')
-        self.assertTMPPExists('srv', 'test', 'hello')
+        self.assertTMPPExists('srv', 'test', 'deployed_hook_output')
 
     def test_deploy(self):
-        self.create_tar('test.tar.gz', 'foo/bar', contents={
-            'foo/deploy/hooks.py': """import os
+        with tarfile.open(self.tmppath('test.tar.gz'), 'w:gz') as tar:
+            tar.add(
+                os.path.join(FIXTURES_DIR, 'simple_sample_app'), arcname='foo')
 
-from yodeploy.hooks.base import DeployHook
-
-
-class Hooks(DeployHook):
-    def prepare(self):
-        open(os.path.join(self.root, 'hello'), 'w').close()
-    def deployed(self):
-        open(os.path.join(self.root, 'there'), 'w').close()
-
-
-hooks = Hooks
-""",
-            'foo/deploy/requirements.txt': 'yodeploy\n',
-            'foo/deploy/compat': '4\n',
-        })
         version = '1'
-        with open(self.tmppath('test.tar.gz')) as f:
-            self.repo.put('test', version, f, {'deploy_compat': '3'})
-        upload_ve(self.repo, 'deploy', self._deploy_ve_hash,
-                  source='test-data/deploy-ve/virtualenv.tar.gz')
+        with open(self.tmppath('test.tar.gz'), 'rb') as f:
+            self.repo.put('test', version, f, {'deploy_compat': '4'})
+        virtualenv.upload_ve(self.repo, 'deploy', self._deploy_ve_id,
+                             source=self.test_ve_tar_path)
         os.unlink(self.tmppath('test.tar.gz'))
 
         self.app.deploy('master', self.repo, version)
         self.assertTMPPExists('srv', 'test', 'versions', version, 'bar')
         self.assertTMPPExists('srv', 'test', 'live', 'bar')
-        self.assertTMPPExists('srv', 'test', 'hello')
-        self.assertTMPPExists('srv', 'test', 'there')
+        self.assertTMPPExists('srv', 'test', 'prepare_hook_output')
+        self.assertTMPPExists('srv', 'test', 'deployed_hook_output')
 
-    def test_gc(self):
-        for version in range(10):
-            self.mkdir('srv', 'test', 'versions', str(version))
-        os.symlink(os.path.join('versions', '3'),
-                   self.tmppath('srv', 'test', 'live'))
-        # Avoid the int-env hack
-        os.utime(self.tmppath('srv', 'test', 'versions', '3'), None)
-        self.app.gc(2)
-        self.assertEqual(self.app.deployed_versions, ['3', '8', '9'])
 
-    def test_gc_bootstrapped_versions(self):
-        self.mkdir('srv', 'test', 'versions', '1')
-        self.mkdir('srv', 'test', 'versions', '1001')
-        os.symlink(os.path.join('versions', '1'),
-                   self.tmppath('srv', 'test', 'live'))
-        earlier = int(time.time()) - 100
-        os.utime(self.tmppath('srv', 'test', 'versions', '1001'),
-                 (earlier, earlier))
-        self.app.gc(1)
-        self.assertEqual(self.app.deployed_versions, ['1'])
+class ApplicationGCTests(ApplicationTestCase):
+    """Application.gc()"""
+    def setUp(self):
+        super(ApplicationGCTests, self).setUp()
 
-    def test_gc_virtualenvs(self):
+        # Simulate 10 installs with version 3 as the live version.
         for version in range(10):
             self.mkdir('srv', 'test', 'versions', str(version))
             self.mkdir('srv', 'test', 'virtualenvs', str(version))
             os.symlink(os.path.join('..', 'virtualenvs', str(version)),
                        self.tmppath('srv', 'test', 'versions', str(version),
                                     'virtualenv'))
+
+        os.symlink(
+            os.path.join('versions', '3'), self.tmppath('srv', 'test', 'live'))
+
+        # Avoid the int-env hack
+        os.utime(self.tmppath('srv', 'test', 'versions', '3'), None)
+
+    def test_prunes_all_but_latest_installs_and_live_version(self):
         self.app.gc(2)
-        self.assertEqual(self.app.deployed_versions, ['8', '9'])
+        self.assertEqual(self.app.deployed_versions, ['3', '8', '9'])
+
+    def test_prunes_installs_versioned_higher_than_live_if_older_mtime(self):
+        self.mkdir('srv', 'test', 'versions', '1001')
+        earlier = int(time.time()) - 100
+        os.utime(self.tmppath('srv', 'test', 'versions', '1001'),
+                 (earlier, earlier))
+        self.app.gc(1)
+        self.assertEqual(self.app.deployed_versions, ['3'])
+
+    def test_prunes_all_but_latest_venvs_and_live_versions_venv(self):
+        self.app.gc(2)
         self.assertEqual(
             sorted(os.listdir(self.tmppath('srv', 'test', 'virtualenvs'))),
-            ['8', '9'])
+            ['3', '8', '9'])

@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 scripts/build.sh test_build
 
 cp setup.py test_build/
+cp -R bin test_build/
 
 mkdir -p test_build/reports
 
@@ -16,8 +17,7 @@ mkdir -p test_build/reports
 cd test_build/
 
 ./setup.py nosetests --with-xunit \
-                     --with-spec \
-                     --spec-color \
+                     --with-specplugin \
                      --xunit-file=reports/xunit.xml \
                      --cover-html \
                      --cover-html-dir=reports \

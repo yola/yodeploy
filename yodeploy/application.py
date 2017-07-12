@@ -6,7 +6,7 @@ import subprocess
 
 import yodeploy.config
 import yodeploy.ipc_logging
-import yodeploy.virtualenv
+from yodeploy import virtualenv
 from yodeploy.locking import LockFile, SpinLockFile
 from yodeploy.repository import version_sort_key
 from yodeploy.util import extract_tar, ignoring
@@ -16,11 +16,11 @@ log = logging.getLogger(__name__)
 
 
 class Application(object):
-    '''A deployable application.
+    """A deployable application.
 
     The deploy can be driven piece by piece, or by the deploy() function which
     will do it all in the right order.
-    '''
+    """
 
     def __init__(self, app, settings_file):
         self.app = app
@@ -30,6 +30,7 @@ class Application(object):
         if not os.path.isdir(self.appdir):
             os.makedirs(self.appdir)
         self.lock = LockFile(os.path.join(self.appdir, 'deploy.lock'))
+        self.compat = self.live_compat
 
     @property
     def live_version(self):
@@ -42,23 +43,35 @@ class Application(object):
             return dest[1]
 
     @property
+    def live_compat(self):
+        """Currently deployed version's compat level"""
+        compat_file = os.path.join(self.appdir, 'live', 'deploy', 'compat')
+        if not os.path.exists(compat_file):
+            return None
+        with open(compat_file) as f:
+            return int(f.read())
+
+    @property
     def deployed_versions(self):
         version_dir = os.path.join(self.appdir, 'versions')
         return sorted((version for version in os.listdir(version_dir)
                        if version != 'unpack'),
                       key=version_sort_key)
 
-    def deploy_ve(self, target, repository, version):
-        '''Unpack a virtualenv for the deploy hooks, and return its location
-        on the FS
-        '''
-        deploy_req_fn = os.path.join(self.appdir, 'versions', version,
+    def deploy_ve(self, target, repository, app_version):
+        """Prepare the deploy virtualenv.
+
+        Unpack a virtualenv for the deploy hooks, and return its location on
+        the FS.
+        """
+        deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        ve_hash = yodeploy.virtualenv.sha224sum(deploy_req_fn)
-        ve_hash = yodeploy.virtualenv.ve_version(ve_hash)
+        python_version = virtualenv.get_python_version(self.compat)
+        platform = self.settings.artifacts.platform
+        ve_id = virtualenv.get_id(deploy_req_fn, python_version, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
                                'virtualenvs')
-        ve_dir = os.path.join(ves_dir, ve_hash)
+        ve_dir = os.path.join(ves_dir, ve_id)
         if os.path.exists(ve_dir):
             return ve_dir
         ve_working = os.path.join(ves_dir, 'unpack')
@@ -67,9 +80,9 @@ class Application(object):
         ve_unpack_root = os.path.join(ve_working, 'virtualenv')
         tarball = os.path.join(ve_working, 'virtualenv.tar.gz')
         with SpinLockFile(os.path.join(ves_dir, 'deploy.lock'), timeout=30):
-            log.debug('Deploying hook virtualenv %s', ve_hash)
-            yodeploy.virtualenv.download_ve(repository, 'deploy', ve_hash,
-                                            target, tarball)
+            log.debug('Deploying hook virtualenv %s', ve_id)
+            virtualenv.download_ve(
+                repository, 'deploy', ve_id, target, tarball)
             extract_tar(tarball, ve_unpack_root)
             if os.path.exists(ve_dir):
                 shutil.rmtree(ve_dir)
@@ -83,20 +96,10 @@ class Application(object):
         if not os.path.isfile(fn):
             return
 
-        with open(os.path.join(self.appdir, 'versions', version, 'deploy',
-                               'compat')) as f:
-            compat = int(f.read())
-        if compat == 3:
-            module = 'yola.deploy.__main__'
-        elif compat == 4:
-            module = 'yodeploy.__main__'
-
         ve = self.deploy_ve(target, repository, version)
-        # .__main__ is needed for silly Python 2.6
-        # See http://bugs.python.org/issue2751
         tlss = yodeploy.ipc_logging.ThreadedLogStreamServer()
         cmd = [os.path.join(ve, 'bin', 'python'),
-               '-m', module,
+               '-m', 'yodeploy',
                '--config', self.settings_fn,
                '--app', self.app,
                '--hook', hook,
@@ -105,10 +108,13 @@ class Application(object):
         if target:
             cmd += ['--target', target]
         cmd += [self.appdir, version]
+
+        env = {
+            'PATH': os.environ['PATH'],
+        }
+
         try:
-            subprocess.check_call(cmd, env={
-                    'PATH': os.environ['PATH'],
-            })
+            subprocess.check_call(cmd, env=env, close_fds=False)
         except subprocess.CalledProcessError:
             log.error("Hook '%s' failed %s/%s", hook, self.app, version)
             raise Exception("Hook failed")
@@ -127,7 +133,7 @@ class Application(object):
         log.info('Deployed %s/%s', self.app, version)
 
     def unpack(self, target, repository, version):
-        '''First stage of deployment'''
+        """First stage of deployment"""
         assert self.lock.held
         log.debug('Unpacking %s/%s', self.app, version)
 
@@ -139,12 +145,15 @@ class Application(object):
         if not os.path.isdir(unpack_dir):
             os.makedirs(unpack_dir)
         tarball = os.path.join(unpack_dir, '%s.tar.gz' % self.app)
+
         with repository.get(self.app, version, target) as f1:
-            if f1.metadata.get('deploy_compat') not in ('3', '4'):
+            self.compat = int(f1.metadata.get('deploy_compat', 1))
+            if self.compat not in (4, 5):
                 raise Exception('Unsupported artifact: compat level %s'
-                                % f1.metadata.get('deploy_compat', 1))
-            with open(tarball, 'w') as f2:
+                                % self.compat)
+            with open(tarball, 'wb') as f2:
                 shutil.copyfileobj(f1, f2)
+
         extract_tar(tarball, os.path.join(unpack_dir, version))
         os.unlink(tarball)
         staging = os.path.join(self.appdir, 'versions', version)
@@ -154,13 +163,13 @@ class Application(object):
                   staging)
 
     def prepare(self, target, repository, version):
-        '''Post-unpack, pre-swing hook'''
+        """Post-unpack, pre-swing hook"""
         assert self.lock.held
         log.debug('Preparing %s/%s', self.app, version)
         self.hook('prepare', target, repository, version)
 
     def swing_symlink(self, version):
-        '''Make version live'''
+        """Make version live"""
         assert self.lock.held
         log.debug('Swinging %s/%s', self.app, version)
         # rename is atomic, symlink isn't
@@ -172,16 +181,17 @@ class Application(object):
         os.rename(temp_link, link)
 
     def deployed(self, target, repository, version):
-        '''Post-swing hook'''
+        """Post-swing hook"""
         assert self.lock.held
         log.debug('Deployed hook %s/%s', self.app, version)
         self.hook('deployed', target, repository, version)
 
     def gc(self, max_versions):
-        '''
+        """Garbage-collect artifacts.
+
         Remove all deployed versions except the most recent max_versions, and
         any live verisons.
-        '''
+        """
         with self.lock:
             old_versions = set(self.deployed_versions[:-max_versions])
             if self.live_version:

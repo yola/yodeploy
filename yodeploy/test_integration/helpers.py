@@ -3,13 +3,13 @@ import os
 import subprocess
 import shutil
 import sys
+import unittest
 
 from os.path import join
 
 
 from yodeploy.application import Application
 from yodeploy.deploy import deploy
-from yodeploy.tests import unittest
 from yodeploy.test_integration import deployconf
 from yodeploy.util import ignoring
 
@@ -23,17 +23,33 @@ def rmdir(path):
         shutil.rmtree(path)
 
 
+def rm(path):
+    with ignoring(errno.ENOENT):
+        os.remove(path)
+
+
 def clear(app_name):
     store = deployconf.deploy_settings.artifacts.store_settings.local.directory
     rmdir(join(store, app_name))
     rmdir(join(deployconf.deploy_settings.paths.apps, app_name))
 
 
+def cleanup_venv(app_name):
+    app_dir = os.path.join(tests_dir, 'samples', app_name)
+    rmdir(join(tests_dir, 'filesys', 'artifacts', app_name))
+    rmdir(join(app_dir, 'virtualenv'))
+    rm(join(app_dir, 'virtualenv.tar.gz'))
+
+
 def mock_using_current_venv(*args):
     """Return the directory that houses the python bin."""
-    if not hasattr(sys, 'real_prefix'):
+    py2ve = not getattr(sys, 'real_prefix', None)  # python 2.7
+    py3ve = getattr(sys, 'base_prefix', None) != sys.prefix  # py >3.3
+
+    if not py2ve and not py3ve:
         raise unittest.SkipTest("Test requires a virtual environment.")
-    return join(os.path.dirname(sys.executable), '..')
+
+    return os.path.realpath(join(os.path.dirname(sys.executable), '..'))
 
 
 def patch_deploy_venv(patch_with=None):
@@ -55,19 +71,20 @@ def build_sample(app_name, version='1'):
     app_dir = os.path.join(tests_dir, 'samples', app_name)
     env = {
         'PATH': os.environ['PATH'],
-        'PYTHONPATH': ':'.join(sys.path),
         'BUILD_NUMBER': version,
         'GIT_BRANCH': 'master',
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
 
     p = subprocess.Popen(
-        (script_path, '--no-virtualenvs', '--config', deployconf_fn),
+        (sys.executable, script_path, '--no-virtualenvs',
+            '--config', deployconf_fn),
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
-    if err or p.wait() != 0:
+
+    if p.wait() != 0:
         raise Exception(out + err)
 
 

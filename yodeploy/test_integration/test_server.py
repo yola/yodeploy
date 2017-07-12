@@ -1,7 +1,6 @@
 import base64
 import json
-
-from yoconfigurator.tests import unittest
+import unittest
 
 from yodeploy.flask_app.app import create_app
 from yodeploy.test_integration.helpers import (
@@ -19,9 +18,12 @@ class ServerTestCase(unittest.TestCase):
         self.username = self.flask_app.config.server.username
         self.password = self.flask_app.config.server.password
 
+        auth_header_val = '%s:%s' % (self.username, self.password)
+        auth_header_val = auth_header_val.encode()
+        auth_header_val = b'Basic %s' % base64.b64encode(auth_header_val)
+
         self.auth_header = {
-            'Authorization': 'Basic ' + base64.b64encode(
-                '%s:%s' % (self.username, self.password))
+            'Authorization': auth_header_val
         }
 
         self.app = self.flask_app.test_client()
@@ -30,14 +32,14 @@ class ServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, status_code)
 
         headers = headers or {}
-        for header, value in headers.iteritems():
+        for header, value in headers.items():
             self.assertEqual(response.headers[header], value)
 
     def assertDeployedApps(self, response, status_code=200, headers=None,
                            apps=None):
         self.assertResponse(response, status_code, headers)
 
-        json_response = json.loads(response.data)
+        json_response = json.loads(response.data.decode())
 
         self.assertTrue('applications' in json_response)
 
@@ -53,7 +55,7 @@ class ServerTestCase(unittest.TestCase):
                           name=None, version='1'):
         self.assertResponse(response, status_code, headers)
 
-        json_response = json.loads(response.data)
+        json_response = json.loads(response.data.decode())
 
         self.assertTrue('application' in json_response)
 

@@ -3,10 +3,14 @@ import logging
 import os
 import socket
 import sys
-import urlparse
 
 import requests
 from requests.exceptions import RequestException
+
+try:
+    from urllib.parse import urlparse, urlunparse  # python 3
+except ImportError:
+    from urlparse import urlparse, urlunparse  # python 2
 
 import yodeploy.application
 import yodeploy.config
@@ -15,10 +19,9 @@ import yodeploy.repository
 log = logging.getLogger(__name__)
 
 
-def configure_logging(verbose, conf, filename=None):
+def configure_logging(verbose, conf):
     """Set up logging."""
-    logging.basicConfig(
-        level=logging.DEBUG, filename=filename, stream=sys.stdout)
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     root = logging.getLogger()
 
     for handler in root.handlers:
@@ -39,10 +42,10 @@ def configure_logging(verbose, conf, filename=None):
 
 
 def strip_auth(url):
-    parts = urlparse.urlparse(url)
+    parts = urlparse(url)
     masked = parts._replace(
         netloc=parts.hostname + (':%s' % parts.port if parts.port else ''))
-    return urlparse.urlunparse(masked)
+    return urlunparse(masked)
 
 
 def report(app, action, target, old_version, version, deploy_settings):

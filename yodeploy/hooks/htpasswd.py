@@ -64,9 +64,6 @@ class AuthenticatedApp(ConfiguratedApp):
 
     HTPASSWD_DIR = '/etc/yola/htpasswd'
 
-    def __init__(self, *args, **kwargs):
-        super(AuthenticatedApp, self).__init__(*args, **kwargs)
-
     def prepare(self):
         super(AuthenticatedApp, self).prepare()
         self.auth_prepare()
@@ -82,14 +79,14 @@ class AuthenticatedApp(ConfiguratedApp):
         htpasswd_fn = os.path.join(self.HTPASSWD_DIR, self.app)
         htpasswd_conf = self.config.get(self.app).htpasswd
         with open(htpasswd_fn, 'w') as f:
-            for user, password in htpasswd_conf.get('users', {}).iteritems():
+            for user, password in htpasswd_conf.get('users', {}).items():
                 f.write('{0}:{1}\n'.format(
                     user, crypt.crypt(password, salt())))
 
             for client_name in htpasswd_conf.get('clients', []):
                 self._write_seeded_htpasswd_entry(f, client_name)
 
-        for group_name, clients in htpasswd_conf.get('groups', {}).iteritems():
+        for group_name, clients in htpasswd_conf.get('groups', {}).items():
             file_name = '{0}_{1}'.format(htpasswd_fn, group_name)
             with open(file_name, 'w') as f:
                 for client_name in clients:

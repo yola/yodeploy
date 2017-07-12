@@ -1,6 +1,76 @@
 Change Log
 ==========
 
+0.8.4
+-----
+
+* `TomcatServlet`: Support apps that don't have Apache vhosts.
+
+0.8.3
+-----
+
+* Add `is_daemon_enabled` method to `DaemonApp`, to allow customising
+  which daemons are installed.
+
+0.8.2
+-----
+
+* `DjangoApp`: Correctly detect Django version used. Until now yodeploy
+  has incorrectly assumed >= 1.7, when performing migrations.
+
+0.8.1
+-----
+
+* Add compat 5 for pure Python 3 apps.
+* Internal API changes to `yodeploy.virtualenv`:
+  - Added `get_python_version`, to return the Python version that an app
+    will run under.
+  - `get_id`, `create_ve`, `relocateable_ve` now require a
+    `python_version` argument.
+  - Replaced `install_requirements` with `pip_install`.
+
+0.8.0
+-----
+
+* Add experimental support for Python >= 3.4
+* Python apps:
+  - The platform name (used for differentiating virtualenvs) now comes
+    from yodeploy's settings: `artifacts.platform`.
+  - virtualenvs are built with `pip`.
+* `TomcatServlet`:
+  - Drop Tomcat 6 support.
+  - Add (preliminary) Tomcat 8 support.
+  - Append `.conf` to vhosts (cleaning up old vhosts in the process).
+* `UpstartApp` and `SupervisordApp`: Replaced with `DaemonApp`, which
+  behaves identically, and will use the same templates.
+* Internal API changes to `yodeploy.virtualenv`:
+  - `ve_version()` is replaced with `ve_id()`.
+  - `create_ve()` requires a `platform` argument.
+* Internal API changes to `yodeploy.repository` repositories:
+  - `.get()` always returns byte buffers
+  - `put()` accept unicode strings, unicode buffers, byte strings, and
+     byte buffers.
+* test suite: suffix test-data dir with python version data to avoid
+  cross-environment collisions when running the test suite with cached data
+* test suite: Install a copy of the current yodeploy checkout (in
+  whatever state it's in) into the test virtualenv rather than the latest
+  version from the configured package index
+* test suite: Ensure that the test process does not hang indefinitely due to
+  ThreadedLogStreamServer failures.
+
+0.7.3
+-----
+
+* NOTE: From now YoDeploy requires Python >= 2.7.
+* Make `hooks.django.DjangoApp.manage_py` method return command output.
+
+
+0.7.2
+-----
+
+* Add Django 1.9+ compatibility for `migrate` command (`syncdb` still works
+  for Django 1.6 and lower)
+
 0.7.1
 ------
 

@@ -1,0 +1,2 @@
+yoconfigurator==0.5.2
+yoconfigurator==0.5.1

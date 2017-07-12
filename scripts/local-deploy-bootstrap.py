@@ -7,8 +7,8 @@
 #  yoconfigurator:
 #    - Installs scripts to ~/bin
 #  deployconfigs
-#    - Configures configs/hostname.py
-
+#    - Configures yodeploy.conf.py
+from __future__ import print_function
 import contextlib
 import errno
 import logging
@@ -21,11 +21,19 @@ import socket
 import subprocess
 import sys
 import tarfile
-import urllib2
-import urlparse
+
+try:  # python 3
+    from urllib.request import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urllib.parse import urljoin, urlparse, urlunparse
+except ImportError:  # python 2
+    from urllib2 import (
+        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+    from urlparse import urljoin, urlparse, urlunparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import yodeploy.config
+
+import yodeploy.config  # noqa
 
 
 GIT_REPO = 'git@github.com:yola/%s.git'
@@ -35,18 +43,26 @@ GIT_MIRRORS = (
 
 log = logging.getLogger('local-bootstrap')
 
+try:
+    # overrwrite unsafe python 2 input method with raw_input, which does not
+    # eval user input.
+    input = raw_input
+except NameError:
+    # in python 3 raw_input is already renamed to input
+    pass
+
 
 def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
-        print
-        input_ = raw_input('%s [Y/n] ' % message)
+        print()
+        input_ = input('%s [Y/n] ' % message)
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
         if input_ in ('n', 'no'):
             return False
-        print 'Invalid selection'
+        print('Invalid selection')
 
 
 def abort(message):
@@ -58,9 +74,37 @@ def abort(message):
 def binary_available(name):
     """Check if a program is available in PATH"""
     for dir_ in os.environ.get('PATH', '').split(':'):
-        if os.access(os.path.join(dir_, name), os.X_OK):
-            return True
+        fn = os.path.join(dir_, name)
+        if os.access(fn, os.X_OK):
+            return fn
     return False
+
+
+def setup_profile():
+    """Check ~/.profile for a .bashrc source, adding it if necessary"""
+    create_profile = None
+
+    for profile in ('~/.bash_profile', '~/.bash_login', '~/.profile'):
+        fn = os.path.expanduser(profile)
+        if not os.path.isfile(fn):
+            continue
+
+        with open(fn) as f:
+            for line in f:
+                if re.match(r'^\s*(\.|source)\s+"?(~|$HOME)/\.bashrc"?\s*$',
+                            line):
+                    return
+
+        create_profile = fn
+        break
+    else:
+        if confirm("You don't seem to have a .profile.\n"
+                   "Create it, sourcing .bashrc?"):
+            create_profile = os.path.expanduser('~/.profile')
+
+    if create_profile:
+        with open(create_profile, 'a') as f:
+            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
 
 
 def check_environment():
@@ -71,29 +115,18 @@ def check_environment():
     if not binary_available('git'):
         abort('We require git to be installed')
 
-    bin_ = os.path.expanduser('~/bin')
     bashrc_additions = []
-    if not os.path.isdir(bin_):
-        if confirm("You don't seem to have a ~/bin directory.\n"
-                   "Create it, and add a line to your .bashrc to add it to "
-                   "your PATH?"):
-            os.mkdir(bin_)
-            bashrc_additions.append('export PATH=~/"bin:$PATH"')
-            os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
+    if not binary_available('build-virtualenv'):
+        bin_ = os.path.expanduser('~/bin')
+        if not os.path.isdir(bin_):
+            if confirm("You don't seem to have a ~/bin directory.\n"
+                       "Create it, and add a line to your .bashrc to add it "
+                       "to your PATH?"):
+                os.mkdir(bin_)
+                bashrc_additions.append('export PATH=~/"bin:$PATH"')
+                os.environ['PATH'] += ':' + os.path.expanduser('~/bin')
 
-    profiles = [profile for profile in
-                ('~/.bash_profile', '~/.bash_login', '~/.profile')
-                if os.path.isfile(os.path.expanduser(profile))]
-    profile = None
-    if profiles:
-        if not confirm("%s exists. Does it source ~/.bashrc?" % profiles[0]):
-            profile = os.path.expanduser(profiles[0])
-    elif confirm("You don't seem to have a .profile.\n"
-                 "Create it, sourcing .bashrc?"):
-        profile = os.path.expanduser('~/.profile')
-    if profile:
-        with open(profile, 'a') as f:
-            f.write("# Created by Yola's local-bootstrap\n. ~/.bashrc\n")
+        setup_profile()
 
     if 'YOLA_SRC' in os.environ:
         yola_src = os.environ['YOLA_SRC']
@@ -102,8 +135,8 @@ def check_environment():
         log.info("The YOLA_SRC environment variable exists. Following it")
     else:
         if 'YOLA_SRC' not in os.environ:
-            input_ = raw_input('Where do you keep your Yola GIT checkouts? '
-                               '[Default: ~/src/]: ')
+            input_ = input('Where do you keep your Yola GIT checkouts? '
+                           '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
                 input_ = '~/src'
@@ -122,8 +155,8 @@ def check_environment():
                 os.mkdir(yola_src)
 
     if bashrc_additions:
-        bashrc_additions = ['', "# Added by Yola's local-bootstrap"
-                           ] + bashrc_additions + ['']
+        bashrc_additions = [
+            '', "# Added by Yola's local-bootstrap"] + bashrc_additions + ['']
         with open(os.path.expanduser('~/.bashrc'), 'a') as f:
             f.write('\n'.join(bashrc_additions))
 
@@ -144,7 +177,7 @@ def call(cmd, *args, **kwargs):
     log.debug('Calling %s', ' '.join(cmd))
     try:
         return subprocess.call(cmd, *args, **kwargs)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             return 127
         raise
@@ -168,7 +201,7 @@ def git_mirror_available():
         our_netrc = None
 
     for name, url in GIT_MIRRORS:
-        parsed = urlparse.urlparse(url)
+        parsed = urlparse(url)
         if parsed.scheme:
             host = parsed.hostname
             port = parsed.scheme
@@ -209,7 +242,8 @@ def clone(app, yola_src, branch='master'):
 
     if (os.path.isdir(appdir)
             and not os.path.isdir(os.path.join(appdir, '.git'))):
-        if confirm("%s exists but isn't a git repository"):
+        if confirm("%s exists but isn't a git repository.\nDelete it?"
+                   % appdir):
             shutil.rmtree(appdir)
 
     mirror = git_mirror_available()
@@ -246,25 +280,27 @@ def deploy_settings():
     return yodeploy.config.load_settings(deploy_settings_location())
 
 
-def bootstrap_virtualenv(cmd):
-    """
-    Bootstrap a virtualenv
-    cmd specifies the location of virtualenv.py
-    """
-    check_call((cmd, 'bootstrap_ve'))
+def bootstrap_virtualenv(virtualenv_path=None):
+    """Bootstrap a virtualenv.
 
-    packages = []
-    with open('requirements.txt') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('#') or not line:
-                continue
-            packages.append(line)
+    virtualenv_path should be the path to a virtualenv.py file to be used for
+    bootstrap_ve execution. If left unspecified, bootstrap_virtualenv will
+    attempt to use whatever virtualenv command exists on the user's path.
 
-    check_call(['bootstrap_ve/bin/python',
-                'bootstrap_ve/bin/easy_install',
-                '-i', deploy_settings().build.pypi,
-               ] + packages)
+    """
+    cmd = ('virtualenv', '--python={}'.format(sys.executable), 'bootstrap_ve')
+
+    if virtualenv_path:
+        cmd = (sys.executable, virtualenv_path, 'bootstrap_ve')
+
+    check_call(cmd)
+
+    check_call([
+        'bootstrap_ve/bin/python',
+        '-m', 'pip', 'install',
+        '--index-url', deploy_settings().build.pypi,
+        '-r', 'requirements.txt'
+    ])
 
 
 def find_required_version(package):
@@ -283,21 +319,21 @@ def urlopener_with_auth(url):
     open it.
     Uses urllib2, so SSL certs aren't verified.
     """
-    opener = urllib2.build_opener()
-    parsed = urlparse.urlparse(url)
+    opener = build_opener()
+    parsed = urlparse(url)
     if parsed.username and parsed.password:
         host = parsed.hostname
         if parsed.port:
             host += ':%i' % parsed.port
         stripped_auth = (parsed[0], host) + parsed[2:]
-        url = urlparse.urlunparse(stripped_auth)
+        url = urlunparse(stripped_auth)
 
-        passwd_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        base_url = urlparse.urlunparse((parsed[0], host, '', '', '', ''))
+        passwd_mgr = HTTPPasswordMgrWithDefaultRealm()
+        base_url = urlunparse((parsed[0], host, '', '', '', ''))
         passwd_mgr.add_password(realm=None, uri=base_url,
                                 user=parsed.username, passwd=parsed.password)
-        auth_handler = urllib2.HTTPBasicAuthHandler(passwd_mgr)
-        opener = urllib2.build_opener(auth_handler)
+        auth_handler = HTTPBasicAuthHandler(passwd_mgr)
+        opener = build_opener(auth_handler)
     return url, opener
 
 
@@ -316,11 +352,11 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     href_re = re.compile(r'<a href="(.+?)">')
     f = opener.open(os.path.join(pypi, app))
     try:
-        for match in href_re.finditer(f.read()):
+        for match in href_re.finditer(f.read().decode('utf-8')):
             path = match.group(1).split('#', 1)[0]
             name = os.path.basename(path)
             if name == expected_name:
-                url = urlparse.urljoin(pypi, path)
+                url = urljoin(pypi, path)
                 break
         else:
             raise Exception('%s version %s not found on PyPI' % (app, version))
@@ -330,7 +366,7 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     log.debug('Downloading %s', url)
     f_in = opener.open(url)
     try:
-        with open(expected_name, 'w') as f_out:
+        with open(expected_name, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     finally:
         f_in.close()
@@ -338,13 +374,26 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     return expected_name
 
 
-def build_virtualenv(bootstrap=False):
+def infer_compat_version():
+    """Return appropriate compat level for the python version"""
+    major_version_to_compat = {
+        2: 4,
+        3: 5,
+    }
+    return major_version_to_compat[sys.version_info.major]
+
+
+def build_virtualenv(bootstrap=False, compat=None):
     """Build a virtualenv for CWD, bootstrapping if necessary"""
     if not binary_available('build-virtualenv') and not bootstrap:
         raise Exception("build-virtualenv can't be found on PATH")
 
     # Already bootstrapped
-    if call(('build-virtualenv',)) == 0:
+    command = ['build-virtualenv']
+    if compat:
+        command.append('--compat={}'.format(compat))
+
+    if call(command) == 0:
         return
 
     if not bootstrap:
@@ -355,9 +404,9 @@ def build_virtualenv(bootstrap=False):
              '-m', 'yodeploy.cmds.build_virtualenv')) == 0:
         return
 
-    # Bootstrap a virtualenv with easy_install
+    # Bootstrap a virtualenv
     if binary_available('virtualenv'):
-        bootstrap_virtualenv('virtualenv')
+        bootstrap_virtualenv()
     else:
         version = find_required_version('virtualenv')
         pypi = deploy_settings().build.pypi
@@ -367,7 +416,7 @@ def build_virtualenv(bootstrap=False):
         tar.close()
         os.unlink(fn)
         virtualenv_py = 'virtualenv-%s/virtualenv.py' % version
-        os.chmod(virtualenv_py, 0755)
+        os.chmod(virtualenv_py, 0o755)
         bootstrap_virtualenv(virtualenv_py)
         shutil.rmtree('virtualenv-%s' % version)
 
@@ -380,12 +429,17 @@ def build_virtualenv(bootstrap=False):
 def write_wrapper(script, ve, args=None):
     """Install a wrapper for script in ~/bin"""
     name = os.path.basename(script).rsplit('.', 1)[0].replace('_', '-')
-    wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
+    # Re-use existing paths
+    wrapper_name = binary_available(name)
+    if not wrapper_name:
+        wrapper_name = os.path.join(os.path.expanduser('~/bin'), name)
+
     if args:
         script = ' '.join([script] + list(args))
     with open(wrapper_name, 'w') as f:
         f.write('#!/bin/sh\nexec %s %s "$@"\n' % (ve, script))
-    os.chmod(wrapper_name, 0755)
+    os.chmod(wrapper_name, 0o755)
 
 
 def setup_deployconfigs(yola_src):
@@ -398,9 +452,9 @@ def setup_deployconfigs(yola_src):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
 
-        shutil.copyfile(os.path.join(yola_src, 'deployconfigs', 'other',
-                                     'yodeploy.conf.py'),
-                        deploy_settings_fn)
+        os.symlink(os.path.join(yola_src, 'deployconfigs', 'other',
+                                'yodeploy.conf.py'),
+                   deploy_settings_fn)
 
 
 def setup_yodeploy(yola_src):
@@ -422,7 +476,7 @@ def setup_yoconfigurator(yola_src):
     """Configure yoconfigurator"""
     root = os.path.join(yola_src, 'yoconfigurator')
     with chdir(root):
-        build_virtualenv()
+        build_virtualenv(compat=infer_compat_version())
 
     # Install our single wrapper script
     ve = os.path.join(root, 'virtualenv', 'bin', 'python')

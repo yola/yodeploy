@@ -4,6 +4,8 @@ import os
 import subprocess
 import sys
 
+from pkg_resources import parse_version
+
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.python import PythonApp
 from yodeploy.util import chown_r, ignoring, touch
@@ -39,7 +41,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                 continue
             with ignoring(errno.EEXIST):
                 os.mkdir(os.path.dirname(logfile))
-            touch(logfile, self.log_user, self.log_group, 0640)
+            touch(logfile, self.log_user, self.log_group, 0o640)
 
     def call_compress(self):
         if not self.compress:
@@ -91,6 +93,18 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         if os.path.exists(data_dir):
             chown_r(data_dir, 'www-data', 'www-data')
 
+    @property
+    def django_version(self):
+        return parse_version(self.manage_py('version'))
+
+    def run_migrate_commands(self):
+        if self.django_version >= parse_version('1.7.0'):
+            self.manage_py('migrate', '--noinput')
+        else:
+            self.manage_py('syncdb', '--noinput')
+            if self.has_migrations:
+                self.manage_py('migrate')
+
     def migrate(self):
         log.info('Running migrations on %s', self.app)
         if self.config is None:
@@ -108,9 +122,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
             if not os.path.exists(aconf.db.name):
                 new_db = True
 
-        self.manage_py('syncdb', '--noinput')
-        if self.has_migrations:
-            self.manage_py('migrate')
+        self.run_migrate_commands()
 
         if new_db:
             seed_data = self.deploy_path(self.app, 'seed_data.json')
@@ -126,7 +138,7 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                command] + list(args)
         log.debug("Executing %r", cmd)
         try:
-            subprocess.check_call(cmd, cwd=self.deploy_dir)
+            return subprocess.check_output(cmd, cwd=self.deploy_dir)
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)

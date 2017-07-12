@@ -1,0 +1,9 @@
+[Unit]
+Description=yodeploy flask server
+
+[Service]
+ExecStart=/usr/local/bin/yodeploy-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

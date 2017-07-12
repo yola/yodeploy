@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import argparse
 import copy
 import json
@@ -8,22 +8,28 @@ import shutil
 import socket
 import subprocess
 import sys
-import urllib2
 from xml.etree import ElementTree
+
+try:
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import Request, urlopen, URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yoconfigurator.base import write_config
-from yoconfigurator.filter import filter_config
-from yoconfigurator.smush import config_sources, smush_config
-import yodeploy.config
-import yodeploy.repository
+from yoconfigurator.base import write_config  # noqa
+from yoconfigurator.filter import filter_config  # noqa
+from yoconfigurator.smush import config_sources, smush_config  # noqa
+import yodeploy.config  # noqa
+import yodeploy.repository  # noqa
+from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
-                 deploy_settings, repository, build_virtualenvs,
-                 upload_virtualenvs):
+                 deploy_settings, deploy_settings_file, repository,
+                 build_virtualenvs, upload_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -33,6 +39,7 @@ class Builder(object):
         self.branch = branch
         self.tag = tag
         self.deploy_settings = deploy_settings
+        self.deploy_settings_file = deploy_settings_file
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
@@ -70,19 +77,62 @@ class Builder(object):
             'description': description,
             'context': context,
         }
-        req = urllib2.Request(
+        req = Request(
             url=url,
             data=json.dumps(data),
             headers={
                 'Authorization': 'token %s' % settings.oauth_token,
             })
         try:
-            urllib2.urlopen(req)
-        except urllib2.URLError, e:
-            print >> sys.stderr, "Failed to notify GitHub: %s" % e
+            urlopen(req)
+        except URLError as e:
+            print('Failed to notify GitHub: %s' % e, file=sys.stderr)
+
+    def configure(self):
+        build_settings = self.deploy_settings.build
+        configs_dirs = [build_settings.configs_dir]
+        app_conf_dir = os.path.join('deploy', 'configuration')
+        sources = config_sources(self.app, build_settings.environment,
+                                 build_settings.cluster,
+                                 configs_dirs, app_conf_dir, build=True)
+        config = smush_config(sources,
+                              initial={'yoconfigurator': {
+                                  'app': self.app,
+                                  'environment': build_settings.environment,
+                              }})
+        write_config(config, '.')
+
+        # public configuration
+        public_filter_pathname = os.path.join(app_conf_dir, 'public-data.py')
+        public_config = filter_config(config, public_filter_pathname)
+        if public_config:
+            write_config(public_config, '.', 'configuration_public.json')
 
     def prepare(self):
-        pass
+        python = os.path.abspath(sys.executable)
+        build_ve = os.path.abspath(__file__.replace('build_artifact',
+                                                    'build_virtualenv'))
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+                                   '--target', self.target, '--download',
+                                   '--config', self.deploy_settings_file,
+                                   '--compat=%i' % self.compat]
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
+                                '--target', self.target, '--download',
+                                '--config', self.deploy_settings_file]
+        if self.upload_virtualenvs:
+            build_deploy_virtualenv.append('--upload')
+            build_app_virtualenv.append('--upload')
+
+        if self.build_virtualenvs:
+            print_banner('Build deploy virtualenv')
+            check_call(build_deploy_virtualenv, cwd='deploy',
+                       abort='build-virtualenv failed')
+            shutil.rmtree('deploy/virtualenv')
+            os.unlink('deploy/virtualenv.tar.gz')
+        if os.path.exists('requirements.txt'):
+            print_banner('Build app virtualenv')
+            check_call(build_app_virtualenv, abort='build-virtualenv failed')
+        self.configure()
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
@@ -117,7 +167,7 @@ class Builder(object):
             if os.path.isfile(report_path):
                 test_tree = ElementTree.parse(report_path)
                 test_suite = test_tree.find('testsuite') or test_tree.getroot()
-                for (k, v) in test_suite.attrib.iteritems():
+                for (k, v) in test_suite.attrib.items():
                     if k in results:
                         results[k] += int(v)
 
@@ -136,110 +186,6 @@ class Builder(object):
             abort(msg)
 
     def upload(self):
-        raise NotImplemented()
-
-    def summary(self):
-        print_banner('Summary')
-        print 'App: %s' % self.app
-        print 'Target: %s' % self.target
-        print 'Version: %s' % self.version
-        print 'Branch: %s' % self.branch
-        print 'Commit: %s' % self.commit
-        print 'Commit message: %s' % self.commit_msg
-        jenkins_tag = ''
-        if self.tag:
-            print 'Tag: %s' % self.tag
-            jenkins_tag = ' (tag: %s)' % self.tag
-        print
-        print ('Jenkins description: %s:%.8s%s "%s"'
-               % (self.branch.replace('origin/', ''), self.commit,
-                  jenkins_tag, self.commit_msg))
-
-
-class BuildCompat1(Builder):
-    """The old shell deploy system"""
-
-    def dcs_target(self):
-        if self.deploy_settings.artifacts.environment == 'integration':
-            return 'integration'
-        if self.target == 'master':
-            return 'trunk'
-        return self.target
-
-    def prepare(self):
-        # Legacy config
-        self.distname = os.environ.get('DISTNAME', self.app)
-        self.dcs = os.environ.get('DEPLOYSERVER',
-                                  self.deploy_settings.build.deploy_content_server)
-        self.artifact = os.environ.get('ARTIFACT', './dist/%s.tar.gz'
-                                                   % self.distname)
-        print 'Environment:'
-        print ' DISTNAME=%s' % self.distname
-        print ' DEPLOYSERVER=%s' % self.dcs
-        print ' ARTIFACT=%s' % self.artifact
-
-    def build_env(self):
-        env = super(BuildCompat1, self).build_env()
-        env['DISTNAME'] = self.distname
-        env['DEPLOYSERVER'] = self.dcs
-        env['ARTIFACT'] = self.artifact
-        return env
-
-    def upload(self):
-        print_banner('Upload')
-        check_call(' '.join(('./scripts/upload.sh', '%s-%s' % (self.app,
-                                                               self.dcs_target()),
-                             self.version, self.artifact)),
-                   shell=True, env=self.build_env(), abort='Upload script failed')
-
-
-class BuildCompat3(Builder):
-    compat = 3
-
-    def configure(self):
-        build_settings = self.deploy_settings.build
-        configs_dirs = [build_settings.configs_dir]
-        app_conf_dir = os.path.join('deploy', 'configuration')
-        sources = config_sources(self.app, build_settings.environment,
-                                 build_settings.cluster,
-                                 configs_dirs, app_conf_dir, build=True)
-        config = smush_config(sources,
-                              initial={'yoconfigurator': {
-                                  'app': self.app,
-                                  'environment': build_settings.environment,
-                             }})
-        write_config(config, '.')
-
-        # public configuration
-        public_filter_pathname = os.path.join(app_conf_dir, 'public-data.py')
-        public_config = filter_config(config, public_filter_pathname)
-        if public_config:
-            write_config(public_config, '.', 'configuration_public.json')
-
-    def prepare(self):
-        python = os.path.abspath(sys.executable)
-        build_ve = os.path.abspath(__file__.replace('build_artifact',
-                                                    'build_virtualenv'))
-        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
-                                   '--target', self.target, '--download']
-        build_app_virtualenv = [python, build_ve, '-a', self.app,
-                                '--target', self.target, '--download']
-        if self.upload_virtualenvs:
-            build_deploy_virtualenv.append('--upload')
-            build_app_virtualenv.append('--upload')
-
-        if self.build_virtualenvs:
-            print_banner('Build deploy virtualenv')
-            check_call(build_deploy_virtualenv, cwd='deploy',
-                       abort='build-virtualenv failed')
-            shutil.rmtree('deploy/virtualenv')
-            os.unlink('deploy/virtualenv.tar.gz')
-        if os.path.exists('requirements.txt'):
-            print_banner('Build app virtualenv')
-            check_call(build_app_virtualenv, abort='build-virtualenv failed')
-        self.configure()
-
-    def upload(self):
         print_banner('Upload')
         artifact = 'dist/%s.tar.gz' % self.app
         metadata = {
@@ -251,14 +197,35 @@ class BuildCompat3(Builder):
         if self.tag:
             metadata['vcs_tag'] = self.tag
 
-        with open(artifact) as f:
+        with open(artifact, 'rb') as f:
             self.repository.put(self.app, self.version, f, metadata,
                                 target=self.target)
-        print 'Uploaded'
+        print('Uploaded')
+
+    def summary(self):
+        print_banner('Summary')
+        print('App: %s' % self.app)
+        print('Target: %s' % self.target)
+        print('Version: %s' % self.version)
+        print('Branch: %s' % self.branch)
+        print('Commit: %s' % self.commit)
+        print('Commit message: %s' % self.commit_msg)
+        jenkins_tag = ''
+        if self.tag:
+            print('Tag: %s' % self.tag)
+            jenkins_tag = ' (tag: %s)' % self.tag
+        print()
+        print('Jenkins description: %s:%.8s%s "%s"' % (
+            self.branch.replace('origin/', ''), self.commit, jenkins_tag,
+            self.commit_msg))
 
 
-class BuildCompat4(BuildCompat3):
+class BuildCompat4(Builder):
     compat = 4
+
+
+class BuildCompat5(Builder):
+    compat = 5
 
 
 def parse_args(default_app):
@@ -331,28 +298,16 @@ def check_call(*args, **kwargs):
             raise
 
 
-def check_output(*args, **kwargs):
-    '''
-    Backport of subprocess.check_output, with enough features for this module
-    '''
-    p = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
-    output = p.communicate()[0]
-    ret = p.poll()
-    if ret:
-        raise subprocess.CalledProcessError(ret, args)
-    return output
-
-
 def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
         'ascii': {
-            'ul': '+',
-            'ur': '+',
-            'dl': '+',
-            'dr': '+',
-            'h': '-',
-            'v': '|',
+            'ul': u'+',
+            'ur': u'+',
+            'dl': u'+',
+            'dr': u'+',
+            'h': u'-',
+            'v': u'|',
         },
         'light': {
             'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
@@ -388,7 +343,7 @@ def print_box(lines, border='light'):
         output.append(borders['v'] + line.ljust(width) + borders['v'])
     output.append(borders['ur'] + borders['h'] * width + borders['ul'])
 
-    print '\n'.join(line.encode('utf-8') for line in output)
+    print(*output, sep='\n')
 
 
 def print_banner(message, width=79, position='left', **kwargs):
@@ -408,7 +363,7 @@ def print_banner(message, width=79, position='left', **kwargs):
 
 
 def abort(message):
-    print >> sys.stderr, message
+    print(message, file=sys.stderr)
     print_banner('Aborted')
     sys.exit(1)
 
@@ -425,7 +380,9 @@ class GitHelper(object):
     def commit(self):
         commit = os.environ.get('GIT_COMMIT')
         if not commit:
-            commit = check_output(('git', 'rev-parse', 'HEAD')).strip()
+            commit = subprocess.check_output(
+                ('git', 'rev-parse', 'HEAD'), universal_newlines=True)
+            commit = commit.strip()
         return commit
 
     @property
@@ -434,7 +391,9 @@ class GitHelper(object):
         if branch:
             return branch
         git_branch = ('git', 'branch', '-r', '--contains', 'HEAD')
-        rbranches = check_output(git_branch)
+        rbranches = subprocess.check_output(
+            git_branch, universal_newlines=True)
+
         for rbranch in rbranches.splitlines():
             if ' -> ' in rbranch:
                 continue
@@ -445,14 +404,23 @@ class GitHelper(object):
     @property
     def commit_msg(self):
         git_show = ('git', 'show', '-s', '--format=%s', self.commit)
-        msg = check_output(git_show).strip()
-        # amazon gets unhappy when you attach non-ascii meta
-        ascii_msg = msg.decode('utf-8').encode('ascii', 'replace')
-        return ascii_msg
+        # using universal_newlines below would introduce a string type
+        # inconsitency between python 2/3, so we deliberately don't use it
+        # so that check_output always returns a byte string here.
+        msg = subprocess.check_output(git_show).strip().decode('utf-8')
+
+        # amazon gets unhappy when you attach non-ascii meta, so we convert
+        # it to an ascii string causing us to drop all unicode characters
+        # (they become ?), but then we change the string back to a unicode
+        # string so that it's json.dump friendly in python 3.
+        msg = msg.encode('ascii', 'replace').decode('ascii')
+        return msg
 
     @property
     def tag(self):
-        tags = check_output(('git', 'tag', '--contains', self.commit))
+        tags = subprocess.check_output(
+            ('git', 'tag', '--contains', self.commit), universal_newlines=True)
+
         tag = None
         for line in tags.splitlines():
             line = line.strip()
@@ -464,6 +432,8 @@ class GitHelper(object):
 
 
 def main():
+    ensure_unicode_compatible()
+
     default_app = os.environ.get('JOB_NAME', os.path.basename(os.getcwd()))
     opts = parse_args(default_app)
 
@@ -471,16 +441,15 @@ def main():
     if os.path.exists('deploy/compat'):
         with open('deploy/compat') as f:
             compat = int(f.read().strip())
-    print 'Detected build compat level %s' % compat
+    print('Detected build compat level %s' % compat)
     try:
         BuilderClass = {
-            1: BuildCompat1,
-            3: BuildCompat3,
             4: BuildCompat4,
+            5: BuildCompat5,
         }[compat]
     except KeyError:
-        print >> sys.stderr, ('Only legacy and yodeploy compat >=3 apps '
-                              'are supported')
+        print('Only legacy and yodeploy compat >=4 apps are supported',
+              file=sys.stderr)
         sys.exit(1)
 
     deploy_settings = yodeploy.config.load_settings(opts.config)
@@ -502,6 +471,7 @@ def main():
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
+                           deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
                            upload_virtualenvs=upload_virtualenvs)

@@ -1,4 +1,5 @@
 import os
+import sysconfig
 
 
 class AttrDict(dict):
@@ -15,6 +16,7 @@ deploy_settings = AttrDict(
     artifacts=AttrDict(
         cluster='',
         store="local",
+        platform=sysconfig.get_platform(),
         store_settings=AttrDict(
             local=AttrDict(
                 directory=os.path.join(test_dir, 'filesys', 'artifacts')
@@ -31,6 +33,7 @@ deploy_settings = AttrDict(
             report=False,
         ),
         configs_dir='',
+        pypi=None,
     ),
 
     deployconfigs=AttrDict(

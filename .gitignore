@@ -4,12 +4,13 @@
 /.coverage
 /build
 /dist
-/test-build
-/test-data
+/test_build
+/test-data*
 /yodeploy/test_integration/filesys/*
 /yodeploy/test_integration/samples/*/configuration.json
 /yodeploy/test_integration/samples/*/configuration_public.json
 /yodeploy/test_integration/samples/*/build
 /yodeploy/test_integration/samples/*/dist
+/yodeploy/test_integration/samples/*/virtualenv*
 /virtualenv
 /virtualenv.tar.gz

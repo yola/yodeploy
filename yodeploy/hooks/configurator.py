@@ -1,3 +1,4 @@
+import codecs
 import json
 import logging
 import os
@@ -51,7 +52,7 @@ class ConfiguratedApp(TemplatedApp):
         with SpinLockFile(os.path.join(conf_root, 'deploy.lock'), timeout=30):
             try:
                 with self.repository.get('configs', target='master') as f1:
-                    with open(conf_tarball, 'w') as f2:
+                    with open(conf_tarball, 'wb') as f2:
                         shutil.copyfileobj(f1, f2)
             except KeyError:
                 raise Exception("No configs in artifacts repository")
@@ -97,10 +98,25 @@ class ConfiguratedApp(TemplatedApp):
         """
         if not self.public_config_js_path:
             return
+
         path = self.deploy_path(self.public_config_js_path)
         pub_conf_json = json.dumps(self.pub_config)
-        with open(path, 'r') as f:
+        token = self.public_config_token
+
+        # Convert python 2 byte strings to unicode
+        try:
+            pub_conf_json = pub_conf_json.decode('utf-8')
+        except AttributeError:
+            pass
+        try:
+            token = token.decode('utf-8')
+        except AttributeError:
+            pass
+
+        with codecs.open(path, 'r', 'utf-8') as f:
             content = f.read()
-        content = content.replace(self.public_config_token, pub_conf_json)
-        with open(path, 'w') as f:
+
+        content = content.replace(token, pub_conf_json)
+
+        with codecs.open(path, 'w', 'utf-8') as f:
             f.write(content)
