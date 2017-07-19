@@ -452,6 +452,8 @@ def setup_deployconfigs(yola_src):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
 
+        if os.path.lexists(deploy_settings_fn):
+            os.unlink(deploy_settings_fn)
         os.symlink(os.path.join(yola_src, 'deployconfigs', 'other',
                                 'yodeploy.conf.py'),
                    deploy_settings_fn)
