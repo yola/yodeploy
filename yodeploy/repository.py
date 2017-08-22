@@ -183,7 +183,7 @@ class S3RepositoryStore(object):
                  encrypted):
         s3 = boto.connect_s3(
             access_key, secret_key,
-            calling_format='boto.s3.connection.OrdinaryCallingFormat')
+            calling_format=boto.s3.connection.OrdinaryCallingFormat())
         self.bucket = s3.get_bucket(bucket)
         self.reduced_redundancy = reduced_redundancy
         self.encrypted = encrypted
