@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.8.5
+-----
+
+* `DjangoApp`: Python 3 support in south vs native migration detection.
+
 0.8.4
 -----
 
