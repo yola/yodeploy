@@ -4,6 +4,27 @@ yodeploy
 
 Python helpers for Yola's Deployment system.
 
+How the deployment system works
+--------------------------------
+
+When code is merged to the `master` or `release` branch, Jenkins will create a
+release artifact by running build/dist scripts in the project's `scripts`
+folder ([example](https://github.com/yola/sbbe/tree/master/scripts)) and upload
+it to S3.
+
+To deploy the artifact, yodeploy must be installed on the target server. Then
+the [deploy command](https://github.com/yola/yodeploy/blob/master/yodeploy/cmds/deploy.py)
+is run (either automatically by Jenkins for QA/envs, or by an engineer for production),
+and the yodeploy on the server does the following:
+
+- Downloads the release artifact from S3
+- Determines if a new virtualenv needs to be created for the artifact's
+  `requirements.txt` by looking for an existing virtualenv with an id matching:
+  `[python version]-[platform]-[hash of requirements.txt]`
+- Builds new virtualenv if necessary.
+- 
+
+
 Using the hooks
 ---------------
 
