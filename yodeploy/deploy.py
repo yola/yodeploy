@@ -48,9 +48,11 @@ def strip_auth(url):
     return urlunparse(masked)
 
 
-def report(app, action, target, old_version, version, deploy_settings):
+def report(app, action, target, old_version, version, deploy_settings,
+           user=None):
     """Report to the world that we deployed."""
-    user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
+    if user is None:
+        user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
     environment = deploy_settings.artifacts.environment
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
@@ -100,7 +102,7 @@ def available_applications(deploy_settings):
     return repository.list_apps()
 
 
-def deploy(app, target, config, version, deploy_settings):
+def deploy(app, target, config, version, deploy_settings, user=None):
     """Deploy an application."""
     if app not in available_applications(deploy_settings):
         log.error('This application is not in the available applications '
@@ -116,7 +118,7 @@ def deploy(app, target, config, version, deploy_settings):
 
     application.deploy(target, repository, version)
     report(application.app, 'deploy', target, old_version, version,
-           deploy_settings)
+           deploy_settings, user)
 
 
 def gc(max_versions, config, deploy_settings):
