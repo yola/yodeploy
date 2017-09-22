@@ -1,6 +1,5 @@
 Flask==0.10.1
 Flask-HTTPAuth==2.5.0
-pyOpenSSL==16.2.0
 Tempita==0.5dev
 boto==2.42.0
 coverage==4.2.0
