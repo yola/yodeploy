@@ -33,6 +33,7 @@ def parse_args(flask_app):
 def create_context():
     if hasattr(ssl, 'create_default_context'):  # Python >= 2.7.9
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
     else:
         context = LegacySSLContext()
 
