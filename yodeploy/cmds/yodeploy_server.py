@@ -39,19 +39,26 @@ def create_context():
     context.load_cert_chain(
         certfile=flask_app.config.server.ssl.cert_chain,
         keyfile=flask_app.config.server.ssl.key)
+    context.set_ciphers(flask_app.config.server.ssl.ciphers)
     return context
 
 
 class LegacySSLContext(object):
     """Wrap ssl.wrap_socket in a class with the SSLContext API"""
 
+    _ciphers = None
+
     def load_cert_chain(self, certfile, keyfile):
         self._certfile = certfile
         self._keyfile = keyfile
 
+    def set_ciphers(self, ciphers):
+        self._ciphers = ciphers
+
     def wrap_socket(self, sock, **kwargs):
         return ssl.wrap_socket(
-            sock, certfile=self._certfile, keyfile=self._keyfile, **kwargs)
+            sock, certfile=self._certfile, keyfile=self._keyfile,
+            ciphers=self._ciphers, **kwargs)
 
 
 if __name__ == '__main__':
