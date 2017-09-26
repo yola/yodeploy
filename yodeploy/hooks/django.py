@@ -138,10 +138,11 @@ class DjangoApp(ApacheHostedApp, PythonApp):
                command] + list(args)
         log.debug("Executing %r", cmd)
         try:
-            return subprocess.check_output(cmd, cwd=self.deploy_dir)
+            output = subprocess.check_output(cmd, cwd=self.deploy_dir)
         except subprocess.CalledProcessError:
             log.error("Management command failed: %r", [command] + list(args))
             sys.exit(1)
+        return output.decode('utf-8')
 
 
 class DjangoMultiSiteApp(ApacheMultiSiteApp, DjangoApp):

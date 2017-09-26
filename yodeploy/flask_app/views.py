@@ -23,8 +23,9 @@ def deploy_app(app):
             log.debug('Extra arguments: %s', request.form)
         target = request.form.get('target', 'master')
         version = request.form.get('version')
+        user = request.form.get('user')
         deploy(app, target, current_app.config.deploy_config_fn, version,
-               current_app.config)
+               current_app.config, user)
         log.info('Version %s of %s successfully deployed', version, app)
     application = Application(app, current_app.config.deploy_config_fn)
     version = application.live_version
