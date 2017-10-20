@@ -13,6 +13,7 @@ import yodeploy.config
 import yodeploy.repository
 import yodeploy.util
 
+
 log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
 
@@ -76,8 +77,11 @@ def main():
     repository = yodeploy.repository.get_repository(deploy_settings)
 
     if not options.compat:
-        with open('deploy/compat') as f:
-            options.compat = int(f.read())
+        try:
+            with open('deploy/compat') as f:
+                options.compat = int(f.read())
+        except IOError:
+            options.compat = yodeploy.util.infer_compat_version()
 
     python_version = virtualenv.get_python_version(options.compat)
     platform = deploy_settings.artifacts.platform
