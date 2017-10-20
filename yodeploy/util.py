@@ -5,6 +5,7 @@ import logging
 import os
 import pwd
 import shutil
+import sys
 import tarfile
 
 log = logging.getLogger(__name__)

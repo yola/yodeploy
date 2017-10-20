@@ -34,6 +34,7 @@ except ImportError:  # python 2
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import yodeploy.config  # noqa
+from yodeploy.util import infer_compat_version
 
 
 GIT_REPO = 'git@github.com:yola/%s.git'
