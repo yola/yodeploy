@@ -374,15 +374,6 @@ def get_from_pypi(app, version, pypi='https://pypi.python.org/simple/'):
     return expected_name
 
 
-def infer_compat_version():
-    """Return appropriate compat level for the python version"""
-    major_version_to_compat = {
-        2: 4,
-        3: 5,
-    }
-    return major_version_to_compat[sys.version_info.major]
-
-
 def build_virtualenv(bootstrap=False, compat=None):
     """Build a virtualenv for CWD, bootstrapping if necessary"""
     if not binary_available('build-virtualenv') and not bootstrap:
