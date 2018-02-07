@@ -54,7 +54,6 @@ def report(app, action, target, old_version, version, deploy_settings,
     if user is None:
         user = os.getenv('SUDO_USER', os.getenv('LOGNAME'))
     environment = deploy_settings.artifacts.environment
-    hostname = socket.gethostname()
     fqdn = socket.getfqdn()
 
     message = '%s@%s: Deployed %s (%s): %s -> %s' % (user, fqdn, app, target,
@@ -62,13 +61,6 @@ def report(app, action, target, old_version, version, deploy_settings,
 
     log.info(message)
     services = deploy_settings.report.services
-
-    if 'statsd' in services:
-        service_settings = deploy_settings.report.service_settings.statsd
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        addr = (service_settings.host, service_settings.port)
-        sock.sendto('deploys.%s.%s.%s:1|c'
-                    % (environment, hostname, app.replace('.', '_')), addr)
 
     if 'webhooks' in services:
         service_settings = deploy_settings.report.service_settings.webhooks
