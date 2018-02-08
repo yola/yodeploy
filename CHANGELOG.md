@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.8.6
+-----
+
+* `build_virtualenv`: Use infer_compat_version if no compat file was found.
+
+
 0.8.5
 -----
 
