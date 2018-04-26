@@ -3,13 +3,14 @@ import unittest
 from mock import PropertyMock, call, patch
 from pkg_resources import parse_version
 
-from yodeploy.hooks.django import DjangoApp
+from yodeploy.hooks.django import ApacheHostedDjangoApp, DjangoApp
 
 
 class TestDjangoHook(unittest.TestCase):
 
     def setUp(self):
-        self.dh = DjangoApp('test', None, '/tmp/test', '123', {}, None)
+        self.dh = ApacheHostedDjangoApp(
+            'test', None, '/tmp/test', '123', {}, None)
 
     def test_vhost_attributes(self):
         self.assertEqual(self.dh.vhost_path, '/etc/apache2/sites-enabled')

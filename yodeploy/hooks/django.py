@@ -7,6 +7,7 @@ import sys
 from pkg_resources import parse_version
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
+from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.python import PythonApp
 from yodeploy.util import chown_r, ignoring, touch
 
@@ -14,7 +15,7 @@ from yodeploy.util import chown_r, ignoring, touch
 log = logging.getLogger(__name__)
 
 
-class DjangoApp(ApacheHostedApp, PythonApp):
+class DjangoApp(ConfiguratedApp, PythonApp):
     migrate_on_deploy = False
     has_migrations = False
     has_media = False
@@ -57,11 +58,6 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         log.debug('Running DjangoApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
-
-        if self.template_exists('apache2/wsgi-handler.wsgi.template'):
-            self.template(
-                'apache2/wsgi-handler.wsgi.template',
-                self.deploy_path(self.app + '.wsgi'))
 
         aconf = self.config.get(self.app)
         uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
@@ -145,6 +141,17 @@ class DjangoApp(ApacheHostedApp, PythonApp):
         return output.decode('utf-8')
 
 
-class DjangoMultiSiteApp(ApacheMultiSiteApp, DjangoApp):
+class ApacheHostedDjangoApp(ApacheHostedApp, DjangoApp):
+    def prepare(self):
+        if self.template_exists('apache2/wsgi-handler.wsgi.template'):
+            self.template(
+                'apache2/wsgi-handler.wsgi.template',
+                self.deploy_path(self.app + '.wsgi'))
+        super(ApacheHostedDjangoApp, self).prepare()
+
+
+class ApacheHostedDjangoMultiSiteApp(
+        ApacheMultiSiteApp,
+        ApacheHostedDjangoApp):
 
     pass

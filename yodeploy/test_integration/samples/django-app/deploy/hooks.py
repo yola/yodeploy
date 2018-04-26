@@ -3,11 +3,11 @@ import mock
 
 from os.path import join
 
-from yodeploy.hooks.django import DjangoApp
+from yodeploy.hooks.django import ApacheHostedDjangoApp
 from yodeploy.test_integration.helpers import tests_dir
 
 
-class Hooks(DjangoApp):
+class Hooks(ApacheHostedDjangoApp):
 
     # these overrides are only needed for testsing
     apache = mock.Mock()
