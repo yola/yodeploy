@@ -6,6 +6,7 @@ Change Log
 
 * Move out apache hooks from `DjangoApp` to new `ApacheHostedDjangoApp`;
 * Rename `DjangoMultiSiteApp` into `ApacheHostedDjangoMultiSiteApp`
+* Add `NginxHostedApp`, `UwsgiHostedApp` and `NginxHostedDjangoApp` hooks
 
 
 0.8.5
