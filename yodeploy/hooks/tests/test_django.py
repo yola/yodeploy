@@ -6,7 +6,7 @@ from pkg_resources import parse_version
 from yodeploy.hooks.django import ApacheHostedDjangoApp, DjangoApp
 
 
-class TestDjangoHook(unittest.TestCase):
+class TestApacheHostedDjangoHook(unittest.TestCase):
 
     def setUp(self):
         self.dh = ApacheHostedDjangoApp(

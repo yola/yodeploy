@@ -1,0 +1,2 @@
+-- uwsgi config
+{{ aconf.uwsgi_specific_key }}

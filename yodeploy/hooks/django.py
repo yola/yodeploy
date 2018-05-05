@@ -8,7 +8,9 @@ from pkg_resources import parse_version
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp
+from yodeploy.hooks.nginx import NginxHostedApp
 from yodeploy.hooks.python import PythonApp
+from yodeploy.hooks.uwsgi import UwsgiHostedApp
 from yodeploy.util import chown_r, ignoring, touch
 
 
@@ -154,4 +156,8 @@ class ApacheHostedDjangoMultiSiteApp(
         ApacheMultiSiteApp,
         ApacheHostedDjangoApp):
 
+    pass
+
+
+class NginxHostedDjangoApp(DjangoApp, UwsgiHostedApp, NginxHostedApp):
     pass

@@ -1,12 +1,11 @@
 import os
-import unittest
 
 from yodeploy.test_integration.helpers import (
     build_sample, deploy_sample, rmdir)
+from yodeploy.test_integration.testcase import DeployTestCase
 
 
-class ApacheTestCase(unittest.TestCase):
-
+class ApacheTestCase(DeployTestCase):
     def clear_confs(self):
         apache = os.path.join(
             os.path.dirname(__file__), 'filesys', 'etc', 'apache2')
@@ -16,11 +15,6 @@ class ApacheTestCase(unittest.TestCase):
         for d in os.listdir(os.path.join(apache, 'yola.d')):
             if not d.startswith('.'):
                 rmdir(os.path.join(apache, 'yola.d', d))
-
-    def assertDeployed(self, fn):
-        deployed_file = os.path.join(os.path.dirname(__file__), 'filesys', fn)
-        self.assertTrue(os.path.exists(deployed_file),
-                        msg='%s does not exist' % deployed_file)
 
 
 class TestApacheHostedAppDeployment(ApacheTestCase):

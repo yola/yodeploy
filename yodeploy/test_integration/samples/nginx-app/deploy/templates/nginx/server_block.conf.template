@@ -1,0 +1,2 @@
+# server block
+{{ aconf.nginx_specific_key }}
