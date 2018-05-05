@@ -159,5 +159,5 @@ class ApacheHostedDjangoMultiSiteApp(
     pass
 
 
-class NginxHostedDjangoApp(DjangoApp, UwsgiHostedApp, NginxHostedApp):
+class NginxHostedDjangoApp(DjangoApp, NginxHostedApp, UwsgiHostedApp):
     pass
