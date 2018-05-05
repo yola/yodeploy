@@ -28,11 +28,12 @@ class TestNginxHostedAppPrepareHook(TestCase):
     def test_places_logfiles(self):
         self.dh.prepare()
 
-        self.touch_mock.assert_has_calls([
-            call('/var/log/nginx/nginx-app-access.log',
-                 'www-data', 'adm', 0o640),
-            call('/var/log/nginx/nginx-app-error.log',
-                 'www-data', 'adm', 0o640),
+        self.touch_mock.assert_has_calls(
+            [
+                call('/var/log/nginx/nginx-app-access.log',
+                     'www-data', 'adm', 0o640),
+                call('/var/log/nginx/nginx-app-error.log',
+                     'www-data', 'adm', 0o640),
             ],
             any_order=True
         )

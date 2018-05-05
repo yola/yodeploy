@@ -16,4 +16,5 @@ class Hooks(ApacheHostedDjangoApp):
     log_user = getpass.getuser()
     log_group = None
 
+
 hooks = Hooks

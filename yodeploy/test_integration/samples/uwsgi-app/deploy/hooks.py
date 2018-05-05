@@ -16,4 +16,5 @@ class Hooks(UwsgiHostedApp):
     user = getpass.getuser()
     group = None
 
+
 hooks = Hooks

@@ -16,4 +16,5 @@ class Hooks(NginxHostedApp):
     user = getpass.getuser()
     group = None
 
+
 hooks = Hooks
