@@ -1,5 +1,3 @@
-"""Application hooks for apps that use uwsgi."""
-
 import logging
 import os
 import subprocess
@@ -11,18 +9,7 @@ from yodeploy.util import touch
 log = logging.getLogger(__name__)
 
 
-class Uwsgi(object):
-    @staticmethod
-    def reload():
-        try:
-            subprocess.check_call(('service', 'uwsgi', 'reload'))
-        except subprocess.CalledProcessError:
-            log.error('Unable to reload uwsgi.')
-            sys.exit(1)
-
-
 class UwsgiHostedApp(ConfiguratedApp):
-    uwsgi = Uwsgi
     config_path = '/etc/uwsgi/'
     logs_path = '/var/log/uwsgi/'
     user = 'www-data'
@@ -50,4 +37,11 @@ class UwsgiHostedApp(ConfiguratedApp):
 
     def uwsgi_hosted_deployed(self):
         log.debug('Running UwsgiHostedApp deployed hook.')
-        self.uwsgi.reload()
+        self._reload_uwsgi()
+
+    def _reload_uwsgi(self):
+        try:
+            subprocess.check_call(('service', 'uwsgi', 'reload'))
+        except subprocess.CalledProcessError:
+            log.exception('Unable to reload uwsgi.')
+            sys.exit(1)

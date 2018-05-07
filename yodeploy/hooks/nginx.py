@@ -1,5 +1,3 @@
-"""Application hooks for apps that use nginx."""
-
 import logging
 import os
 import subprocess
@@ -11,18 +9,7 @@ from yodeploy.util import touch
 log = logging.getLogger(__name__)
 
 
-class Nginx(object):
-    @staticmethod
-    def reload():
-        try:
-            subprocess.check_call(('service', 'nginx', 'reload'))
-        except subprocess.CalledProcessError:
-            log.error('Unable to reload nginx.')
-            sys.exit(1)
-
-
 class NginxHostedApp(ConfiguratedApp):
-    nginx = Nginx
     logs_path = '/var/log/nginx/'
     server_blocks_path = '/etc/nginx/sites-enabled'
     user = 'www-data'
@@ -53,4 +40,11 @@ class NginxHostedApp(ConfiguratedApp):
 
     def nginx_hosted_deployed(self):
         log.debug('Running NginxHostedApp deployed hook.')
-        self.nginx.reload()
+        self._reload_nginx()
+
+    def _reload_nginx(self):
+        try:
+            subprocess.check_call(('service', 'nginx', 'reload'))
+        except subprocess.CalledProcessError:
+            log.exception('Unable to reload nginx.')
+            sys.exit(1)
