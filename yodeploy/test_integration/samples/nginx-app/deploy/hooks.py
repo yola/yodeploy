@@ -7,16 +7,14 @@ from yodeploy.hooks.nginx import NginxHostedApp
 from yodeploy.test_integration.helpers import tests_dir
 
 
-class Hooks(NginxHostedApp):
-    # these overrides are only needed for testing
+class HooksWithTestSetup(NginxHostedApp):
     logs_path = os.path.join(tests_dir, 'filesys/var/log/nginx')
     server_blocks_path = os.path.join(
         tests_dir, 'filesys/etc/nginx/sites-enabled'
     )
     user = getpass.getuser()
     group = None
+    reload_nginx = Mock()
 
-    _reload_nginx = Mock()
 
-
-hooks = Hooks
+hooks = HooksWithTestSetup

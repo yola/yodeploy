@@ -37,9 +37,9 @@ class UwsgiHostedApp(ConfiguratedApp):
 
     def uwsgi_hosted_deployed(self):
         log.debug('Running UwsgiHostedApp deployed hook.')
-        self._reload_uwsgi()
+        self.reload_uwsgi()
 
-    def _reload_uwsgi(self):
+    def reload_uwsgi(self):
         try:
             subprocess.check_call(('service', 'uwsgi', 'reload'))
         except subprocess.CalledProcessError:
