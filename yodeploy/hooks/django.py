@@ -144,12 +144,7 @@ class DjangoApp(ConfiguratedApp, PythonApp):
 
 
 class ApacheHostedDjangoApp(DjangoApp, ApacheHostedApp):
-    def prepare(self):
-        super(ApacheHostedDjangoApp, self).prepare()
-        if self.template_exists('apache2/wsgi-handler.wsgi.template'):
-            self.template(
-                'apache2/wsgi-handler.wsgi.template',
-                self.deploy_path(self.app + '.wsgi'))
+    pass
 
 
 class ApacheHostedDjangoMultiSiteApp(
