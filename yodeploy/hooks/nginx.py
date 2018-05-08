@@ -4,16 +4,12 @@ import subprocess
 import sys
 
 from yodeploy.hooks.configurator import ConfiguratedApp
-from yodeploy.util import touch
 
 log = logging.getLogger(__name__)
 
 
 class NginxHostedApp(ConfiguratedApp):
-    logs_path = '/var/log/nginx/'
     server_blocks_path = '/etc/nginx/sites-enabled'
-    user = 'www-data'
-    group = 'adm'
 
     def deployed(self):
         super(NginxHostedApp, self).deployed()
@@ -25,14 +21,6 @@ class NginxHostedApp(ConfiguratedApp):
 
     def nginx_hosted_prepare(self):
         log.debug('Running NginxHostedApp prepare hook.')
-        access_log_path = os.path.join(
-            self.logs_path, '{}-access.log'.format(self.app)
-        )
-        error_log_path = os.path.join(
-            self.logs_path, '{}-error.log'.format(self.app)
-        )
-        touch(access_log_path, self.user, self.group, 0o640)
-        touch(error_log_path, self.user, self.group, 0o640)
         self.template(
             'nginx/server_block.conf.template',
             os.path.join(self.server_blocks_path, self.app)

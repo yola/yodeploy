@@ -13,15 +13,7 @@ class TestNginxAppDeployment(DeployTestCase):
 
     def tearDown(self):
         rm(os.path.join(
-            tests_dir, 'filesys/var/log/nginx/nginx-app-access.log'))
-        rm(os.path.join(
-            tests_dir, 'filesys/var/log/nginx/nginx-app-error.log'))
-        rm(os.path.join(
             tests_dir, 'filesys/etc/nginx/sites-enabled/nginx-app'))
 
     def test_places_server_block(self):
         self.assertDeployed('etc/nginx/sites-enabled/nginx-app')
-
-    def test_places_logfiles(self):
-        self.assertDeployed('var/log/nginx/nginx-app-access.log')
-        self.assertDeployed('var/log/nginx/nginx-app-error.log')

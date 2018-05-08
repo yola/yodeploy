@@ -10,7 +10,6 @@ from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp
 from yodeploy.hooks.nginx import NginxHostedApp
 from yodeploy.hooks.python import PythonApp
-from yodeploy.hooks.uwsgi import UwsgiHostedApp
 from yodeploy.util import chown_r, ignoring, touch
 
 
@@ -154,5 +153,5 @@ class ApacheHostedDjangoMultiSiteApp(
     pass
 
 
-class NginxHostedDjangoApp(DjangoApp, NginxHostedApp, UwsgiHostedApp):
+class NginxHostedDjangoApp(DjangoApp, NginxHostedApp):
     pass

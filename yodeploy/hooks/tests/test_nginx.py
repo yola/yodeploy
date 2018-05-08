@@ -11,10 +11,6 @@ class TestNginxHostedAppPrepareHook(TestCase):
             'nginx-app', None, '/tmp/test', '123', {}, None
         )
 
-        touch_patcher = patch('yodeploy.hooks.nginx.touch')
-        self.touch_mock = touch_patcher.start()
-        self.addCleanup(touch_patcher.stop)
-
         template_patcher = patch.object(self.dh, 'template')
         self.template_mock = template_patcher.start()
         self.addCleanup(template_patcher.stop)
@@ -24,19 +20,6 @@ class TestNginxHostedAppPrepareHook(TestCase):
         )
         configurator_prepare_patcher.start()
         self.addCleanup(configurator_prepare_patcher.stop)
-
-    def test_places_logfiles(self):
-        self.dh.prepare()
-
-        self.touch_mock.assert_has_calls(
-            [
-                call('/var/log/nginx/nginx-app-access.log',
-                     'www-data', 'adm', 0o640),
-                call('/var/log/nginx/nginx-app-error.log',
-                     'www-data', 'adm', 0o640),
-            ],
-            any_order=True
-        )
 
     def test_places_server_block(self):
         self.dh.prepare()
