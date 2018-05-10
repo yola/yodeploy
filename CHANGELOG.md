@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+0.9.0
+-----
+
+* Move out apache hooks from `DjangoApp` to new `ApacheHostedDjangoApp`.
+* Rename `DjangoMultiSiteApp` into `ApacheHostedDjangoMultiSiteApp`.
+* Add `NginxHostedApp` and `NginxHostedDjangoApp` hooks.
+
+
 0.8.5
 -----
 
