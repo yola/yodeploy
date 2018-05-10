@@ -14,7 +14,7 @@ class HooksWithTestSetup(NginxHostedApp):
     )
     user = getpass.getuser()
     group = None
-    reload_nginx = Mock()
+    _reload_nginx = Mock()
 
 
 hooks = HooksWithTestSetup

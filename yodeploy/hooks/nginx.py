@@ -28,9 +28,9 @@ class NginxHostedApp(ConfiguratedApp):
 
     def nginx_hosted_deployed(self):
         log.debug('Running NginxHostedApp deployed hook.')
-        self.reload_nginx()
+        self._reload_nginx()
 
-    def reload_nginx(self):
+    def _reload_nginx(self):
         try:
             subprocess.check_call(('service', 'nginx', 'reload'))
         except subprocess.CalledProcessError:
