@@ -25,7 +25,7 @@ class TestNginxHostedAppPrepareHook(TestCase):
         self.dh.prepare()
 
         self.template_mock.assert_called_once_with(
-            'nginx/server_block.conf.template',
+            'nginx/server-block.template',
             '/etc/nginx/sites-enabled/nginx-app'
         )
 
