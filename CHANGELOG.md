@@ -1,13 +1,18 @@
 Change Log
 ==========
 
+0.10.0
+-----
+
+* Change expected template for NGINX's server block from 
+  `nginx/server_block.conf.template` to `nginx/server-block.template` 
+
 0.9.0
 -----
 
 * Move out apache hooks from `DjangoApp` to new `ApacheHostedDjangoApp`.
 * Rename `DjangoMultiSiteApp` into `ApacheHostedDjangoMultiSiteApp`.
 * Add `NginxHostedApp` and `NginxHostedDjangoApp` hooks.
-
 
 0.8.5
 -----
@@ -76,7 +81,6 @@ Change Log
 
 * NOTE: From now YoDeploy requires Python >= 2.7.
 * Make `hooks.django.DjangoApp.manage_py` method return command output.
-
 
 0.7.2
 -----

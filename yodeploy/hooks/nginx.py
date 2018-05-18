@@ -22,7 +22,7 @@ class NginxHostedApp(ConfiguratedApp):
     def nginx_hosted_prepare(self):
         log.debug('Running NginxHostedApp prepare hook.')
         self.template(
-            'nginx/server_block.conf.template',
+            'nginx/server-block.template',
             os.path.join(self.server_blocks_path, self.app)
         )
 
