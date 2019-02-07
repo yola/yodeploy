@@ -9,6 +9,7 @@ import shutil
 import sysconfig
 import tarfile
 
+from pkg_resources import parse_version
 import virtualenv
 
 log = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ def create_ve(
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_version = subprocess.check_output((
             ve_python, '-c', 'import ensurepip; print(ensurepip.version())'))
-        if pip_version < '9.':
+        if parse_version(pip_version) < parse_version('9'):
             pip_install(ve_dir, pypi, '-U', 'pip')
         pip_install(ve_dir, pypi, 'wheel')
 
