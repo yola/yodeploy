@@ -2,11 +2,11 @@ import mock
 
 from os.path import join
 
-from yodeploy.hooks.django import DjangoMultiSiteApp
+from yodeploy.hooks.django import ApacheHostedDjangoMultiSiteApp
 from yodeploy.test_integration.helpers import tests_dir
 
 
-class Hooks(DjangoMultiSiteApp):
+class Hooks(ApacheHostedDjangoMultiSiteApp):
 
     # these overrides are only needed for testsing
     apache = mock.Mock()

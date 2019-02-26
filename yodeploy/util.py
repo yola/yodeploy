@@ -5,6 +5,7 @@ import logging
 import os
 import pwd
 import shutil
+import sys
 import tarfile
 
 log = logging.getLogger(__name__)
@@ -82,3 +83,12 @@ def ignoring(ignore_err_no):
     except OSError as e:
         if e.errno != ignore_err_no:
             raise
+
+
+def infer_compat_version():
+    """Return appropriate compat level for the python version"""
+    major_version_to_compat = {
+        2: 4,
+        3: 5,
+    }
+    return major_version_to_compat[sys.version_info.major]
