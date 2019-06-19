@@ -32,7 +32,7 @@ class YodeployApplication(BaseApplication):
         parser.add_argument('--debug', '-d', action='store_true',
                             help='Increase verbosity')
         parser.add_argument('--ssl-version', '-ssl', help='Set SSL constants',
-                            defaut='ssl.OP_NO_TLSv1')
+                            default='ssl.OP_NO_TLSv1')
 
         opts = parser.parse_args()
 
