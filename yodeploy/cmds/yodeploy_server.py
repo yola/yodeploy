@@ -31,7 +31,7 @@ class YodeployApplication(BaseApplication):
                                  % config.server.port)
         parser.add_argument('--debug', '-d', action='store_true',
                             help='Increase verbosity')
-        parses.add_argument('--ssl-version', '-ssl', help='Set SSL constants',
+        parser.add_argument('--ssl-version', '-ssl', help='Set SSL constants',
                             defaut='ssl.OP_NO_TLSv1')
 
         opts = parser.parse_args()
