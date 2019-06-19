@@ -31,6 +31,8 @@ class YodeployApplication(BaseApplication):
                                  % config.server.port)
         parser.add_argument('--debug', '-d', action='store_true',
                             help='Increase verbosity')
+        parses.add_argument('--ssl-version', '-ssl', help='Set SSL constants',
+                            defaut='ssl.OP_NO_TLSv1')
 
         opts = parser.parse_args()
 
@@ -38,7 +40,6 @@ class YodeployApplication(BaseApplication):
 
         self.cfg.set('bind', '{}:{}'.format(opts.listen, opts.port))
         self.cfg.set('ciphers', config.server.ssl.ciphers)
-        self.cfg.set('ssl_version', config.server.ssl.tls)
         self.cfg.set('certfile', config.server.ssl.cert_chain)
         self.cfg.set('keyfile', config.server.ssl.key)
         self.cfg.set('workers', config.server.workers)
