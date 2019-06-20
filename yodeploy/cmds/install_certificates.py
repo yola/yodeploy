@@ -37,8 +37,8 @@ def get_env_list(url, username, password):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Downloads ssl certificates from envhub and installs them "
-                    "locally for development purposes."
+        description='Downloads ssl certificates from envhub and installs them '
+                    'locally for development purposes.'
     )
     parser.add_argument('-l', '--list', action='store_true',
                         help='List instance_ids of running envs')
@@ -85,7 +85,7 @@ def main():
         else:
             pk_local_path = _SSL_PRIVATE_KEY_PATH
 
-        cert_download_fn = re.findall("filename=(.+)",
+        cert_download_fn = re.findall('filename=(.+)',
                 cert_response.headers['Content-Disposition'])[0]
         cert_local_fn = os.path.join(cert_local_path, cert_download_fn)
         with open(cert_local_fn, 'w+') as fn:
@@ -93,7 +93,7 @@ def main():
             fn.close()
             print 'certificate saved as {}'.format(cert_local_fn)
 
-        pk_download_fn = re.findall("filename=(.+)",
+        pk_download_fn = re.findall('filename=(.+)',
                 key_response.headers['Content-Disposition'])[0]
         pk_local_fn = os.path.join(pk_local_path, pk_download_fn)
         with open(pk_local_fn, 'w+') as fn:
