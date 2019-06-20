@@ -38,7 +38,7 @@ class YodeployApplication(BaseApplication):
 
         self.cfg.set('bind', '{}:{}'.format(opts.listen, opts.port))
         self.cfg.set('ciphers', config.server.ssl.ciphers)
-        self.cfg.set('ssl_version', config.server.ssl.tls)
+        self.cfg.set('ssl_version', config.server.ssl.ssl_version)
         self.cfg.set('certfile', config.server.ssl.cert_chain)
         self.cfg.set('keyfile', config.server.ssl.key)
         self.cfg.set('workers', config.server.workers)
