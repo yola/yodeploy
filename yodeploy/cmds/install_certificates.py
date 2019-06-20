@@ -59,7 +59,7 @@ def main():
     password = settings.envhub.password
     url = settings.envhub.url
 
-    if options.list:
+    if options.list and not options.owner:
         for env in json.load(get_env_list(url, username, password)):
             print env.name, env.instance_id
             return
