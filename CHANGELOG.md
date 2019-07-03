@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.10.1
+-----
+
+* Remove `flake8` dependency.
+
 0.10.0
 -----
 
