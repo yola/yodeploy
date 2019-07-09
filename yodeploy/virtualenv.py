@@ -79,8 +79,6 @@ def create_ve(
     if python_version.startswith('3.'):
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
-        pip_install(ve_dir, pypi, 'wheel')
-
     elif python_version == sysconfig.get_python_version():
         virtualenv.create_environment(ve_dir, site_packages=False)
     else:
@@ -90,6 +88,7 @@ def create_ve(
             '--no-site-packages', ve_dir))
 
     pip_install(ve_dir, pypi, '-U', 'pip')
+    pip_install(ve_dir, pypi, 'wheel')
 
     log.info('Installing requirements')
     pip_install(ve_dir, pypi, '-r', req_file)
