@@ -5,7 +5,6 @@ Change Log
 -----
 
 * Always upgrade `pip` for Python virtualenvs.
-* Return installing `wheel` for Python 2 virtualenvs.
 
 0.10.1
 -----
