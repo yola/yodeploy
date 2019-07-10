@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.10.2
+-----
+
+* Always upgrade `pip` for Python virtualenvs.
+
 0.10.1
 -----
 
