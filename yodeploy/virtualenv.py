@@ -72,6 +72,7 @@ def create_ve(
         verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.join(app_dir, 'virtualenv')
+    ve_python = os.path.join(ve_dir, 'bin', 'python')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
     # The venv module makes a lot of our reclocateability problems go away, so
@@ -79,6 +80,11 @@ def create_ve(
     if python_version.startswith('3.'):
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
+        pip_version = subprocess.check_output((
+            ve_python, '-c', 'import ensurepip; print(ensurepip.version())'))
+        if parse_version(pip_version) < parse_version('9'):
+            pip_install(ve_dir, pypi, '-U', 'pip')
+        pip_install(ve_dir, pypi, 'wheel')
     elif python_version == sysconfig.get_python_version():
         virtualenv.create_environment(ve_dir, site_packages=False)
     else:
@@ -86,9 +92,6 @@ def create_ve(
             sys.executable, virtualenv.__file__.rstrip('c'),
             '-p', 'python%s' % python_version,
             '--no-site-packages', ve_dir))
-
-    pip_install(ve_dir, pypi, '-U', 'pip')
-    pip_install(ve_dir, pypi, 'wheel')
 
     log.info('Installing requirements')
     pip_install(ve_dir, pypi, '-r', req_file)
