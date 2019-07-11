@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+DEV
+-----
+
+* Revert Always upgrade `pip` for Python virtualenvs, it breaks pythhon 2 venv creation
+
+
 0.10.2
 -----
 
@@ -14,8 +20,8 @@ Change Log
 0.10.0
 -----
 
-* Change expected template for NGINX's server block from 
-  `nginx/server_block.conf.template` to `nginx/server-block.template` 
+* Change expected template for NGINX's server block from
+  `nginx/server_block.conf.template` to `nginx/server-block.template`
 
 0.9.0
 -----
