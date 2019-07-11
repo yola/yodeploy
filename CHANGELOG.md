@@ -4,7 +4,7 @@ Change Log
 0.10.3
 -----
 
-* Revert Always upgrade `pip` for Python virtualenvs, it breaks venv creation
+* Revert Always upgrade `pip` for Python virtualenvs, it breaks pythhon 2 venv creation
 
 
 0.10.2
