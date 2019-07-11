@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-0.10.3
+DEV
 -----
 
 * Revert Always upgrade `pip` for Python virtualenvs, it breaks pythhon 2 venv creation
