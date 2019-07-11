@@ -3,9 +3,12 @@ import argparse
 import json
 import os
 import re
+import sys
 
 import requests
 from requests.auth import HTTPBasicAuth
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from yodeploy import config
 
