@@ -20,20 +20,20 @@ cert_path = 'envs/certificate/public'
 key_path = 'envs/certificate/private'
 
 
-def get_certificate(url, instance_id, username, password):
-    cert_url = '/'.join([url, cert_path, instance_id])
+def get_certificate(url, name, username, password):
+    cert_url = url + '/'.join([cert_path, name])
     cert = requests.get(cert_url, auth=HTTPBasicAuth(username, password))
     return cert
 
 
-def get_private_key(url, instance_id, username, password):
-    cert_url = '/'.join([url, key_path, instance_id])
+def get_private_key(url, name, username, password):
+    cert_url = url + '/'.join([key_path, name])
     cert = requests.get(cert_url, auth=HTTPBasicAuth(username, password))
     return cert
 
 
 def get_env_list(url, username, password):
-    list_url = '/'.join([url, list_path])
+    list_url = ''.join([url, list_path])
     envs = requests.get(list_url, auth=HTTPBasicAuth(username, password))
     return envs
 
@@ -45,12 +45,8 @@ def main():
     )
     parser.add_argument('-l', '--list', action='store_true',
                         help='List instance_ids of running envs')
-    parser.add_argument('-o', '--owner', default=os.getlogin(),
-                        type=basestring,
-                        help='Filter list of instances by owner, '
-                        'implies --list, defaults to login user')
     parser.add_argument('-i', '--install',
-                        help='Install ssl certificate for given instance_id')
+                        help='Install ssl certificate for given instance name')
     parser.add_argument('--certificate-path', default=_SSL_CERT_PATH)
     parser.add_argument('--private-key-path', default=_SSL_PRIVATE_KEY_PATH)
 
@@ -62,21 +58,21 @@ def main():
     password = settings.envhub.password
     url = settings.envhub.url
 
-    if options.list and not options.owner:
-        for env in json.load(get_env_list(url, username, password)):
-            print env.name, env.instance_id
+    if options.list:
+        env_response = get_env_list(url, username, password)
+        if env_response.status_code != 200:
+            print 'failed to retrieve envs with status' \
+                  '{response.status_code}\n{response.content}'.format(
+                    response=env_response)
             return
-
-    if options.owner:
-        for env in json.load(get_env_list(url, username, password)):
-            if env.owner == options.owner:
-                print env.name, env.instance_id
-                return
+        for env in json.loads(env_response.content):
+            print env['name'], env['developer']
+        return
 
     if options.install:
-        instance_id = options.install
-        cert_response = get_certificate(url, instance_id, username, password)
-        key_response = get_private_key(url, instance_id, username, password)
+        name = options.install
+        cert_response = get_certificate(url, name, username, password)
+        key_response = get_private_key(url, name, username, password)
 
         if options.certificate_path:
             cert_local_path = options.certificate_path
