@@ -74,15 +74,8 @@ def main():
         cert_response = get_certificate(url, name, username, password)
         key_response = get_private_key(url, name, username, password)
 
-        if options.certificate_path:
-            cert_local_path = options.certificate_path
-        else:
-            cert_local_path = _SSL_CERT_PATH
-
-        if options.private_key_path:
-            pk_local_path = options.private_key_path
-        else:
-            pk_local_path = _SSL_PRIVATE_KEY_PATH
+        cert_local_path = options.certificate_path
+        pk_local_path = options.private_key_path
 
         cert_download_fn = re.findall(
             'filename=(.+)', cert_response.headers['Content-Disposition'])[0]
@@ -103,4 +96,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
