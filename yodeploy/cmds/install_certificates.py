@@ -10,14 +10,19 @@ from requests.auth import HTTPBasicAuth
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yodeploy import config
-
-_SSL_CERT_PATH = '/etc/ssl/certs'
-_SSL_PRIVATE_KEY_PATH = '/etc/ssl/private'
+from yodeploy import config  # noqa
 
 list_path = 'envs/list/'
 cert_path = 'envs/certificate/public'
 key_path = 'envs/certificate/private'
+
+
+def find_ssl_path(settings):
+    ssl_dir = os.path.expanduser(os.path.join(
+        *settings.common.yodeploy.ssl_path))
+    if not os.path.exists(ssl_dir):
+        os.makedirs(ssl_dir)
+    return ssl_dir
 
 
 def get_certificate(url, name, username, password):
@@ -47,8 +52,6 @@ def main():
                         help='List instance_ids of running envs')
     parser.add_argument('-i', '--install',
                         help='Install ssl certificate for given instance name')
-    parser.add_argument('--certificate-path', default=_SSL_CERT_PATH)
-    parser.add_argument('--private-key-path', default=_SSL_PRIVATE_KEY_PATH)
 
     options = parser.parse_args()
 
@@ -74,8 +77,9 @@ def main():
         cert_response = get_certificate(url, name, username, password)
         key_response = get_private_key(url, name, username, password)
 
-        cert_local_path = options.certificate_path
-        pk_local_path = options.private_key_path
+        ssl_dir = find_ssl_path(settings)
+        cert_local_path = os.path.join(ssl_dir, 'certs')
+        pk_local_path = os.path.join(ssl_dir, 'private')
 
         cert_download_fn = re.findall(
             'filename=(.+)', cert_response.headers['Content-Disposition'])[0]
