@@ -18,8 +18,7 @@ key_path = 'envs/certificate/private'
 
 
 def find_ssl_path(settings):
-    ssl_dir = os.path.expanduser(os.path.join(
-        *settings.common.yodeploy.ssl_path))
+    ssl_dir = os.path.expanduser(settings.common.yodeploy.ssl_path)
     if not os.path.exists(ssl_dir):
         os.makedirs(ssl_dir)
     return ssl_dir
