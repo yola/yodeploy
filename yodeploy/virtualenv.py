@@ -85,7 +85,6 @@ def create_ve(
         if parse_version(pip_version) < parse_version('9'):
             pip_install(ve_dir, pypi, '-U', 'pip')
         pip_install(ve_dir, pypi, 'wheel')
-
     elif python_version == sysconfig.get_python_version():
         virtualenv.create_environment(ve_dir, site_packages=False)
     else:

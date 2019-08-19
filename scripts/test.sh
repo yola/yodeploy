@@ -24,8 +24,3 @@ cd test_build/
                      --cover-package=yodeploy \
                      --with-xcoverage \
                      --xcoverage-file=reports/coverage.xml
-
-# Ignore the return status of these linters
-set +e
-flake8 --output-file reports/flake8.report yodeploy
-set -e
