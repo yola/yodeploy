@@ -85,17 +85,15 @@ def main():
         cert_download_fn = re.findall(
             'filename=(.+)', cert_response.headers['Content-Disposition'])[0]
         cert_local_fn = os.path.join(cert_local_path, cert_download_fn)
-        with open(cert_local_fn, 'w+') as fn:
+        with open(cert_local_fn, 'w') as fn:
             fn.write(cert_response.content)
-            fn.close()
             print('certificate saved as {}'.format(cert_local_fn))
 
         pk_download_fn = re.findall(
             'filename=(.+)', key_response.headers['Content-Disposition'])[0]
         pk_local_fn = os.path.join(pk_local_path, pk_download_fn)
-        with open(pk_local_fn, 'w+') as fn:
+        with open(pk_local_fn, 'w') as fn:
             fn.write(key_response.content)
-            fn.close()
             print('private key saved as {}'.format(pk_local_fn))
 
 
