@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 import argparse
 import json
 import os
@@ -63,12 +65,12 @@ def main():
     if options.list:
         env_response = get_env_list(url, username, password)
         if env_response.status_code != 200:
-            print 'failed to retrieve envs with status' \
+            print('failed to retrieve envs with status'
                   '{response.status_code}\n{response.content}'.format(
-                    response=env_response)
+                    response=env_response))
             return
         for env in json.loads(env_response.content):
-            print env['name'], env['developer']
+            print(env['name'], env['developer'])
         return
 
     if options.install:
@@ -86,7 +88,7 @@ def main():
         with open(cert_local_fn, 'w+') as fn:
             fn.write(cert_response.content)
             fn.close()
-            print 'certificate saved as {}'.format(cert_local_fn)
+            print('certificate saved as {}'.format(cert_local_fn))
 
         pk_download_fn = re.findall(
             'filename=(.+)', key_response.headers['Content-Disposition'])[0]
@@ -94,7 +96,7 @@ def main():
         with open(pk_local_fn, 'w+') as fn:
             fn.write(key_response.content)
             fn.close()
-            print 'private key saved as {}'.format(pk_local_fn)
+            print('private key saved as {}'.format(pk_local_fn))
 
 
 if __name__ == '__main__':
