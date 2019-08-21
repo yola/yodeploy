@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import sys
 
 import requests
@@ -21,8 +22,15 @@ key_path = 'envs/certificate/private'
 
 def find_ssl_path(settings):
     ssl_dir = os.path.expanduser(settings.common.yodeploy.ssl_path)
+    certs_dir = os.path.join(ssl_dir, 'certs')
+    private_dir = os.path.join(ssl_dir, 'private')
     if not os.path.exists(ssl_dir):
         os.makedirs(ssl_dir)
+    if not os.path.exists(certs_dir):
+        os.mkdir(certs_dir)
+    if not os.path.exists(private_dir):
+        os.mkdir(private_dir)
+        os.chmod(private_dir, stat.S_IRWXU)
     return ssl_dir
 
 
