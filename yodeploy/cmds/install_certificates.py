@@ -33,6 +33,21 @@ def find_ssl_path(settings):
     return ssl_dir
 
 
+def remove_all_files(path):
+    for f in os.listdir(path):
+        if os.path.isfile(f):
+            print('removing {}'.format(f))
+            os.unlink(f)
+
+
+def clean_ssl_directory(settings):
+    ssl_dir = os.path.expanduser(settings.yodeploy.ssl_path)
+    certs_dir = os.path.join(ssl_dir, 'certs')
+    private_dir = os.path.join(ssl_dir, 'private')
+    remove_all_files(certs_dir)
+    remove_all_files(private_dir)
+
+
 def get_certificate(url, name, username, password):
     cert_url = url + '/'.join([cert_path, name])
     cert = requests.get(cert_url, auth=HTTPBasicAuth(username, password))
@@ -67,7 +82,8 @@ def main():
                         help='List instance_ids of running envs')
     parser.add_argument('-i', '--install',
                         help='Install ssl certificate for given instance name')
-
+    parser.add_argument('--clean', help='Deletes all ssl certificates in dir '
+                                        'managed by this app')
     options = parser.parse_args()
 
     deploy_config = config.find_deploy_config()
@@ -86,6 +102,9 @@ def main():
         for env in json.loads(env_response.content):
             print(env['name'], env['developer'])
         return
+
+    if options.clean:
+        clean_ssl_directory(settings)
 
     if options.install:
         name = options.install
