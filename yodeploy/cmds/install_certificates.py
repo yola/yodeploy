@@ -4,7 +4,6 @@ from __future__ import print_function
 import argparse
 import json
 import os
-import re
 import stat
 import sys
 
