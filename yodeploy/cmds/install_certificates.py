@@ -52,6 +52,13 @@ def get_env_list(url, username, password):
     return envs
 
 
+def get_filename_from_headers(headers):
+    content_disp = headers['Content-Disposition']
+    for s in content_disp.split():
+        if s.startswith('filename='):
+            return s[9:].strip('\"')
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Downloads ssl certificates from envhub and installs them '
@@ -90,8 +97,7 @@ def main():
         cert_local_path = os.path.join(ssl_dir, 'certs')
         pk_local_path = os.path.join(ssl_dir, 'private')
 
-        cert_download_fn = re.findall(
-            'filename=(.+)', cert_response.headers['Content-Disposition'])[0]
+        cert_download_fn = get_filename_from_headers(cert_response.headers)
         if '/' not in cert_download_fn:
             cert_local_fn = os.path.join(cert_local_path, cert_download_fn)
         else:
@@ -104,8 +110,7 @@ def main():
             fn.write(cert_response.content)
             print('certificate saved as {}'.format(cert_local_fn))
 
-        pk_download_fn = re.findall(
-            'filename=(.+)', key_response.headers['Content-Disposition'])[0]
+        pk_download_fn = get_filename_from_headers(key_response.headers)
         if '/' not in cert_download_fn:
             pk_local_fn = os.path.join(pk_local_path, pk_download_fn)
         else:
