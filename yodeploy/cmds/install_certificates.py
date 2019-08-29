@@ -75,7 +75,7 @@ def main():
         if env_response.status_code != 200:
             print('failed to retrieve envs with status'
                   '{response.status_code}\n{response.content}'.format(
-                response=env_response))
+                        response=env_response))
             sys.exit(1)
         for env in json.loads(env_response.content):
             print(env['name'], env['developer'])
