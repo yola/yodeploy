@@ -93,6 +93,8 @@ def create_ve(
             '-p', 'python%s' % python_version,
             '--no-site-packages', ve_dir))
 
+    pip_install(ve_dir, pypi, '-U', 'setuptools')
+
     log.info('Installing requirements')
     pip_install(ve_dir, pypi, '-r', req_file)
 
