@@ -1,11 +1,28 @@
 Change Log
 ==========
 
+0.10.3
+-----
+
+* Upgrade `setuptools` for Python virtualenvs.
+* Revert Always upgrade `pip` for Python virtualenvs, it breaks python 2 venv creation.
+
+
+0.10.2
+-----
+
+* Always upgrade `pip` for Python virtualenvs.
+
+0.10.1
+-----
+
+* Remove `flake8` dependency.
+
 0.10.0
 -----
 
-* Change expected template for NGINX's server block from 
-  `nginx/server_block.conf.template` to `nginx/server-block.template` 
+* Change expected template for NGINX's server block from
+  `nginx/server_block.conf.template` to `nginx/server-block.template`
 
 0.9.0
 -----
