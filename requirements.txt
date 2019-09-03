@@ -1,14 +1,16 @@
-Flask==1.0.2
-Flask-HTTPAuth==2.5.0
-Tempita==0.5dev
-boto==2.42.0
-coverage==4.2.0
-gunicorn==19.9.0
-mock==1.0.1
-nose==1.3.7
-nosexcover==1.0.10
-requests==2.21.0
-spec==1.3.1
-virtualenv==15.1.0
-werkzeug==0.14.1
-yoconfigurator==0.5.2
+Flask == 1.0.2
+Flask-HTTPAuth == 2.5.0
+Tempita == 0.5dev
+Werkzeug == 0.14.1
+boto == 2.42.0
+gunicorn == 19.9.0
+requests == 2.21.0
+virtualenv == 15.1.0
+yoconfigurator == 0.5.2
+
+# Development dependencies:
+coverage == 4.2.0
+mock == 1.0.1
+nose == 1.3.7
+nosexcover == 1.0.10
+spec == 1.3.1
