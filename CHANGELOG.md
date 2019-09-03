@@ -1,10 +1,11 @@
 Change Log
 ==========
 
-DEV
+0.10.3
 -----
 
-* Revert Always upgrade `pip` for Python virtualenvs, it breaks pythhon 2 venv creation
+* Upgrade `setuptools` for Python virtualenvs.
+* Revert Always upgrade `pip` for Python virtualenvs, it breaks python 2 venv creation.
 
 
 0.10.2
