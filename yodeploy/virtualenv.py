@@ -96,7 +96,7 @@ def create_ve(
     pip_install(ve_dir, pypi, '-U', 'setuptools')
 
     log.info('Installing requirements')
-    pip_install(ve_dir, pypi, '-r', req_file)
+    pip_install(ve_dir, pypi, '-r', req_file, '--no-binary', ':all:')
 
     if verify_req_install:
         log.info('Verifying requirements were met')
