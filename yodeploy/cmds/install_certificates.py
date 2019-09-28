@@ -35,9 +35,10 @@ def find_ssl_path(settings):
 
 def remove_all_files(path):
     for f in os.listdir(path):
-        if os.path.isfile(f):
-            print('removing {}'.format(f))
-            os.unlink(f)
+        remove_path = os.path.join(path, f)
+        if os.path.isfile(remove_path):
+            print('removing {}'.format(remove_path))
+            os.unlink(remove_path)
 
 
 def clean_ssl_directory(settings):
