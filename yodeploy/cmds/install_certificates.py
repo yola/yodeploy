@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import argparse
+from cgi import parse_header
 import json
 import os
 import stat
@@ -67,11 +68,14 @@ def get_env_list(url, username, password):
     return envs
 
 
-def get_filename_from_headers(headers):
-    content_disp = headers['Content-Disposition']
-    for s in content_disp.split():
-        if s.startswith('filename='):
-            return s[9:].strip('\"')
+def get_filename_from_headers(headers, fallback):
+    content_dispostion = headers.get('Content-Disposition', '')
+    _, params = parse_header(content_dispostion)
+
+    if '/' in params.get('filename', ''):
+        return fallback
+
+    return params.get('filename', fallback)
 
 
 def main():
@@ -117,31 +121,20 @@ def main():
         cert_local_path = os.path.join(ssl_dir, 'certs')
         pk_local_path = os.path.join(ssl_dir, 'private')
 
-        cert_download_fn = get_filename_from_headers(cert_response.headers)
-        if '/' not in cert_download_fn:
-            cert_local_fn = os.path.join(cert_local_path, cert_download_fn)
-        else:
-            print('WARNING! Download filename contains /'
-                  'defaulting to {}.crt'.format(name))
-            cert_local_fn = os.path.join(
-                cert_local_path, '{}.crt'.format(name))
+        cert_filename = get_filename_from_headers(
+            cert_response.headers, '%s.pem' % name)
+        pk_filename = get_filename_from_headers(
+            key_response.headers, '%s.key' % name)
+        cert_local_path = os.path.join(cert_local_path, cert_filename)
+        pk_local_path = os.path.join(pk_local_path, pk_filename)
 
-        with open(cert_local_fn, 'w') as fn:
+        with open(cert_local_path, 'w') as fn:
             fn.write(cert_response.content)
-            print('certificate saved as {}'.format(cert_local_fn))
+            print('certificate saved as {}'.format(cert_local_path))
 
-        pk_download_fn = get_filename_from_headers(key_response.headers)
-        if '/' not in cert_download_fn:
-            pk_local_fn = os.path.join(pk_local_path, pk_download_fn)
-        else:
-            print('WARNING! Download filename contains /'
-                  'defaulting to {}.key'.format(name))
-            pk_local_fn = os.path.join(
-                pk_local_path, '{}.key'.format(name))
-
-        with open(pk_local_fn, 'w') as fn:
+        with open(pk_local_path, 'w') as fn:
             fn.write(key_response.content)
-            print('private key saved as {}'.format(pk_local_fn))
+            print('private key saved as {}'.format(pk_local_path))
 
 
 if __name__ == '__main__':
