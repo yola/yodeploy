@@ -82,8 +82,9 @@ def main():
                         help='List instance_ids of running envs')
     parser.add_argument('-i', '--install',
                         help='Install ssl certificate for given instance name')
-    parser.add_argument('--clean', help='Deletes all ssl certificates in dir '
-                                        'managed by this app')
+    parser.add_argument(
+        '--clean', action='store_true',
+        help='Deletes all ssl certificates in dir managed by this app')
     options = parser.parse_args()
 
     deploy_config = config.find_deploy_config()
