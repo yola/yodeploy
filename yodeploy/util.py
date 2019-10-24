@@ -41,6 +41,8 @@ def extract_tar(tarball, root):
     directory to root.
     """
     workdir = os.path.dirname(root)
+    if sys.version_info[0] < 3:
+        workdir = workdir.encode(sys.getfilesystemencoding())
     tar = tarfile.open(tarball, 'r')
     try:
         members = tar.getmembers()
