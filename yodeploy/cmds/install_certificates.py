@@ -52,18 +52,23 @@ class CertificateService(HTTPServiceClient):
         return self.get('/envs/list/').json()
 
 
-def find_ssl_path(settings):
-    ssl_dir = os.path.expanduser(settings.yodeploy.ssl_path)
+def get_ssl_path(settings):
+    return os.path.expanduser(settings.yodeploy.ssl_path)
+
+
+def ensure_required_ssl_subdirs_exist(ssl_dir):
     certs_dir = os.path.join(ssl_dir, 'certs')
     private_dir = os.path.join(ssl_dir, 'private')
+
     if not os.path.exists(ssl_dir):
         os.makedirs(ssl_dir)
+
     if not os.path.exists(certs_dir):
         os.mkdir(certs_dir)
+
     if not os.path.exists(private_dir):
         os.mkdir(private_dir)
         os.chmod(private_dir, stat.S_IRWXU)
-    return ssl_dir
 
 
 def get_files(*paths):
@@ -150,12 +155,14 @@ def main():
         cert_filename, cert = cert_service.get_certificate(name)
         key_filename, key = cert_service.get_private_key(name)
 
-        ssl_dir = find_ssl_path(settings)
+        ssl_dir = get_ssl_path(settings)
         cert_local_path = os.path.join(ssl_dir, 'certs')
         pk_local_path = os.path.join(ssl_dir, 'private')
 
         cert_local_path = os.path.join(cert_local_path, cert_filename)
         pk_local_path = os.path.join(pk_local_path, key_filename)
+
+        ensure_required_ssl_subdirs_exist(ssl_dir)
 
         with open(cert_local_path, 'w') as fn:
             fn.write(cert)
