@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+0.11.0
+------
+
+* Add install_certificate command, enabling consumers to download certificates
+  for environments from a remote certificate store.
+
 0.10.3
 -----
 
