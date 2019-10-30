@@ -3,21 +3,45 @@ from __future__ import print_function
 
 import argparse
 from cgi import parse_header
-import json
 import os
 import stat
 import sys
 
-import requests
-from requests.auth import HTTPBasicAuth
+from demands import HTTPServiceClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from yodeploy import config  # noqa
 
-list_path = 'envs/list/'
-cert_path = 'envs/certificate/public'
-key_path = 'envs/certificate/private'
+
+class CertificateService(HTTPServiceClient):
+    def _get_filename_from_headers(self, headers, fallback):
+        content_dispostion = headers.get('Content-Disposition', '')
+        _, params = parse_header(content_dispostion)
+
+        if '/' in params.get('filename', ''):
+            return fallback
+
+        return params.get('filename', fallback)
+
+    def get_certificate(self, env_name):
+        filename = '%s.pem' % env_name
+
+        response = self.get('/envs/certificate/public/{}/'.format(env_name))
+        filename = self._get_filename_from_headers(response.headers, filename)
+
+        return filename, response.content
+
+    def get_private_key(self, env_name):
+        filename = '%s.key' % env_name
+
+        response = self.get('/envs/certificate/private/{}/'.format(env_name))
+        filename = self._get_filename_from_headers(response.headers, filename)
+
+        return filename, response.content
+
+    def get_environments(self):
+        return self.get('/envs/list/').json()
 
 
 def find_ssl_path(settings):
@@ -50,34 +74,6 @@ def clean_ssl_directory(settings):
     remove_all_files(private_dir)
 
 
-def get_certificate(url, name, username, password):
-    cert_url = url + '/'.join([cert_path, name])
-    cert = requests.get(cert_url, auth=HTTPBasicAuth(username, password))
-    return cert
-
-
-def get_private_key(url, name, username, password):
-    cert_url = url + '/'.join([key_path, name])
-    cert = requests.get(cert_url, auth=HTTPBasicAuth(username, password))
-    return cert
-
-
-def get_env_list(url, username, password):
-    list_url = ''.join([url, list_path])
-    envs = requests.get(list_url, auth=HTTPBasicAuth(username, password))
-    return envs
-
-
-def get_filename_from_headers(headers, fallback):
-    content_dispostion = headers.get('Content-Disposition', '')
-    _, params = parse_header(content_dispostion)
-
-    if '/' in params.get('filename', ''):
-        return fallback
-
-    return params.get('filename', fallback)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description='Downloads ssl certificates from envhub and installs them '
@@ -94,46 +90,35 @@ def main():
 
     deploy_config = config.find_deploy_config()
     settings = config.load_settings(deploy_config)
-    username = settings.envhub.user
-    password = settings.envhub.password
-    url = settings.envhub.url
+    cert_service = CertificateService(
+        settings.envhub.url,
+        auth=(settings.envhub.user, settings.envhub.password))
 
     if options.list:
-        env_response = get_env_list(url, username, password)
-        if env_response.status_code != 200:
-            print('failed to retrieve envs with status'
-                  '{response.status_code}\n{response.content}'.format(
-                        response=env_response))
-            sys.exit(1)
-        for env in json.loads(env_response.content):
-            print(env['name'], env['developer'])
-        return
+        for env in cert_service.get_environments():
+            print('{name} -- {developer}'.format(**env))
 
     if options.clean:
         clean_ssl_directory(settings)
 
     if options.install:
         name = options.install
-        cert_response = get_certificate(url, name, username, password)
-        key_response = get_private_key(url, name, username, password)
+        cert_filename, cert = cert_service.get_certificate(name)
+        key_filename, key = cert_service.get_private_key(name)
 
         ssl_dir = find_ssl_path(settings)
         cert_local_path = os.path.join(ssl_dir, 'certs')
         pk_local_path = os.path.join(ssl_dir, 'private')
 
-        cert_filename = get_filename_from_headers(
-            cert_response.headers, '%s.pem' % name)
-        pk_filename = get_filename_from_headers(
-            key_response.headers, '%s.key' % name)
         cert_local_path = os.path.join(cert_local_path, cert_filename)
-        pk_local_path = os.path.join(pk_local_path, pk_filename)
+        pk_local_path = os.path.join(pk_local_path, key_filename)
 
         with open(cert_local_path, 'w') as fn:
-            fn.write(cert_response.content)
+            fn.write(cert)
             print('certificate saved as {}'.format(cert_local_path))
 
         with open(pk_local_path, 'w') as fn:
-            fn.write(key_response.content)
+            fn.write(key)
             print('private key saved as {}'.format(pk_local_path))
 
 
