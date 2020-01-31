@@ -1,12 +1,16 @@
 Change Log
 ==========
 
+0.10.4
+-----
+
+* Install `wheel` after upgrading `setuptools`.
+
 0.10.3
 -----
 
 * Upgrade `setuptools` for Python virtualenvs.
 * Revert Always upgrade `pip` for Python virtualenvs, it breaks python 2 venv creation.
-
 
 0.10.2
 -----

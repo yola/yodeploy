@@ -84,7 +84,6 @@ def create_ve(
             ve_python, '-c', 'import ensurepip; print(ensurepip.version())'))
         if parse_version(pip_version) < parse_version('9'):
             pip_install(ve_dir, pypi, '-U', 'pip')
-        pip_install(ve_dir, pypi, 'wheel')
     elif python_version == sysconfig.get_python_version():
         virtualenv.create_environment(ve_dir, site_packages=False)
     else:
@@ -94,6 +93,7 @@ def create_ve(
             '--no-site-packages', ve_dir))
 
     pip_install(ve_dir, pypi, '-U', 'setuptools')
+    pip_install(ve_dir, pypi, 'wheel')
 
     log.info('Installing requirements')
     pip_install(ve_dir, pypi, '-r', req_file)
