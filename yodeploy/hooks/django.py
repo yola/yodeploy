@@ -72,6 +72,7 @@ class DjangoApp(ConfiguratedApp, PythonApp):
                 os.mkdir(media_dir)
             chown_r(data_dir, 'www-data', 'www-data')
 
+        log.debug('Before DjangoApp.prepare_logfiles')
         self.prepare_logfiles()
 
         if self.migrate_on_deploy:
