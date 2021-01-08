@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+0.10.5
+-----
+
+* Modify file permissions on django logs to allow group writes
+
 0.10.4
 -----
 
