@@ -74,7 +74,7 @@ def create_ve(
     ve_dir = os.path.join(app_dir, 'virtualenv')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
-    # The mos recent pip versions dropped support for Python below 3.6
+    # The most recent pip versions dropped support for Python below 3.6
     # See changelog for v21.0 https://pip.pypa.io/en/stable/news
     if python_version.startswith('3.6'):
         subprocess.check_call((
