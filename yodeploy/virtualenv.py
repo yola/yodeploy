@@ -74,9 +74,9 @@ def create_ve(
     ve_dir = os.path.join(app_dir, 'virtualenv')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
-    # The venv module makes a lot of our reclocateability problems go away, so
-    # we only use the virtualenv library on Python 2.
-    if python_version.startswith('3.'):
+    # The mos recent pip versions dropped support for Python below 3.6
+    # See changelog for v21.0 https://pip.pypa.io/en/stable/news
+    if python_version.startswith('3.6'):
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_install(ve_dir, pypi, '-U', 'pip')
