@@ -76,7 +76,8 @@ def create_ve(
 
     # The most recent pip versions dropped support for Python below 3.6
     # See changelog for v21.0 https://pip.pypa.io/en/stable/news
-    if python_version.startswith('3.6'):
+    parsed_python_version = parse_version(python_version)
+    if parsed_python_version >= parse_version('3.6.0'):
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_install(ve_dir, pypi, '-U', 'pip')
