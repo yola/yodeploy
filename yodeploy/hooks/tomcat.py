@@ -93,7 +93,7 @@ class TomcatServlet(ConfiguratedApp):
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
         ubuntu_version = platform.linux_distribution()[1]
-        tomcat = 'tomcat8' if ubuntu_version >= '16.04' else 'tomcat7'
+        tomcat = 'tomcat9' if ubuntu_version >= '20.04' else 'tomcat8'
         uid = pwd.getpwnam(tomcat).pw_uid
 
         os.chown(contexts, uid, -1)
