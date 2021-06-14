@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+0.10.6
+-----
+* Added support for tomcat9
+
 0.10.5
 -----
 
