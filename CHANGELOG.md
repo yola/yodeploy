@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+0.10.7
+-----
+* Fixed error while reading missing `sqlite` configuration.
+
 0.10.6
 -----
 * Added support for tomcat9
