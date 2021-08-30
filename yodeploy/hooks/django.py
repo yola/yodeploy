@@ -113,7 +113,7 @@ class DjangoApp(ConfiguratedApp, PythonApp):
         if 'db' not in aconf:
             return
 
-        uses_sqlite = aconf.db.engine.endswith('sqlite3')
+        uses_sqlite = aconf.get('db', {}).get('engine', '').endswith('sqlite3')
         new_db = False
         if uses_sqlite:
             if not os.path.exists(aconf.db.name):
