@@ -2,9 +2,9 @@ Flask == 1.0.2
 Flask-HTTPAuth == 2.5.0
 Tempita == 0.5dev
 Werkzeug == 0.14.1
-boto == 2.42.0
+boto3 == 1.17.112
 gunicorn == 19.9.0
-requests == 2.21.0
+requests == 2.26.0
 virtualenv == 16.7.5
 yoconfigurator == 0.5.2
 
