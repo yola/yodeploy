@@ -38,7 +38,7 @@ def configure_logging(verbose, conf):
         handler.setLevel(logging.DEBUG)
         logging.getLogger().addHandler(handler)
 
-    logging.getLogger('boto').setLevel(logging.WARNING)
+    logging.getLogger('boto3').setLevel(logging.WARNING)
 
 
 def strip_auth(url):
