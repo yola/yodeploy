@@ -57,6 +57,8 @@ class S3Client(object):
         return urlopen(req)
 
     def _add_headers_and_sign_req(self, req):
+        # Signing code was taken from
+        # https://charemza.name/blog/posts/aws/python/you-might-not-need-boto-3/
         algorithm = 'AWS4-HMAC-SHA256'
         now = datetime.datetime.utcnow()
         amzdate = now.strftime('%Y%m%dT%H%M%SZ')
