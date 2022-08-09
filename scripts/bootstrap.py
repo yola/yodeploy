@@ -3,8 +3,7 @@
 # This downloads the latest builds from S3
 # It's entirely self-contained because we bundle it in a Chef recipe
 
-import base64
-import email.utils
+import datetime
 import hashlib
 import hmac
 import imp
@@ -33,45 +32,99 @@ log = logging.getLogger('bootstrap')
 
 class S3Client(object):
     """A really simple, NIH, pure-python S3 client"""
-    def __init__(self, bucket, access_key, secret_key):
+    def __init__(
+            self, bucket, access_key, secret_key, region_name='us-east-1'):
         self.bucket = bucket
+        self.region_name = region_name
 
-        # Coerce keys to byte strings for safe use in hashing functions
+        # Coerce keys to unicode strings for safe use in formatting strings
         try:
-            self.access_key = access_key.encode()
+            self.access_key = access_key.decode('utf-8')
         except AttributeError:
             self.access_key = access_key
 
         try:
-            self.secret_key = secret_key.encode()
+            self.secret_key = secret_key.decode('utf-8')
         except AttributeError:
             self.secret_key = secret_key
 
     def get(self, key):
-        url = 'https://s3.amazonaws.com/%s/%s' % (self.bucket, key)
+        url = 'https://s3.{}.amazonaws.com/{}/{}'.format(
+            self.region_name, self.bucket, key)
         log.debug('Downloading %s', url)
         req = Request(url)
-        req.add_header('Date', email.utils.formatdate())
-        self._sign_req(req)
+        self._add_headers_and_sign_req(req)
         return urlopen(req)
 
-    def _sign_req(self, req):
-        # We don't bother with CanonicalizedAmzHeaders
-        assert not [True for header in req.headers
-                    if header.lower().startswith('x-amz-')]
-        cleartext = [req.get_method(),
-                     req.get_header('Content-MD5', ''),
-                     req.get_header('Content-Type', ''),
-                     req.get_header('Date', ''),
-                     urlparse(req.get_full_url()).path]
-        cleartext = '\n'.join(cleartext)
-        cleartext = cleartext.encode()
+    def _add_headers_and_sign_req(self, req):
+        # Signing code was taken from
+        # https://charemza.name/blog/posts/aws/python/you-might-not-need-boto-3/
+        algorithm = 'AWS4-HMAC-SHA256'
+        now = datetime.datetime.utcnow()
+        amzdate = now.strftime('%Y%m%dT%H%M%SZ')
+        datestamp = now.strftime('%Y%m%d')
+        payload_hash = hashlib.sha256(b'').hexdigest()
+        credential_scope = '{}/{}/s3/aws4_request'.format(
+            datestamp, self.region_name)
 
-        mac = hmac.new(self.secret_key, cleartext, hashlib.sha1)
-        signature = base64.encodestring(mac.digest()).rstrip()
+        pre_auth_headers_lower = {
+            header_key.lower(): ' '.join(header_value.split())
+            for header_key, header_value in req.header_items()
+        }
+        required_headers = {
+            'host': urlparse(req.get_full_url()).netloc,
+            'x-amz-content-sha256': payload_hash,
+            'x-amz-date': amzdate,
+        }
 
-        req.add_header('Authorization',
-                       b'AWS %s:%s' % (self.access_key, signature))
+        headers = dict(pre_auth_headers_lower, **required_headers)
+        header_keys = sorted(headers.keys())
+        signed_headers = ';'.join(header_keys)
+
+        def signature():
+            def canonical_request():
+                parse_result = urlparse(req.get_full_url())
+                canonical_headers = ''.join(
+                    '{}:{}\n'.format(key, headers[key]) for key in header_keys)
+                return '\n'.join((
+                    req.get_method(),
+                    parse_result.path,
+                    parse_result.query,
+                    canonical_headers,
+                    signed_headers,
+                    payload_hash,
+                ))
+
+            def sign(key, msg):
+                return hmac.new(
+                    key, msg.encode('utf-8'), hashlib.sha256).digest()
+
+            string_to_sign = '\n'.join((
+                algorithm,
+                amzdate,
+                credential_scope,
+                hashlib.sha256(canonical_request().encode('utf-8')).hexdigest()
+            ))
+
+            date_key = sign(
+                'AWS4{}'.format(self.secret_key).encode('utf-8'), datestamp)
+            region_key = sign(date_key, self.region_name)
+            service_key = sign(region_key, 's3')
+            request_key = sign(service_key, 'aws4_request')
+            return hmac.new(
+                request_key, string_to_sign.encode('utf-8'), hashlib.sha256
+            ).hexdigest()
+
+        req.add_header('x-amz-date', amzdate)
+        req.add_header('x-amz-content-sha256', payload_hash)
+        req.add_header(
+            'Authorization',
+            '{} Credential={}/{},SignedHeaders={},Signature={}'.format(
+                algorithm,
+                self.access_key,
+                credential_scope,
+                signed_headers,
+                signature()))
 
 
 # stolen from yodeploy.config
