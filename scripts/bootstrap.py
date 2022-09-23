@@ -68,7 +68,7 @@ class S3Client(object):
         cleartext = cleartext.encode()
 
         mac = hmac.new(self.secret_key, cleartext, hashlib.sha1)
-        signature = base64.encodestring(mac.digest()).rstrip()
+        signature = base64.encodebytes(mac.digest()).rstrip()
 
         req.add_header('Authorization',
                        b'AWS %s:%s' % (self.access_key, signature))
