@@ -5,12 +5,12 @@ Werkzeug == 0.14.1
 boto3 == 1.17.112
 gunicorn == 19.9.0
 requests == 2.26.0
-virtualenv == 16.7.5
+virtualenv == 16.7.9
 yoconfigurator == 0.5.2
 
 # Development dependencies:
-coverage == 4.2.0
-mock == 1.0.1
+coverage == 5.5
+mock == 3.0.5
 nose == 1.3.7
-nosexcover == 1.0.10
-spec == 1.3.1
+nosexcover == 1.0.11
+spec == 1.4.1
