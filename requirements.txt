@@ -1,7 +1,7 @@
 Flask == 1.0.2
 Flask-HTTPAuth == 2.5.0
 Jinja2 == 2.11.3
-Werkzeug == 1.0.1
+Werkzeug == 2.2.3
 boto3 == 1.17.112
 gunicorn == 19.9.0
 requests == 2.26.0
