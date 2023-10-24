@@ -125,27 +125,22 @@ class Builder(object):
             build_app_virtualenv.append('--upload')
 
         if self.build_docker_images:
+            # Define the directory where Dockerfiles are located
             dockerfiles_dir = '/docker/'
 
-            if os.path.exists(dockerfiles_dir):
-                print_banner('Building docker images')
+            # List Dockerfiles in the directory
+            dockerfiles = [file for file in os.listdir(dockerfiles_dir)
+                           if file.endswith('.Dockerfile')]
+            # Iterate through the Dockerfiles and extract image name
+            for dockerfile in dockerfiles:
+                image_name = dockerfile.replace('.Dockerfile', '')
 
-                # Define the directory where Dockerfiles are located
-                dockerfiles_dir = '/docker/'
+            full_image_name = "{}:{}".format(image_name, self.version)
+            self.configure()
 
-                # List Dockerfiles in the directory
-                dockerfiles = [file for file in os.listdir(dockerfiles_dir)
-                               if file.endswith('.Dockerfile')]
-                # Iterate through the Dockerfiles and extract image name
-                for dockerfile in dockerfiles:
-                    image_name = dockerfile.replace('.Dockerfile', '')
-
-                full_image_name = "{}:{}".format(image_name, self.version)
-                self.configure()
-
-                check_call(['docker-compose', 'build'], cwd='/docker/',
-                           abort='Failed to build Docker images')
-                check_call(['docker', 'tag', image_name, full_image_name])
+            check_call(['docker-compose', 'build'], cwd='/docker/',
+                       abort='Failed to build Docker images')
+            check_call(['docker', 'tag', image_name, full_image_name])
 
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
@@ -492,13 +487,17 @@ def main():
 
     upload_virtualenvs = not opts.test_only
 
+    dockerfiles_dir = '/docker/'
+    build_docker_images = os.path.exists(dockerfiles_dir)
+
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs)
+                           upload_virtualenvs=upload_virtualenvs,
+                           build_docker_images=build_docker_images)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
