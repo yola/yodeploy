@@ -128,6 +128,8 @@ class Builder(object):
             # Define the directory where Dockerfiles are located
             dockerfiles_dir = '/docker/'
 
+            print_banner('Build docker images')
+
             # List Dockerfiles in the directory
             dockerfiles = [file for file in os.listdir(dockerfiles_dir)
                            if file.endswith('.Dockerfile')]
@@ -487,7 +489,7 @@ def main():
 
     upload_virtualenvs = not opts.test_only
 
-    dockerfiles_dir = '/docker/'
+    dockerfiles_dir = 'docker/'
     build_docker_images = os.path.exists(dockerfiles_dir)
 
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
