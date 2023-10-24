@@ -29,7 +29,7 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs):
+                 build_virtualenvs, upload_virtualenvs, build_docker_images):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -43,6 +43,7 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
+        self.build_docker_images = build_docker_images
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -122,6 +123,29 @@ class Builder(object):
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
+
+        if self.build_docker_images:
+            dockerfiles_dir = '/docker/'
+
+            if os.path.exists(dockerfiles_dir):
+                print_banner('Building docker images')
+
+                # Define the directory where Dockerfiles are located
+                dockerfiles_dir = '/docker/'
+
+                # List Dockerfiles in the directory
+                dockerfiles = [file for file in os.listdir(dockerfiles_dir)
+                               if file.endswith('.Dockerfile')]
+                # Iterate through the Dockerfiles and extract image name
+                for dockerfile in dockerfiles:
+                    image_name = dockerfile.replace('.Dockerfile', '')
+
+                full_image_name = f"{image_name}:{self.version}"
+                self.configure()
+
+                check_call(['docker-compose', 'build'], cwd='/docker/',
+                           abort='Failed to build Docker images')
+                check_call(['docker', 'tag', image_name, full_image_name])
 
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
