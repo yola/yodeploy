@@ -140,7 +140,7 @@ class Builder(object):
                 for dockerfile in dockerfiles:
                     image_name = dockerfile.replace('.Dockerfile', '')
 
-                full_image_name = f"{image_name}:{self.version}"
+                full_image_name = "{}:{}".format(image_name, self.version)
                 self.configure()
 
                 check_call(['docker-compose', 'build'], cwd='/docker/',
