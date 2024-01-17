@@ -23,13 +23,14 @@ from yoconfigurator.filter import filter_config  # noqa
 from yoconfigurator.smush import config_sources, smush_config  # noqa
 import yodeploy.config  # noqa
 import yodeploy.repository  # noqa
+from yodeploy.docker_registry import ECRClient # noqa
 from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs):
+                 build_virtualenvs, upload_virtualenvs, build_docker_images):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -43,6 +44,7 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
+        self.build_docker_images = build_docker_images
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -133,6 +135,32 @@ class Builder(object):
             print_banner('Build app virtualenv')
             check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
+        if self.build_docker_images:
+            self.ecr_client = ECRClient(
+                aws_access_key_id=self.deploy_settings.artifacts.ecr_acccess_key,
+                aws_secret_access_key=self.deploy_settings.artifacts.ecr_secret_key,
+                aws_region='us-east-1',
+                ecr_registry_uri=self.deploy_settings.artifacts.ecr_uri + self.app,
+                ecr_registry_store=self.deploy_settings.artifacts.ecr_store
+            )
+            print_banner('Build docker images')
+            app_docker_dir = ECRClient.DOCKERFILES_DIR
+            docker_env_file = ECRClient.DOCKER_ENV_FILE
+            app_names = self.ecr_client.get_apps_names(
+                app_docker_dir)
+
+            build_docker_images = ['docker', 'compose',
+                                   '--env-file', docker_env_file, 'build']
+
+            check_call(build_docker_images, cwd=app_docker_dir,
+                       abort='Failed to build Docker images')
+
+            print_banner('Tagging and pushing docker image')
+            for app_name in app_names:
+                self.ecr_client.push_image(app_name, self.version)
+
+            print_banner('Cleaning old and dangling images')
+            self.ecr_client.cleanup_images()
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
@@ -468,13 +496,18 @@ def main():
 
     upload_virtualenvs = not opts.test_only
 
+    dockerfiles_dir = ECRClient.DOCKERFILES_DIR
+
+    build_docker_images = os.path.exists(dockerfiles_dir)
+
     builder = BuilderClass(app=opts.app, target=opts.target, version=version,
                            commit=commit, commit_msg=commit_msg, branch=branch,
                            tag=tag, deploy_settings=deploy_settings,
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs)
+                           upload_virtualenvs=upload_virtualenvs,
+                           build_docker_images=build_docker_images)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
