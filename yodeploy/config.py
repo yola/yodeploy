@@ -1,8 +1,13 @@
 # This should be self-contained, local-bootstrap imports it
 from __future__ import print_function
-import imp
+import six
 import sys
 import os
+
+if six.PY2:
+    import imp
+else:
+    import importlib.util
 
 
 SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf.py']
@@ -11,9 +16,16 @@ SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf.py']
 def load_settings(fn):
     '''Load deploy_settings from the specified filename'''
     fake_mod = '_deploy_settings'
-    description = ('.py', 'r', imp.PY_SOURCE)
+    description = ('.py', 'r', imp.PY_SOURCE) if six.PY2 else ('.py', 'r', importlib.util.MAGIC_NUMBER)
+
     with open(fn) as f:
-        m = imp.load_module(fake_mod, f, fn, description)
+        if six.PY2:
+            m = imp.load_module(fake_mod, f, fn, description)
+        else:
+            spec = importlib.util.spec_from_file_location(fake_mod, fn)
+            m = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(m)
+
     return m.deploy_settings
 
 
