@@ -7,6 +7,9 @@ gunicorn == 19.9.0
 requests == 2.26.0
 virtualenv == 16.7.9
 yoconfigurator == 0.5.2
+markupsafe == 1.1.1
+docker == 4.4.4
+six == 1.16.0
 
 # Development dependencies:
 coverage == 5.5
