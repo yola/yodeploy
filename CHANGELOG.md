@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+## DEV
+
+* Added docker support
+
 1.0.0
 -----
 * Replaced `Tempita` by `Jinja2` for templating.
