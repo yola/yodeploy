@@ -101,7 +101,7 @@ class ECRClient:
             if any(self.ecr_registry_uri in t for t in img.get("RepoTags", []))
         ]
         dangling_images = [
-            img for img in ecr_images
+            img for img in images
             if "<none>:<none>" in img.get("RepoTags", [])
         ]
 
