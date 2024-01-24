@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-## DEV
-
+1.1.0
+-----
 * Added docker support
 
 1.0.0
