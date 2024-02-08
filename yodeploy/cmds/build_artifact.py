@@ -140,7 +140,7 @@ class Builder(object):
                 aws_access_key_id=self.deploy_settings.artifacts.ecr_acccess_key,
                 aws_secret_access_key=self.deploy_settings.artifacts.ecr_secret_key,
                 aws_region='us-east-1',
-                ecr_registry_uri=self.deploy_settings.artifacts.ecr_uri + self.app,
+                ecr_registry_uri=self.deploy_settings.artifacts.ecr_uri,
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
             print_banner('Build docker images')
@@ -155,9 +155,9 @@ class Builder(object):
             check_call(build_docker_images, cwd=app_docker_dir,
                        abort='Failed to build Docker images')
 
-            print_banner('Tagging and pushing docker image')
+            print_banner('Tagging and pushing docker image to ECR')
             for app_name in app_names:
-                self.ecr_client.push_image(app_name, self.version)
+                self.ecr_client.push_image(app_name, self.version, self.branch.replace('origin/', ''))
 
             print_banner('Cleaning old and dangling images')
             self.ecr_client.cleanup_images()
