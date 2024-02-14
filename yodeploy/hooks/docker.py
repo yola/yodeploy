@@ -52,7 +52,7 @@ class DockerApp(DeployHook):
         self.log.info("Pulling {} images with Docker...".format(self.app))
         for app_name in self.app_names:
             # Pull the image from ECR or local image for Envs.
-            self.ecr_client.pull_image(app_name, self.version)
+            self.ecr_client.pull_image(app_name, self.version, self.target)
 
     def docker_deployed(self):
         self.start_container()
