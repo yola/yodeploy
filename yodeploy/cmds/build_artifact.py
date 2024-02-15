@@ -156,9 +156,12 @@ class Builder(object):
                        abort='Failed to build Docker images')
 
             print_banner('Tagging and pushing docker image to ECR')
-            for app_name in app_names:
-                self.ecr_client.push_image(app_name, self.version, self.branch.replace('origin/', ''))
-
+            push_docker_images = ['docker', 'compose',
+                                   '--env-file', docker_env_file, 'push']
+            
+            check_call(push_docker_images, cwd=app_docker_dir,
+                       abort='Failed to build Docker images')
+            
             print_banner('Cleaning old and dangling images')
             self.ecr_client.cleanup_images()
 
