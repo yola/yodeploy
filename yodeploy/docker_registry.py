@@ -142,12 +142,15 @@ class ECRClient:
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
 
-    def get_apps_names(self):
+    def get_apps_names(self, directory=None):
         """Retrieves application names from Dockerfiles within a directory,
           excluding tests images."""
+        if directory is None:
+            directory = os.getcwd()        
+
         application = [
             os.path.splitext(dockerfile)[0]  # Remove ".Dockerfile" extension
-            for dockerfile in os.listdir()
+            for dockerfile in os.listdir(directory)
             if dockerfile.endswith('.Dockerfile') and "tests" not in dockerfile
         ]
         return application
