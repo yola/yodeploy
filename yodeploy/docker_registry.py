@@ -88,13 +88,13 @@ class ECRClient:
                 log.error("An error occurred: {}".format(e), exc_info=True)
 
     def manipulate_docker_compose(self, image_uris):
-        with open('compose.yml', 'r') as file:
+        with open('compose.yaml', 'r') as file:
             compose_data = yaml.safe_load(file)
 
         for service_name, image_uri in image_uris.items():
             compose_data['services'][service_name]['image'] = image_uri
 
-        with open('compose.yml', 'w') as file:
+        with open('compose.yaml', 'w') as file:
             yaml.dump(compose_data, file, default_flow_style=False)
 
     def build_images(self, branch, version):

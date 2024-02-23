@@ -150,7 +150,7 @@ class Builder(object):
                        abort='Failed to build Docker images')
 
             print_banner('Tagging and pushing docker image to ECR')            
-            check_call(self.ecr_client.push_to_ECR(), cwd=app_docker_dir,
+            check_call(self.ecr_client.push_to_ECR(self.branch, self.version), cwd=app_docker_dir,
                        abort='Failed to build Docker images')
             
 
