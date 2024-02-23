@@ -10,7 +10,7 @@ yoconfigurator == 0.5.2
 markupsafe == 1.1.1
 docker == 4.4.4
 six == 1.16.0
-pyyaml == 5.4.1
+PyYAML == 5.4.1
 
 # Development dependencies:
 coverage == 5.5
