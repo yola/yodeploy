@@ -97,15 +97,21 @@ class ECRClient:
         with open('compose.yml', 'w') as file:
             yaml.dump(compose_data, file, default_flow_style=False)
 
-    def build_images(self):
-        # Get the Docker Compose command
+    def build_images(self, branch, version):
+        
+        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
+        self.manipulate_docker_compose(image_uris)
+
         compose_command = self.docker_compose_command()
 
         try:
-            subprocess.check_call(f"{compose_command} build", shell=True)
+            subprocess.check_call("{} build".format(compose_command), shell=True)
             log.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
-            log.error(f"Error building Docker images {e}")
+            log.error("Error building Docker images")
 
         self.cleanup_images()
 
@@ -146,10 +152,12 @@ class ECRClient:
         ]
         return application
 
-    def construct_image_uris(self, ecr_registry_uri, service_names, branch, version):
+    def construct_image_uris(self, ecr_registry_uri,
+                             service_names, branch, version):
         image_uris = {}
         for service_name in service_names:
-            image_uri = f"{ecr_registry_uri}/{service_name}-{branch}:{version}"
+            image_uri = "%s/%s-%s:%s" % (ecr_registry_uri,
+                                         service_name, branch, version)
             image_uris[service_name] = image_uri
         return image_uris
 
