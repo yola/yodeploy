@@ -96,23 +96,22 @@ class ECRClient:
 
         with open('compose.yaml', 'w') as file:
             yaml.dump(compose_data, file, default_flow_style=False)
-
-    def build_images(self, branch, version):
         
-        service_names = self.get_apps_names()
-
-        image_uris = self.construct_image_uris(self.ecr_registry_uri,
-                                               service_names, branch, version)
-        self.manipulate_docker_compose(image_uris)
-
-        compose_command = self.docker_compose_command()
-
+    def build_images(self, branch, version):
         try:
+            service_names = self.get_apps_names()
+
+            image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
+            self.manipulate_docker_compose(image_uris)
+
+            compose_command = self.docker_compose_command()
+
             subprocess.check_call("{} build".format(compose_command), shell=True)
             log.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
-            log.error("Error building Docker images")
-
+            log.error("Failed to build Docker images: {}".format(e))
+            raise
         self.cleanup_images()
 
     def push_to_ECR(self, branch, version):

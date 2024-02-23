@@ -146,11 +146,13 @@ class Builder(object):
             print_banner('Build docker images')
             os.chdir(ECRClient.DOCKERFILES_DIR)
 
-            check_call(self.ecr_client.build_images(self.branch, self.version),
+            check_call(self.ecr_client.build_images(self.branch.replace('origin/', ''),
+                                                     self.version),
                        abort='Failed to build Docker images')
 
             print_banner('Tagging and pushing docker image to ECR')            
-            check_call(self.ecr_client.push_to_ECR(self.branch, self.version),
+            check_call(self.ecr_client.push_to_ECR(self.branch.replace('origin/', ''),
+                                                    self.version),
                        abort='Failed to build Docker images')
             
 
