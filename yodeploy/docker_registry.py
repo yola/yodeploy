@@ -99,7 +99,7 @@ class ECRClient:
 
     def build_images(self, branch, version):
         
-        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+        service_names = self.get_apps_names()
 
         image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
@@ -122,7 +122,7 @@ class ECRClient:
 
         self.authenticate_docker_client()
 
-        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+        service_names = self.get_apps_names()
 
         # Create ECR repository if it doesn't exist
         self.create_ecr_repository(service_names, branch)
@@ -142,12 +142,12 @@ class ECRClient:
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
 
-    def get_apps_names(self, dockerfiles_dir):
+    def get_apps_names(self):
         """Retrieves application names from Dockerfiles within a directory,
           excluding tests images."""
         application = [
             os.path.splitext(dockerfile)[0]  # Remove ".Dockerfile" extension
-            for dockerfile in os.listdir(dockerfiles_dir)
+            for dockerfile in os.listdir()
             if dockerfile.endswith('.Dockerfile') and "tests" not in dockerfile
         ]
         return application
@@ -168,7 +168,7 @@ class ECRClient:
 
         self.authenticate_docker_client()
 
-        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+        service_names = self.get_apps_names()
         image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
