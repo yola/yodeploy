@@ -16,7 +16,7 @@ class DockerApp(DeployHook):
             aws_access_key_id=self.settings.artifacts.ecr_acccess_key,
             aws_secret_access_key=self.settings.artifacts.ecr_secret_key,
             aws_region='us-east-1',
-            ecr_registry_uri=self.settings.artifacts.ecr_uri + self.app,
+            ecr_registry_uri=self.settings.artifacts.ecr_uri,
             ecr_registry_store=self.settings.artifacts.ecr_store
         )
         self.app_names = self.ecr_client.get_apps_names(self.docker_base_dir)

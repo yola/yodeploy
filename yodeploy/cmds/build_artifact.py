@@ -145,25 +145,14 @@ class Builder(object):
             )
             print_banner('Build docker images')
             app_docker_dir = ECRClient.DOCKERFILES_DIR
-            docker_env_file = ECRClient.DOCKER_ENV_FILE
-            app_names = self.ecr_client.get_apps_names(
-                app_docker_dir)
 
-            build_docker_images = ['docker', 'compose',
-                                   '--env-file', docker_env_file, 'build']
-
-            check_call(build_docker_images, cwd=app_docker_dir,
+            check_call(self.ecr_client.build_images(self.branch, self.version), cwd=app_docker_dir,
                        abort='Failed to build Docker images')
 
-            print_banner('Tagging and pushing docker image to ECR')
-            push_docker_images = ['docker', 'compose',
-                                   '--env-file', docker_env_file, 'push']
-            
-            check_call(push_docker_images, cwd=app_docker_dir,
+            print_banner('Tagging and pushing docker image to ECR')            
+            check_call(self.ecr_client.push_to_ECR(), cwd=app_docker_dir,
                        abort='Failed to build Docker images')
             
-            print_banner('Cleaning old and dangling images')
-            self.ecr_client.cleanup_images()
 
     def build_env(self):
         """Return environment variables to be exported for the build"""

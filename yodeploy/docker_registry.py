@@ -1,9 +1,10 @@
-import boto3
 import base64
+import boto3
 import json
-import os
 import logging
+import os
 import subprocess
+import yaml
 from docker import APIClient
 
 log = logging.getLogger(__name__)
@@ -33,125 +34,148 @@ class ECRClient:
     def authenticate_docker_client(self):
         # Get token and Extract username and password
         auth_token = self.ecr_client.get_authorization_token()
-        token_data = base64.b64decode(auth_token['authorizationData']
-                                      [0]['authorizationToken'])
+        token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
         username, password = token_data.decode('utf-8').split(':')
 
         self.docker_client = APIClient()
-        self.docker_client.login(username=username, password=password,
-                                 registry=self.ecr_registry_uri)
+        self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
 
-    def create_ecr_repository(self, image_name, branch):
-        if not image_name or not branch:
-            log.error("Both 'image_name' and 'branch' are required.")
+    def create_ecr_repository(self, service_names, branch='master'):
+        if not service_names:
+            log.error("'service_names' are required.")
             return
 
         if branch not in ['master', 'release', 'docker']:
-            log.info("Skipped ECR creation for branch '{}'".format(branch))
+            log.info("Skipped ECR creation for branch '{}'.".format(branch))
             return
 
-        repository_name = "{}-{}".format(image_name.lower(), branch)
+        for service_name in service_names:
+            repository_name = "{}-{}".format(service_name.lower(), branch)
+
+            try:
+                response = self.ecr_client.create_repository(
+                    repositoryName=repository_name,
+                    imageScanningConfiguration={'scanOnPush': True},
+                    imageTagMutability='IMMUTABLE'
+                )
+                repository_uri = response['repository']['repositoryUri']
+                log.info("ECR Repo created: {}".format(repository_uri))
+
+                # Add lifecycle policy to keep only last 5 images
+                lifecycle_policy = {
+                    'rules': [
+                        {
+                            'rulePriority': 1,
+                            'description': 'Keep only last 5 images',
+                            'selection': {
+                                'tagStatus': 'any',
+                                'countType': 'imageCountMoreThan',
+                                'countNumber': 5,
+                            },
+                            'action': {'type': 'expire'}
+                        }
+                    ]
+                }
+
+                self.ecr_client.put_lifecycle_policy(
+                    repositoryName=repository_name,
+                    lifecyclePolicyText=json.dumps(lifecycle_policy)
+                )
+
+            except self.ecr_client.exceptions.RepositoryAlreadyExistsException:
+                log.info("ECR Repo '{}' already exists.".format(repository_name))
+            except Exception as e:
+                log.error("An error occurred: {}".format(e), exc_info=True)
+
+    def manipulate_docker_compose(self, image_uris):
+        with open('compose.yml', 'r') as file:
+            compose_data = yaml.safe_load(file)
+
+        for service_name, image_uri in image_uris.items():
+            compose_data['services'][service_name]['image'] = image_uri
+
+        with open('compose.yml', 'w') as file:
+            yaml.dump(compose_data, file, default_flow_style=False)
+
+    def build_images(self):
+        # Get the Docker Compose command
+        compose_command = self.docker_compose_command()
 
         try:
-            response = self.ecr_client.create_repository(
-                repositoryName=repository_name,
-                imageScanningConfiguration={
-                    'scanOnPush': True
-                },
-                imageTagMutability='IMMUTABLE'
-            )
-            repository_uri = response['repository']['repositoryUri']
-            log.info("ECR Repo created: {}".format(repository_uri))
+            subprocess.check_call(f"{compose_command} build", shell=True)
+            log.info("Docker images built successfully")
+        except subprocess.CalledProcessError as e:
+            log.error(f"Error building Docker images {e}")
 
-            # Add lifecycle policy to keep only last 5 images
-            lifecycle_policy = {
-                'rules': [
-                    {
-                        'rulePriority': 1,
-                        'description': 'Keep only last 5 images',
-                        'selection': {
-                            'tagStatus': 'any',
-                            'countType': 'imageCountMoreThan',
-                            'countNumber': 5,
-                        },
-                        'action': {
-                            'type': 'expire'
-                        }
-                    }
-                ]
-            }
+        self.cleanup_images()
 
-            self.ecr_client.put_lifecycle_policy(
-                repositoryName=repository_name,
-                lifecyclePolicyText=json.dumps(lifecycle_policy)
-            )
-
-        except self.ecr_client.exceptions.RepositoryAlreadyExistsException:
-            log.info("ECR Repo '{}' already exists.".format(repository_name))
-        except Exception as e:
-            log.error("An error occurred: {}".format(e), exc_info=True)
-
-    def get_apps_names(self, dockerfiles_dir):
-        """Retrieves application names from Dockerfiles within a directory,
-          excluding tests images."""
-        application_names = [
-            os.path.splitext(dockerfile)[0]  # Remove ".Dockerfile" extension
-            for dockerfile in os.listdir(dockerfiles_dir)
-            if dockerfile.endswith('.Dockerfile') and "tests" not in dockerfile
-        ]
-        return application_names
-
-    def _get_image_tag(self, dockerfile_name, version):
-        """Helper method to create image name and tag."""
-        image_name = dockerfile_name.replace('.Dockerfile', '')
-        image_tag = "{}-{}".format(image_name, version)
-        return image_name, image_tag
-
-    def _get_ecr_repo_and_uri(self, image_name, branch, image_tag):
-        """Helper method to calculate ECR repository name and image URI."""
-        ecr_repo_name = "{}{}-{}".format(self.ecr_registry_uri, image_name, branch)
-        ecr_image_uri = "{}:{}".format(ecr_repo_name, image_tag)
-        return ecr_repo_name, ecr_image_uri
-
-    def push_image(self, dockerfile_name, version, branch):
+    def push_to_ECR(self, branch, version):
         if self.ecr_registry_store == 'local':
             log.info("Skipping push to AWS ECR (location set to 'local')")
             return
 
         self.authenticate_docker_client()
 
-        image_name, image_tag = self._get_image_tag(dockerfile_name, version)
-        ecr_repo_name, ecr_image_uri = self._get_ecr_repo_and_uri(image_name, branch, image_tag)
+        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
 
         # Create ECR repository if it doesn't exist
-        self.create_ecr_repository(image_name, branch)
+        self.create_ecr_repository(service_names, branch)
 
-        # Show tagged images
-        log.info("ECR Image URI:", ecr_image_uri)
-        self.docker_client.tag(image="{}:{}".format(image_name, branch),
-                               repository=ecr_repo_name,
-                               tag=image_tag)
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
+        self.manipulate_docker_compose(image_uris)
 
-        # Push the image to ECR
-        self.docker_client.push(repository=ecr_image_uri)
-        log.info("Image push complete for:", ecr_image_uri)
+        push_command = "{} push".format(self.docker_compose_command)
 
-    def pull_image(self, dockerfile_name, version, branch):
+        try:
+            subprocess.check_call(push_command, shell=True)
+            log.info("Docker image pushed to AWS ECR successfully")
+        except subprocess.CalledProcessError as e:
+            log.error("Error pushing Docker image to AWS ECR: {}".format(e))
+
+    def docker_compose_command(self):
+        return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
+
+    def get_apps_names(self, dockerfiles_dir):
+        """Retrieves application names from Dockerfiles within a directory,
+          excluding tests images."""
+        application = [
+            os.path.splitext(dockerfile)[0]  # Remove ".Dockerfile" extension
+            for dockerfile in os.listdir(dockerfiles_dir)
+            if dockerfile.endswith('.Dockerfile') and "tests" not in dockerfile
+        ]
+        return application
+
+    def construct_image_uris(self, ecr_registry_uri, service_names, branch, version):
+        image_uris = {}
+        for service_name in service_names:
+            image_uri = f"{ecr_registry_uri}/{service_name}-{branch}:{version}"
+            image_uris[service_name] = image_uri
+        return image_uris
+
+    def pull_image(self, version, branch):
         if self.ecr_registry_store == 'local':
             log.info("Skipping pull from AWS ECR (location set to 'local')")
             return
 
         self.authenticate_docker_client()
 
-        image_name, image_tag = self._get_image_tag(dockerfile_name, version)
-        ecr_repo_name, ecr_image_uri = self._get_ecr_repo_and_uri(image_name, branch, image_tag)
+        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
+        self.manipulate_docker_compose(image_uris)
 
-        # Pull the image from ECR
-        self.docker_client.pull(repository=ecr_repo_name, tag=image_tag)
+        pull_command = "{} pull".format(self.docker_compose_command)
+
+        try:
+            subprocess.check_call(pull_command, shell=True)
+            log.info("Docker image pushed to AWS ECR successfully")
+        except subprocess.CalledProcessError as e:
+            log.error("Error pushing Docker image to AWS ECR: {}".format(e))
         # Perform image cleanup after pulling
         self.cleanup_images()
 
-        log.info("Image pull complete for:", ecr_image_uri)
+        log.info("Image pull complete for", image_uris)
 
     def cleanup_images(self, num_images_to_keep=5):
         self.authenticate_docker_client()
