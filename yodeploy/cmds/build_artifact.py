@@ -144,13 +144,13 @@ class Builder(object):
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
             print_banner('Build docker images')
-            app_docker_dir = ECRClient.DOCKERFILES_DIR
+            os.chdir(ECRClient.DOCKERFILES_DIR)
 
-            check_call(self.ecr_client.build_images(self.branch, self.version), cwd=app_docker_dir,
+            check_call(self.ecr_client.build_images(self.branch, self.version),
                        abort='Failed to build Docker images')
 
             print_banner('Tagging and pushing docker image to ECR')            
-            check_call(self.ecr_client.push_to_ECR(self.branch, self.version), cwd=app_docker_dir,
+            check_call(self.ecr_client.push_to_ECR(self.branch, self.version),
                        abort='Failed to build Docker images')
             
 
