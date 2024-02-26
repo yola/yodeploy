@@ -109,7 +109,7 @@ class ECRClient:
             subprocess.check_call(build_command, shell=True)
             log.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
-            raise subprocess.CalledProcessError("Failed to build Docker images: {}".format(e))
+            raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
 
         self.cleanup_images()
 
@@ -135,7 +135,7 @@ class ECRClient:
             subprocess.check_call(push_command, shell=True)
             log.info("Docker image pushed to AWS ECR successfully")
         except subprocess.CalledProcessError as e:
-            raise subprocess.CalledProcessError("Failed to push Docker images: {}".format(e))
+            raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
 
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
