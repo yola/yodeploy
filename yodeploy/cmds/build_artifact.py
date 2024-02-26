@@ -149,7 +149,7 @@ class Builder(object):
                                          self.version),
 
             print_banner('Pushing docker image to ECR')
-            self.ecr_client.push_to_ECR(self.branch.replace('origin/', ''),
+            self.ecr_client.push_images(self.branch.replace('origin/', ''),
                                         self.version),
 
     def build_env(self):

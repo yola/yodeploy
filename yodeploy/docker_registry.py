@@ -121,9 +121,7 @@ class ECRClient:
         except subprocess.CalledProcessError as e:
             raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
 
-        self.cleanup_images()
-
-    def push_to_ECR(self, branch, version):
+    def push_images(self, branch, version):
         if self.ecr_registry_store == 'local':
             log.info("Skipping push to AWS ECR (location set to 'local')")
             return
@@ -190,9 +188,6 @@ class ECRClient:
             log.info("Docker image pushed to AWS ECR successfully")
         except subprocess.CalledProcessError as e:
             log.error("Error pushing Docker image to AWS ECR: {}".format(e))
-        # Perform image cleanup after pulling
-        self.cleanup_images()
-
         log.info("Image pull complete for", image_uris)
 
     def cleanup_images(self, num_images_to_keep=5):
