@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 import yaml
-from docker import APIClient
+import docker
 
 log = logging.getLogger(__name__)
 
@@ -31,14 +31,29 @@ class ECRClient:
             region_name=self.aws_region
         )
 
-    def authenticate_docker_client(self):
+    # def authenticate_docker_client(self):
         # Get token and Extract username and password
-        auth_token = self.ecr_client.get_authorization_token()
-        token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
-        username, password = token_data.decode('utf-8').split(':')
+    #    auth_token = self.ecr_client.get_authorization_token()
+    #    token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
+    #    username, password = token_data.decode('utf-8').split(':')
 
-        self.docker_client = APIClient()
-        self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+    #    self.docker_client = APIClient()
+    #    self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+
+    def authenticate_docker_client(self):
+        try:
+            # Configure login context using environment variables or external files
+            self.docker_client = docker.from_env()
+            # Login to the ECR registry
+            self.docker_client.login(
+                username=self.aws_access_key_id,
+                password=self.aws_secret_access_key,
+                registry=self.ecr_registry_uri
+            )
+            log.info("Successfully authenticated Docker client for ECR access")
+        except Exception as e:
+            log.error("Error authenticating Docker client: {}".format(e))
+            raise
 
     def create_ecr_repository(self, service_names, branch='master'):
         if not service_names:
