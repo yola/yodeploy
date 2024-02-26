@@ -96,22 +96,21 @@ class ECRClient:
 
         with open('compose.yaml', 'w') as file:
             yaml.dump(compose_data, file, default_flow_style=False)
-        
+
     def build_images(self, branch, version):
-        try:
-            service_names = self.get_apps_names()
-
-            image_uris = self.construct_image_uris(self.ecr_registry_uri,
+        service_names = self.get_apps_names()
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
-            self.manipulate_docker_compose(image_uris)
+        self.manipulate_docker_compose(image_uris)
 
-            compose_command = self.docker_compose_command()
+        build_command = "{} build".format(self.docker_compose_command)
 
-            subprocess.check_call("{} build".format(compose_command), shell=True)
+        try:
+            subprocess.check_call(build_command, shell=True)
             log.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
-            log.error("Failed to build Docker images: {}".format(e))
-            raise
+            raise subprocess.CalledProcessError("Failed to build Docker images: {}".format(e))
+
         self.cleanup_images()
 
     def push_to_ECR(self, branch, version):
@@ -136,7 +135,7 @@ class ECRClient:
             subprocess.check_call(push_command, shell=True)
             log.info("Docker image pushed to AWS ECR successfully")
         except subprocess.CalledProcessError as e:
-            log.error("Error pushing Docker image to AWS ECR: {}".format(e))
+            raise subprocess.CalledProcessError("Failed to push Docker images: {}".format(e))
 
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
@@ -145,7 +144,7 @@ class ECRClient:
         """Retrieves application names from Dockerfiles within a directory,
           excluding tests images."""
         if directory is None:
-            directory = os.getcwd()        
+            directory = os.getcwd()
 
         application = [
             os.path.splitext(dockerfile)[0]  # Remove ".Dockerfile" extension
