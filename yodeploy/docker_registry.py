@@ -41,19 +41,14 @@ class ECRClient:
     #    self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
 
     def authenticate_docker_client(self):
-        try:
-            # Configure login context using environment variables or external files
-            self.docker_client = docker.from_env()
-            # Login to the ECR registry
-            self.docker_client.login(
-                username=self.aws_access_key_id,
-                password=self.aws_secret_access_key,
-                registry=self.ecr_registry_uri
-            )
-            log.info("Successfully authenticated Docker client for ECR access")
-        except Exception as e:
-            log.error("Error authenticating Docker client: {}".format(e))
-            raise
+        # Get token
+        auth_token = self.ecr_client.get_authorization_token()
+        token = auth_token['authorizationData'][0]['authorizationToken']
+
+        # Set Docker environment variables
+        os.environ['DOCKER_USERNAME'] = 'AWS'
+        os.environ['DOCKER_PASSWORD'] = token
+        os.environ['DOCKER_REGISTRY'] = self.ecr_registry_uri
 
     def create_ecr_repository(self, service_names, branch='master'):
         if not service_names:
