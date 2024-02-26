@@ -181,7 +181,7 @@ class ECRClient:
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
 
-        pull_command = "{} pull".format(self.docker_compose_command)
+        pull_command = "{} pull".format(self.docker_compose_command())
 
         try:
             subprocess.check_call(pull_command, shell=True)
