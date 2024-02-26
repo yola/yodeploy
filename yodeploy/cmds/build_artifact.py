@@ -145,12 +145,12 @@ class Builder(object):
             )
             print_banner('Build docker images')
             os.chdir(ECRClient.DOCKERFILES_DIR)
-            check_call([self.ecr_client.build_images
-                        (self.branch.replace('origin/', ''), self.version)]),
+            self.ecr_client.build_images(self.branch.replace('origin/', ''),
+                                         self.version),
 
             print_banner('Pushing docker image to ECR')
-            check_call([self.ecr_client.push_to_ECR
-                        (self.branch.replace('origin/', ''), self.version)]),
+            self.ecr_client.push_to_ECR(self.branch.replace('origin/', ''),
+                                        self.version),
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
