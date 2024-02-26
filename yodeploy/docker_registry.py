@@ -103,7 +103,7 @@ class ECRClient:
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
 
-        build_command = "{} build".format(self.docker_compose_command)
+        build_command = "{} build".format(self.docker_compose_command())
 
         try:
             subprocess.check_call(build_command, shell=True)
@@ -119,7 +119,6 @@ class ECRClient:
             return
 
         self.authenticate_docker_client()
-
         service_names = self.get_apps_names()
 
         # Create ECR repository if it doesn't exist
@@ -129,7 +128,7 @@ class ECRClient:
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
 
-        push_command = "{} push".format(self.docker_compose_command)
+        push_command = "{} push".format(self.docker_compose_command())
 
         try:
             subprocess.check_call(push_command, shell=True)
