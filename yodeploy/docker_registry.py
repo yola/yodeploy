@@ -22,12 +22,13 @@ class ECRClient:
 
     def __init__(self, aws_access_key_id, aws_secret_access_key,
                  ecr_registry_uri, ecr_registry_store,
-                 aws_region='us-east-1',):
+                 aws_region='us-east-1', **kwargs):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_region = aws_region
         self.ecr_registry_uri = ecr_registry_uri
         self.ecr_registry_store = ecr_registry_store
+        self.logger = kwargs.get('logger')
 
         # Initialize ECR client with explicit credentials
         self.ecr_client = boto3.client(
@@ -37,13 +38,6 @@ class ECRClient:
             region_name=self.aws_region
         )
     def authenticate_docker_client(self):
-        """
-        Authenticates a Docker client using credentials obtained from the ECR client.
-
-        Raises:
-            Exception: If authentication fails or required configuration is missing.
-        """
-
         if not self.ecr_registry_uri:
             raise Exception("Missing required configuration: 'ecr_registry_uri'")
 
