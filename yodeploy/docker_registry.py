@@ -47,16 +47,16 @@ class ECRClient:
             token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
             username, password = token_data.decode('utf-8').split(':')
         except Exception as e:
-            self.logger.error(f"Failed to retrieve authentication token from ECR: {e}", exc_info=True)
+            self.logger.error("Failed to retrieve authentication token from ECR: %s" % e)
             raise
 
         # Create Docker client and perform authentication
         try:
             self.docker_client = APIClient()
             self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
-            self.logger.info(f"Successfully authenticated Docker client for ECR registry: {self.ecr_registry_uri}")
+            self.logger.info("Successfully authenticated Docker client for ECR registry: %s" % self.ecr_registry_uri)
         except Exception as e:
-            self.logger.error(f"Failed to authenticate Docker client: {e}", exc_info=True)
+            self.logger.error("Failed to authenticate Docker client: %s" % e)
             raise
 
         return self.docker_client
