@@ -9,6 +9,12 @@ from docker import APIClient
 
 log = logging.getLogger(__name__)
 
+# Configure a handler to print messages to the console
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+
+# Attach the handler to the logger
+log.addHandler(handler)
 
 class ECRClient:
     DOCKERFILES_DIR = os.path.join('deploy', 'docker')
@@ -50,7 +56,6 @@ class ECRClient:
             self.logger.error("Failed to retrieve authentication token from ECR: %s" % e)
             raise
 
-        # Create Docker client and perform authentication
         try:
             self.docker_client = APIClient()
             self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
