@@ -143,12 +143,11 @@ class Builder(object):
                 ecr_registry_uri=self.deploy_settings.artifacts.ecr_uri,
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
-            print_banner('Build docker images')
+
             os.chdir(ECRClient.DOCKERFILES_DIR)
             self.ecr_client.build_images(self.branch.replace('origin/', ''),
                                          self.version),
 
-            print_banner('Pushing docker image to ECR')
             self.ecr_client.push_images(self.branch.replace('origin/', ''),
                                         self.version),
 

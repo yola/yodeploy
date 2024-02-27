@@ -15,6 +15,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
+
 class ECRClient:
     DOCKERFILES_DIR = os.path.join('deploy', 'docker')
     DOCKER_ENV_FILE = '/etc/yola/docker_apps.env'
@@ -135,7 +136,7 @@ class ECRClient:
 
         for image_uri in image_uris.values():
             try:
-                self.docker_client.images.push(image_uri)
+                self.docker_client.push(image_uri)
                 logger.info("Docker image pushed to AWS ECR successfully: {}".format(image_uri))
             except Exception as e:
                 logger.error("Error pushing Docker image {}: {}".format(image_uri, e))
@@ -179,7 +180,7 @@ class ECRClient:
 
         for image_uri in image_uris.values():
             try:
-                self.docker_client.images.pull(image_uri)
+                self.docker_client.pull(image_uri)
                 logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
             except Exception as e:
                 logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
