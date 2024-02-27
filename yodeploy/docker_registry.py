@@ -7,13 +7,13 @@ import subprocess
 import yaml
 from docker import APIClient
 
-log = logging.getLogger(__name__)
-# Configure a handler to print messages to the console
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-
-# Attach the handler to the logger
-log.addHandler(handler)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 class ECRClient:
     DOCKERFILES_DIR = os.path.join('deploy', 'docker')
@@ -36,51 +36,24 @@ class ECRClient:
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.aws_region
         )
+
+        self.docker_client = APIClient()
+
     def authenticate_docker_client(self):
-        if not self.ecr_registry_uri:
-            raise Exception("Missing required configuration: 'ecr_registry_uri'")
-
-        # Get ECR authorization token and extract username and password
-        try:
-            auth_token = self.ecr_client.get_authorization_token()
-            token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
-            username, password = token_data.decode('utf-8').split(':')
-        except Exception as e:
-            # Handle potential errors related to retrieving the token
-            if self.logger:  # Check if logger is available before using it
-                self.logger.error("Failed to retrieve authentication token from ECR: %s" % e)
-            raise
-
-        try:
-            self.docker_client = APIClient()
-            self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
-            if self.logger:  # Check if logger is available before using it
-                self.logger.info("Successfully authenticated Docker client for ECR registry: %s" % self.ecr_registry_uri)
-        except Exception as e:
-            if self.logger:  # Check if logger is available before using it
-                self.logger.error("Failed to authenticate Docker client: %s" % e)
-            raise
-
-        return self.docker_client
-
-    # def authenticate_docker_client(self):
         # Get token and Extract username and password
-    #    auth_token = self.ecr_client.get_authorization_token()
-    #    token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
-    #    username, password = token_data.decode('utf-8').split(':')
+        auth_token = self.ecr_client.get_authorization_token()
+        token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
+        username, password = token_data.decode('utf-8').split(':')
 
-    #    self.docker_client = APIClient()
-    #    self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
-
-    #    return self.docker_client
+        self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
 
     def create_ecr_repository(self, service_names, branch='master'):
         if not service_names:
-            log.error("'service_names' are required.")
+            logger.error("'service_names' are required.")
             return
 
         if branch not in ['master', 'release', 'docker']:
-            log.info("Skipped ECR creation for branch '{}'.".format(branch))
+            logger.info("Skipped ECR creation for branch '{}'.".format(branch))
             return
 
         for service_name in service_names:
@@ -93,7 +66,7 @@ class ECRClient:
                     imageTagMutability='IMMUTABLE'
                 )
                 repository_uri = response['repository']['repositoryUri']
-                log.info("ECR Repo created: {}".format(repository_uri))
+                logger.info("ECR Repo created: {}".format(repository_uri))
 
                 # Add lifecycle policy to keep only last 5 images
                 lifecycle_policy = {
@@ -117,9 +90,9 @@ class ECRClient:
                 )
 
             except self.ecr_client.exceptions.RepositoryAlreadyExistsException:
-                log.info("ECR Repo '{}' already exists.".format(repository_name))
+                logger.info("ECR Repo '{}' already exists.".format(repository_name))
             except Exception as e:
-                log.error("An error occurred: {}".format(e), exc_info=True)
+                logger.error("An error occurred: {}".format(e), exc_info=True)
 
     def manipulate_docker_compose(self, image_uris):
         with open('compose.yaml', 'r') as file:
@@ -141,13 +114,13 @@ class ECRClient:
 
         try:
             subprocess.check_call(build_command, shell=True)
-            log.info("Docker images built successfully")
+            logger.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
             raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
 
     def push_images(self, branch, version):
         if self.ecr_registry_store == 'local':
-            log.info("Skipping push to AWS ECR (location set to 'local')")
+            logger.info("Skipping push to AWS ECR (location set to 'local')")
             return
 
         self.authenticate_docker_client()
@@ -160,13 +133,12 @@ class ECRClient:
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
 
-        push_command = "{} push".format(self.docker_compose_command())
-
-        try:
-            subprocess.check_call(push_command, shell=True)
-            log.info("Docker image pushed to AWS ECR successfully")
-        except subprocess.CalledProcessError as e:
-            raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
+        for image_uri in image_uris.values():
+            try:
+                self.docker_client.images.push(image_uri)
+                logger.info("Docker image pushed to AWS ECR successfully: {}".format(image_uri))
+            except Exception as e:
+                logger.error("Error pushing Docker image {}: {}".format(image_uri, e))
 
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
@@ -195,7 +167,7 @@ class ECRClient:
 
     def pull_image(self, version, branch):
         if self.ecr_registry_store == 'local':
-            log.info("Skipping pull from AWS ECR (location set to 'local')")
+            logger.info("Skipping pull from AWS ECR (location set to 'local')")
             return
 
         self.authenticate_docker_client()
@@ -205,14 +177,12 @@ class ECRClient:
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
 
-        pull_command = "{} pull".format(self.docker_compose_command())
-
-        try:
-            subprocess.check_call(pull_command, shell=True)
-            log.info("Docker image pushed to AWS ECR successfully")
-        except subprocess.CalledProcessError as e:
-            log.error("Error pushing Docker image to AWS ECR: {}".format(e))
-        log.info("Image pull complete for", image_uris)
+        for image_uri in image_uris.values():
+            try:
+                self.docker_client.images.pull(image_uri)
+                logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
+            except Exception as e:
+                logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
 
     def cleanup_images(self, num_images_to_keep=5):
         self.authenticate_docker_client()
@@ -242,4 +212,4 @@ class ECRClient:
                 img_id = img["Id"]
                 self.docker_client.remove_image(img_id, force=True)
 
-        log.info("Removed obsolete images")
+        logger.info("Removed obsolete images")
