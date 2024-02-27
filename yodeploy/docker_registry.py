@@ -30,17 +30,47 @@ class ECRClient:
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.aws_region
         )
-
     def authenticate_docker_client(self):
-        # Get token and Extract username and password
-        auth_token = self.ecr_client.get_authorization_token()
-        token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
-        username, password = token_data.decode('utf-8').split(':')
+        """
+        Authenticates a Docker client using credentials obtained from the ECR client.
 
-        self.docker_client = APIClient()
-        self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+        Raises:
+            Exception: If authentication fails or required configuration is missing.
+        """
+
+        if not self.ecr_registry_uri:
+            raise Exception("Missing required configuration: 'ecr_registry_uri'")
+
+        # Get ECR authorization token and extract username and password
+        try:
+            auth_token = self.ecr_client.get_authorization_token()
+            token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
+            username, password = token_data.decode('utf-8').split(':')
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve authentication token from ECR: {e}", exc_info=True)
+            raise
+
+        # Create Docker client and perform authentication
+        try:
+            self.docker_client = APIClient()
+            self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+            self.logger.info(f"Successfully authenticated Docker client for ECR registry: {self.ecr_registry_uri}")
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Docker client: {e}", exc_info=True)
+            raise
 
         return self.docker_client
+
+    # def authenticate_docker_client(self):
+        # Get token and Extract username and password
+    #    auth_token = self.ecr_client.get_authorization_token()
+    #    token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
+    #    username, password = token_data.decode('utf-8').split(':')
+
+    #    self.docker_client = APIClient()
+    #    self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+
+    #    return self.docker_client
 
     def create_ecr_repository(self, service_names, branch='master'):
         if not service_names:
