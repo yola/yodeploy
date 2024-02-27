@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 import yaml
-import docker
+from docker import APIClient
 
 log = logging.getLogger(__name__)
 
@@ -31,24 +31,16 @@ class ECRClient:
             region_name=self.aws_region
         )
 
-    # def authenticate_docker_client(self):
-        # Get token and Extract username and password
-    #    auth_token = self.ecr_client.get_authorization_token()
-    #    token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
-    #    username, password = token_data.decode('utf-8').split(':')
-
-    #    self.docker_client = APIClient()
-    #    self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
-
     def authenticate_docker_client(self):
-        # Get token
+        # Get token and Extract username and password
         auth_token = self.ecr_client.get_authorization_token()
-        token = auth_token['authorizationData'][0]['authorizationToken']
+        token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
+        username, password = token_data.decode('utf-8').split(':')
 
-        # Set Docker environment variables
-        os.environ['DOCKER_USERNAME'] = 'AWS'
-        os.environ['DOCKER_PASSWORD'] = token
-        os.environ['DOCKER_REGISTRY'] = self.ecr_registry_uri
+        self.docker_client = APIClient()
+        self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
+
+        return self.docker_client
 
     def create_ecr_repository(self, service_names, branch='master'):
         if not service_names:
