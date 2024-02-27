@@ -8,7 +8,6 @@ import yaml
 from docker import APIClient
 
 log = logging.getLogger(__name__)
-
 # Configure a handler to print messages to the console
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
@@ -47,15 +46,19 @@ class ECRClient:
             token_data = base64.b64decode(auth_token['authorizationData'][0]['authorizationToken'])
             username, password = token_data.decode('utf-8').split(':')
         except Exception as e:
-            self.logger.error("Failed to retrieve authentication token from ECR: %s" % e)
+            # Handle potential errors related to retrieving the token
+            if self.logger:  # Check if logger is available before using it
+                self.logger.error("Failed to retrieve authentication token from ECR: %s" % e)
             raise
 
         try:
             self.docker_client = APIClient()
             self.docker_client.login(username=username, password=password, registry=self.ecr_registry_uri)
-            self.logger.info("Successfully authenticated Docker client for ECR registry: %s" % self.ecr_registry_uri)
+            if self.logger:  # Check if logger is available before using it
+                self.logger.info("Successfully authenticated Docker client for ECR registry: %s" % self.ecr_registry_uri)
         except Exception as e:
-            self.logger.error("Failed to authenticate Docker client: %s" % e)
+            if self.logger:  # Check if logger is available before using it
+                self.logger.error("Failed to authenticate Docker client: %s" % e)
             raise
 
         return self.docker_client
