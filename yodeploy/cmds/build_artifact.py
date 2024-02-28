@@ -155,7 +155,7 @@ class Builder(object):
             ]
 
             for command in commands:
-                check_call(command, cwd=app_docker_dir)
+                subprocess.check_call(command, cwd=app_docker_dir)
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
