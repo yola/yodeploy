@@ -29,30 +29,37 @@ class DockerApp(DeployHook):
         super(DockerApp, self).deployed()
         self.docker_deployed()
 
+    def docker_compose_command(self):
+        return "docker compose --env-file {}".format(self.docker_env_file)
+
     def start_container(self):
-        result = subprocess.run(
-            ['docker', 'compose',
-             '--env-file', self.docker_env_file, 'up', '-d'],
-            cwd=self.docker_base_dir,
-            check=True,
-            capture_output=True,
-            text=True
+        try:
+            command = self.docker_compose_command().split() + ['up', '-d']
+            result = subprocess.run(
+                command,
+                cwd=self.docker_base_dir,
+                check=True,
+                capture_output=True,
+                text=True
             )
-        if result.returncode == 0:
-            self.log.info("Docker container {} started successfully."
-                          .format(self.app))
-        else:
-            self.log.error(
-                "Error starting Docker container for {}: {}".format(
-                    self.app, result.stderr
+            if result.returncode == 0:
+                self.log.info("Docker container {} started successfully.".format(self.app))
+            else:
+                self.log.error(
+                    "Error starting Docker container for {}: {}".format(
+                        self.app, result.stderr
+                    )
                 )
-            )
+        except Exception as e:
+            self.log.error("Exception occurred while starting Docker container for {}: {}".format(self.app, str(e)))
 
     def docker_prepare(self):
         self.log.info("Pulling {} images with Docker...".format(self.app))
         for app_name in self.app_names:
-            # Pull the image from ECR or local image for Envs.
-            self.ecr_client.pull_image(app_name, self.version, self.target)
+            try:
+                self.ecr_client.pull_image(self.version, self.target)
+            except Exception as e:
+                self.log.error("Failed to pull image for {}: {}".format(app_name, str(e)))
 
     def docker_deployed(self):
         self.start_container()

@@ -144,12 +144,12 @@ class Builder(object):
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
 
-            os.chdir(ECRClient.DOCKERFILES_DIR)
+            app_docker_dir=ECRClient.DOCKERFILES_DIR
             self.ecr_client.build_images(self.branch.replace('origin/', ''),
-                                         self.version),
+                                         self.version, cwd=app_docker_dir),
 
             self.ecr_client.push_images(self.branch.replace('origin/', ''),
-                                        self.version),
+                                        self.version, cwd=app_docker_dir),
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
