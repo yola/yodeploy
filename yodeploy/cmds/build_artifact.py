@@ -145,6 +145,8 @@ class Builder(object):
             )
 
             app_docker_dir = ECRClient.DOCKERFILES_DIR
+            print("We are in: %s" % os.getcwd())
+            print("app_docker_dir:", app_docker_dir)
 
             print_banner('Build and pushing docker images')
             commands = [
