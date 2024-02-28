@@ -144,19 +144,11 @@ class Builder(object):
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
 
-            app_docker_dir = os.path.join(
-                ECRClient.DOCKERFILES_DIR, os.getcwd())
-
             print_banner('Build and pushing docker images')
-            commands = [
-                self.ecr_client.build_images(
-                    self.branch.replace('origin/', ''), self.version),
-                self.ecr_client.push_images(
-                    self.branch.replace('origin/', ''), self.version)
-            ]
-
-            for command in commands:
-                check_call(command, cwd=app_docker_dir)
+            self.ecr_client.build_images(
+                self.branch.replace('origin/', ''), self.version),
+            self.ecr_client.push_images(
+                self.branch.replace('origin/', ''), self.version)
 
     def build_env(self):
         """Return environment variables to be exported for the build"""

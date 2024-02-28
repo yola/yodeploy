@@ -113,12 +113,12 @@ class ECRClient:
         image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
         self.manipulate_docker_compose(image_uris)
-
+        
+        compose_dir = self.DOCKERFILES_DIR
         build_command = "{} build".format(self.docker_compose_command())
 
         try:
-            print("Building Docker images in: %s" % os.getcwd())
-            subprocess.check_call(build_command, shell=True)
+            subprocess.check_call(build_command, shell=True, cwd=compose_dir)
             logger.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
             raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
@@ -129,7 +129,7 @@ class ECRClient:
             return
 
         self.authenticate_docker_client()
-        service_names = self.get_apps_names()
+        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
 
         # Create ECR repository if it doesn't exist
         self.create_ecr_repository(service_names, branch)
@@ -144,6 +144,25 @@ class ECRClient:
                 logger.info("Docker image pushed to AWS ECR successfully: {}".format(image_uri))
             except Exception as e:
                 logger.error("Error pushing Docker image {}: {}".format(image_uri, e))
+
+    def pull_image(self, version, branch):
+        if self.ecr_registry_store == 'local':
+            logger.info("Skipping pull from AWS ECR (location set to 'local')")
+            return
+
+        self.authenticate_docker_client()
+
+        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
+        self.manipulate_docker_compose(image_uris)
+
+        for image_uri in image_uris.values():
+            try:
+                self.docker_client.pull(image_uri)
+                logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
+            except Exception as e:
+                logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
 
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
@@ -169,25 +188,6 @@ class ECRClient:
                                          service_name, branch, version)
             image_uris[service_name] = image_uri
         return image_uris
-
-    def pull_image(self, version, branch):
-        if self.ecr_registry_store == 'local':
-            logger.info("Skipping pull from AWS ECR (location set to 'local')")
-            return
-
-        self.authenticate_docker_client()
-
-        service_names = self.get_apps_names()
-        image_uris = self.construct_image_uris(self.ecr_registry_uri,
-                                               service_names, branch, version)
-        self.manipulate_docker_compose(image_uris)
-
-        for image_uri in image_uris.values():
-            try:
-                self.docker_client.pull(image_uri)
-                logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
-            except Exception as e:
-                logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
 
     def cleanup_images(self, num_images_to_keep=5):
         self.authenticate_docker_client()

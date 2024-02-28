@@ -33,33 +33,20 @@ class DockerApp(DeployHook):
         return "docker compose --env-file {}".format(self.docker_env_file)
 
     def start_container(self):
+        command = self.docker_compose_command().split() + ['up', '-d']
         try:
-            command = self.docker_compose_command().split() + ['up', '-d']
-            result = subprocess.run(
+            subprocess.check_call(
                 command,
                 cwd=self.docker_base_dir,
-                check=True,
-                capture_output=True,
-                text=True
+                shell=True,
             )
-            if result.returncode == 0:
-                self.log.info("Docker container {} started successfully.".format(self.app))
-            else:
-                self.log.error(
-                    "Error starting Docker container for {}: {}".format(
-                        self.app, result.stderr
-                    )
-                )
-        except Exception as e:
-            self.log.error("Exception occurred while starting Docker container for {}: {}".format(self.app, str(e)))
+        except subprocess.CalledProcessError as e:
+            self.log.error("Failed to start Docker container for {}: {}"
+                           .format(self.app, str(e)))
 
     def docker_prepare(self):
         self.log.info("Pulling {} images with Docker...".format(self.app))
-        for app_name in self.app_names:
-            try:
-                self.ecr_client.pull_image(self.version, self.target)
-            except Exception as e:
-                self.log.error("Failed to pull image for {}: {}".format(app_name, str(e)))
+        self.ecr_client.pull_image(self.version, self.target)
 
     def docker_deployed(self):
         self.start_container()
