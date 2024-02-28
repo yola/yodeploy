@@ -117,6 +117,7 @@ class ECRClient:
         build_command = "{} build".format(self.docker_compose_command())
 
         try:
+            print("Building Docker images in: %s" % os.getcwd())
             subprocess.check_call(build_command, shell=True)
             logger.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
