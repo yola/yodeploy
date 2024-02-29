@@ -117,6 +117,8 @@ class ECRClient:
         compose_dir = self.DOCKERFILES_DIR
         build_command = "{} build".format(self.docker_compose_command())
 
+        print('Build cmd: %s' % build_command)
+
         try:
             subprocess.check_call(build_command, shell=True, cwd=compose_dir)
             logger.info("Docker images built successfully")

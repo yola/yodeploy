@@ -143,7 +143,7 @@ class Builder(object):
                 ecr_registry_uri=self.deploy_settings.artifacts.ecr_uri,
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
-
+            print("Start docker stuff")
             print_banner('Build and pushing docker images')
             self.ecr_client.build_images(
                 self.branch.replace('origin/', ''), self.version),
