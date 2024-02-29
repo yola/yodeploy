@@ -136,8 +136,6 @@ class ECRClient:
 
         image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
-        self.manipulate_docker_compose(image_uris)
-
         for image_uri in image_uris.values():
             try:
                 self.docker_client.push(image_uri)
@@ -152,6 +150,8 @@ class ECRClient:
 
         self.authenticate_docker_client()
 
+        print("We are in:", os.getcwd())
+
         service_names = self.get_apps_names(self.DOCKERFILES_DIR)
         image_uris = self.construct_image_uris(self.ecr_registry_uri,
                                                service_names, branch, version)
@@ -163,6 +163,19 @@ class ECRClient:
                 logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
             except Exception as e:
                 logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
+
+    def start_container(self):
+        print("We are in:", os.getcwd())
+        command = self.docker_compose_command().split() + ['up', '-d']
+        try:
+            subprocess.check_call(
+                command,
+                cwd=self.DOCKERFILES_DIR,
+                shell=True,
+            )
+        except subprocess.CalledProcessError as e:
+            self.log.error("Failed to start Docker container for {}: {}"
+                           .format(self.app, str(e)))
 
     def docker_compose_command(self):
         return "docker compose --env-file {}".format(self.DOCKER_ENV_FILE)
