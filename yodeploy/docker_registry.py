@@ -96,6 +96,7 @@ class ECRClient:
                 logger.error("An error occurred: {}".format(e), exc_info=True)
 
     def manipulate_docker_compose(self, branch, version):
+        print("We are in:", os.getcwd())
         compose_dir = self.DOCKERFILES_DIR
         compose_path = os.path.join(compose_dir, 'compose.yaml')
         if not os.path.exists(compose_path):
@@ -118,12 +119,8 @@ class ECRClient:
         compose_dir = self.DOCKERFILES_DIR
         build_command = "{} build".format(self.docker_compose_command())
 
-        try:
-            subprocess.check_call(build_command, shell=True, cwd=compose_dir)
-            logger.info("Docker images built successfully")
-        except subprocess.CalledProcessError as e:
-            logger.error("Error building Docker images: {}".format(e))
-        raise
+        subprocess.check_call(build_command, shell=True, cwd=compose_dir)
+
 
     def push_images(self, branch, version):
         if self.ecr_registry_store == 'local':
@@ -131,7 +128,7 @@ class ECRClient:
             return
 
         self.authenticate_docker_client()
-        
+
         service_names = self.get_apps_names()
         # Create ECR repository if it doesn't exist
         self.create_ecr_repository(service_names, branch)
