@@ -145,8 +145,8 @@ class Builder(object):
             )
             print("Start docker stuff")
             print_banner('Build and pushing docker images')
-            self.ecr_client.build_images(
-                self.branch.replace('origin/', ''), self.version),
+            # self.ecr_client.build_images(
+                # self.branch.replace('origin/', ''), self.version),
             self.ecr_client.push_images(
                 self.branch.replace('origin/', ''), self.version)
 
