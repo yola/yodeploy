@@ -98,6 +98,8 @@ class ECRClient:
     def manipulate_docker_compose(self, image_uris):
         compose_dir = self.DOCKERFILES_DIR
         compose_path = os.path.join(compose_dir, 'compose.yaml')
+        if not os.path.exists(compose_path):
+            logger.error("compose.yaml not found at path: %s", compose_path)
 
         with open(compose_path, 'r') as file:
             compose_data = yaml.safe_load(file)
@@ -117,13 +119,12 @@ class ECRClient:
         compose_dir = self.DOCKERFILES_DIR
         build_command = "{} build".format(self.docker_compose_command())
 
-        print('Build cmd: %s' % build_command)
-
         try:
             subprocess.check_call(build_command, shell=True, cwd=compose_dir)
             logger.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
-            raise subprocess.CalledProcessError(e.returncode, e.cmd, e.output)
+            logger.error("Error building Docker images: {}".format(e))
+        raise e
 
     def push_images(self, branch, version):
         if self.ecr_registry_store == 'local':
@@ -141,9 +142,10 @@ class ECRClient:
         for image_uri in image_uris.values():
             try:
                 self.docker_client.push(image_uri)
-                logger.info("Docker image pushed to AWS ECR successfully: {}".format(image_uri))
-            except Exception as e:
-                logger.error("Error pushing Docker image {}: {}".format(image_uri, e))
+                logger.info("Docker image pushed: {}".format(image_uri))
+            except subprocess.CalledProcessError as e:
+                logger.error("Error pushing images: {}".format(e))
+            raise e
 
     def pull_image(self, version, branch):
         if self.ecr_registry_store == 'local':
