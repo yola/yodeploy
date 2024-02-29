@@ -95,11 +95,15 @@ class ECRClient:
             except Exception as e:
                 logger.error("An error occurred: {}".format(e), exc_info=True)
 
-    def manipulate_docker_compose(self, image_uris):
+    def manipulate_docker_compose(self, branch, version):
         compose_dir = self.DOCKERFILES_DIR
         compose_path = os.path.join(compose_dir, 'compose.yaml')
         if not os.path.exists(compose_path):
             logger.error("compose.yaml not found at path: %s", compose_path)
+
+        service_names = self.get_apps_names()
+        image_uris = self.construct_image_uris(self.ecr_registry_uri,
+                                               service_names, branch, version)
 
         with open(compose_path, 'r') as file:
             compose_data = yaml.safe_load(file)
@@ -110,12 +114,7 @@ class ECRClient:
         with open(compose_path, 'w') as file:
             yaml.dump(compose_data, file, default_flow_style=False)
 
-    def build_images(self, branch, version):
-        service_names = self.get_apps_names()
-        image_uris = self.construct_image_uris(self.ecr_registry_uri,
-                                               service_names, branch, version)
-        self.manipulate_docker_compose(image_uris)
-        
+    def build_images(self):
         compose_dir = self.DOCKERFILES_DIR
         build_command = "{} build".format(self.docker_compose_command())
 
@@ -124,7 +123,7 @@ class ECRClient:
             logger.info("Docker images built successfully")
         except subprocess.CalledProcessError as e:
             logger.error("Error building Docker images: {}".format(e))
-        raise e
+        raise
 
     def push_images(self, branch, version):
         if self.ecr_registry_store == 'local':
@@ -132,8 +131,8 @@ class ECRClient:
             return
 
         self.authenticate_docker_client()
-        service_names = self.get_apps_names(self.DOCKERFILES_DIR)
-
+        
+        service_names = self.get_apps_names()
         # Create ECR repository if it doesn't exist
         self.create_ecr_repository(service_names, branch)
 
@@ -145,7 +144,7 @@ class ECRClient:
                 logger.info("Docker image pushed: {}".format(image_uri))
             except subprocess.CalledProcessError as e:
                 logger.error("Error pushing images: {}".format(e))
-            raise e
+            raise
 
     def pull_image(self, version, branch):
         if self.ecr_registry_store == 'local':
@@ -167,6 +166,7 @@ class ECRClient:
                 logger.info("Docker image pulled from AWS ECR successfully: {}".format(image_uri))
             except Exception as e:
                 logger.error("Error pulling Docker image {}: {}".format(image_uri, e))
+            raise
 
     def start_container(self):
         print("We are in:", os.getcwd())
