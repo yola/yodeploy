@@ -136,6 +136,7 @@ class Builder(object):
             check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
         if self.build_docker_images:
+            print_banner('Building and pushing docker images')
             self.ecr_client = ECRClient(
                 aws_access_key_id=self.deploy_settings.artifacts.ecr_acccess_key,
                 aws_secret_access_key=self.deploy_settings.artifacts.ecr_secret_key,
@@ -144,12 +145,8 @@ class Builder(object):
                 ecr_registry_store=self.deploy_settings.artifacts.ecr_store
             )
 
-            print_banner('Build and pushing docker images')
-            self.ecr_client.manipulate_docker_compose(
-                self.branch.replace('origin/', ''), self.version)
-            self.ecr_client.build_images()
-            self.ecr_client.push_images(
-                self.branch.replace('origin/', ''), self.version)
+            self.ecr_client.build_images(self.get_branch_name(), self.version)
+            self.ecr_client.push_images(self.get_branch_name(), self.version)
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
@@ -219,6 +216,10 @@ class Builder(object):
                                 target=self.target)
         print('Uploaded')
 
+    def get_branch_name(self):
+        """Return the branch name without 'origin/'."""
+        return self.branch.replace('origin/', '')
+
     def summary(self):
         print_banner('Summary')
         print('App: %s' % self.app)
@@ -233,7 +234,7 @@ class Builder(object):
             jenkins_tag = ' (tag: %s)' % self.tag
         print()
         print('Jenkins description: %s:%.8s%s "%s"' % (
-            self.branch.replace('origin/', ''), self.commit, jenkins_tag,
+            self.get_branch_name(), self.commit, jenkins_tag,
             self.commit_msg))
 
 
