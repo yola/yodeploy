@@ -3,7 +3,7 @@ Flask-HTTPAuth == 2.5.0
 Jinja2 == 2.11.3
 Werkzeug == 1.0.1
 boto3 == 1.17.112
-gunicorn == 19.9.0
+gunicorn == 22.0.0
 requests == 2.26.0
 virtualenv == 16.7.9
 yoconfigurator == 0.5.2
