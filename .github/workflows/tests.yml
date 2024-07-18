@@ -1,0 +1,17 @@
+name: Run test on PRs
+
+on:
+  push:
+    branches: [ 'master' ]
+  pull_request:
+    branches: [ 'master' ]
+
+jobs:
+  tests:
+   runs-on: ubuntu-20.04
+
+   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Test yodeploy
+      run: build-artifact --app yodeploy --test-only
