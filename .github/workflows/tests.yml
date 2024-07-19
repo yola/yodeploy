@@ -1,10 +1,7 @@
 name: Run test on PRs
 
 on:
-  push:
-    branches: [ 'master' ]
-  pull_request:
-    branches: [ 'master' ]
+  push
 
 jobs:
   tests:
@@ -13,5 +10,8 @@ jobs:
    steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    - name: Test yodeploy
-      run: build-artifact --app yodeploy --test-only
+    - name: Test yodeploy via script
+      run: |
+         chmod +x ./scripts/test.sh
+         ./scripts/test.sh
+      shell: bash
