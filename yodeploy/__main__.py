@@ -1,12 +1,17 @@
 import argparse
-import imp
 import logging
 import socket
 import os
+import six
 
 import yodeploy.repository
 import yodeploy.config
 import yodeploy.ipc_logging
+
+if six.PY2:
+    import imp
+else:
+    import importlib.util
 
 
 def main():
@@ -69,12 +74,17 @@ def call_hook(app, target, appdir, version, deploy_settings, repository,
     '''Load and fire a hook'''
     fake_mod = '_deploy_hooks'
     fn = os.path.join(appdir, 'versions', version, 'deploy', 'hooks.py')
-    description = ('.py', 'r', imp.PY_SOURCE)
+    description = ('.py', 'r', imp.PY_SOURCE) if six.PY2 else ('.py', 'r', importlib.util.MAGIC_NUMBER)
 
     with open(fn, 'rb') as f:
-        m = imp.load_module(fake_mod, f, fn, description)
-    hooks = m.hooks(app, target, appdir, version, deploy_settings,
-                    repository)
+         if six.PY2:
+             m = imp.load_module(fake_mod, f, fn, description)
+         else:
+             spec = importlib.util.spec_from_file_location(fake_mod, fn)
+             m = importlib.util.module_from_spec(spec)
+             spec.loader.exec_module(m)
+
+    hooks = m.hooks(app, target, appdir, version, deploy_settings, repository)
     getattr(hooks, hook)()
 
 

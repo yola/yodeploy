@@ -1,12 +1,13 @@
-Flask == 1.0.2
-Flask-HTTPAuth == 2.5.0
+Flask == 1.1.4
+Flask-HTTPAuth == 4.2.0
 Jinja2 == 2.11.3
-Werkzeug == 1.0.1
+Werkzeug==2.3.8
 boto3 == 1.17.112
 gunicorn == 19.9.0
 requests == 2.26.0
 virtualenv == 16.7.9
 yoconfigurator == 0.5.2
+markupsafe == 1.1.1
 
 # Development dependencies:
 coverage == 5.5

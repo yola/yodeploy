@@ -7,16 +7,15 @@ import base64
 import email.utils
 import hashlib
 import hmac
-import imp
 import logging
 import optparse
 import os
+import six
 import shutil
 import subprocess
 import sys
 import sysconfig
 import tarfile
-
 
 try:  # python 3
     from urllib.request import Request, urlopen
@@ -25,6 +24,10 @@ except ImportError:  # python 2
     from urllib2 import Request, urlopen
     from urlparse import urlparse
 
+if six.PY2:
+    import imp
+else:
+    import importlib.util
 
 deploy_settings_fn = '/etc/yola/deploy.conf.py'
 deploy_base = '/srv'
@@ -79,11 +82,15 @@ class S3Client(object):
 def load_settings(fn):
     """Load deploy_settings from the specified filename"""
     fake_mod = '_deploy_settings'
-    description = ('.py', 'r', imp.PY_SOURCE)
-    with open(fn) as f:
-        m = imp.load_module(fake_mod, f, fn, description)
+    if six.PY2:
+        description = ('.py', 'r', imp.PY_SOURCE) if six.PY2 else ('.py', 'r', importlib.util.MAGIC_NUMBER)
+        with open(fn) as f:
+            m = imp.load_module(fake_mod, f, fn, description)
+    else:
+        spec = importlib.util.spec_from_file_location(fake_mod, fn)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
     return m.deploy_settings
-
 
 # stolen from yodeploy.virtualenv
 

@@ -10,7 +10,7 @@ from requests.exceptions import RequestException
 try:
     from urllib.parse import urlparse, urlunparse  # python 3
 except ImportError:
-    from urlparse import urlparse, urlunparse  # python 2
+    from urllib.parse import urlparse, urlunparse  # python 2
 
 import yodeploy.application
 import yodeploy.config

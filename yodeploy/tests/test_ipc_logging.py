@@ -13,7 +13,7 @@ import unittest
 # strings by default. In Python 3, io.StringIO is appropriate because it uses
 # unicode strings by default.
 try:
-    from StringIO import StringIO  # python 2.7, allows byte strings
+    from io import StringIO  # python 2.7, allows byte strings
 except ImportError:
     from io import StringIO  # python 3, requires unicode
 

@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 STORES = {}
 
 try:
-    string_types = (basestring,)  # python 2
+    string_types = (str,)  # python 2
 except NameError:
     string_types = (str,)  # python 3
 
@@ -229,7 +229,7 @@ class S3RepositoryStore(object):
 
         options = {}
         if metadata:
-            options['Metadata'] = {k: str(v) for k, v in metadata.items()}
+            options['Metadata'] = {k: str(v) for k, v in list(metadata.items())}
         if self.reduced_redundancy:
             options['StorageClass'] = 'REDUCED_REDUNDANCY'
         if self.encrypted:
@@ -282,7 +282,7 @@ class Repository(object):
         The metadata will be attached as a 'metadata' attribute.
         """
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
         artifact_path = os.path.join(app, target, artifact)
         if not version:
             with self.store.get(os.path.join(artifact_path, 'latest')) as f:
@@ -294,7 +294,7 @@ class Repository(object):
 
     def latest_version(self, app, target='master', artifact=None):
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
 
         artifact_path = os.path.join(app, target, artifact)
 
@@ -304,7 +304,7 @@ class Repository(object):
     def get_metadata(self, app, version=None, target='master', artifact=None):
         """Return just the metadata for the requested artifact."""
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
 
         artifact_path = os.path.join(app, target, artifact)
 
@@ -319,7 +319,7 @@ class Repository(object):
             artifact=None):
         """Store an object (fp) in the repository."""
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
         if version == 'latest' or version.endswith('.meta'):
             raise ValueError('Illegal version: %s' % version)
         artifact_path = os.path.join(app, target, artifact)
@@ -331,7 +331,7 @@ class Repository(object):
     def delete(self, app, version, target='master', artifact=None):
         """Delete an object from the repository."""
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
         artifact_path = os.path.join(app, target, artifact)
 
         versions = self.list_versions(app, target, artifact)
@@ -366,11 +366,11 @@ class Repository(object):
 
     def list_versions(self, app, target='master', artifact=None):
         if not artifact:
-            artifact = u'%s.tar.gz' % app
+            artifact = '%s.tar.gz' % app
         path = os.path.join(app, target, artifact)
         versions = []
         for version in self.store.list(path, files=True, dirs=False):
-            if version == u'latest' or version.endswith(u'.meta'):
+            if version == 'latest' or version.endswith('.meta'):
                 continue
             versions.append(version)
         return sorted(versions, key=version_sort_key)

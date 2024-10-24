@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import argparse
 import logging
 import os
@@ -32,7 +32,7 @@ def parse_args():
 
     # hack in some short aliases:
     shortcuts = {}
-    for k, v in subparsers._name_parser_map.items():
+    for k, v in list(subparsers._name_parser_map.items()):
         subparsers._name_parser_map[k[0]] = v
         shortcuts[k[0]] = k
 

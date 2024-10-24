@@ -22,7 +22,7 @@ import struct
 try:
     import socketserver  # python 3
 except:
-    import SocketServer as socketserver  # python 2
+    import socketserver as socketserver  # python 2
 
 
 class ExistingSocketHandler(logging.handlers.SocketHandler):

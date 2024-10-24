@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import argparse
 import copy
 import json
@@ -14,7 +14,8 @@ try:
     from urllib.request import Request, urlopen
     from urllib.error import URLError
 except ImportError:
-    from urllib2 import Request, urlopen, URLError
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -167,7 +168,7 @@ class Builder(object):
             if os.path.isfile(report_path):
                 test_tree = ElementTree.parse(report_path)
                 test_suite = test_tree.find('testsuite') or test_tree.getroot()
-                for (k, v) in test_suite.attrib.items():
+                for (k, v) in list(test_suite.attrib.items()):
                     if k in results:
                         results[k] += int(v)
 
@@ -302,36 +303,36 @@ def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
         'ascii': {
-            'ul': u'+',
-            'ur': u'+',
-            'dl': u'+',
-            'dr': u'+',
-            'h': u'-',
-            'v': u'|',
+            'ul': '+',
+            'ur': '+',
+            'dl': '+',
+            'dr': '+',
+            'h': '-',
+            'v': '|',
         },
         'light': {
-            'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS LIGHT VERTICAL}',
+            'ul': '\N{BOX DRAWINGS LIGHT UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS LIGHT UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS LIGHT DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS LIGHT HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS LIGHT VERTICAL}',
         },
         'heavy': {
-            'ul': u'\N{BOX DRAWINGS HEAVY UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS HEAVY UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS HEAVY DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS HEAVY DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS HEAVY HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS HEAVY VERTICAL}',
+            'ul': '\N{BOX DRAWINGS HEAVY UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS HEAVY UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS HEAVY DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS HEAVY DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS HEAVY HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS HEAVY VERTICAL}',
         },
         'double': {
-            'ul': u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS DOUBLE VERTICAL}',
+            'ul': '\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS DOUBLE VERTICAL}',
         },
     }
     borders = styles[border]
@@ -353,7 +354,7 @@ def print_banner(message, width=79, position='left', **kwargs):
     width -= 2
 
     if position == 'left':
-        message = u' ' + message.ljust(width - 1)
+        message = ' ' + message.ljust(width - 1)
     elif position in ('center', 'centre'):
         message = message.center(width)
     elif position == 'right':
