@@ -8,7 +8,7 @@
 #    - Installs scripts to ~/bin
 #  deployconfigs
 #    - Configures yodeploy.conf.py
-from __future__ import print_function
+
 import contextlib
 import errno
 import logging
@@ -29,7 +29,7 @@ try:  # python 3
 except ImportError:  # python 2
     from urllib2 import (
         build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
-    from urlparse import urljoin, urlparse, urlunparse
+    from urllib.parse import urljoin, urlparse, urlunparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -57,7 +57,7 @@ def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
         print()
-        input_ = input('%s [Y/n] ' % message)
+        input_ = eval(input('%s [Y/n] ' % message))
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
@@ -136,8 +136,8 @@ def check_environment():
         log.info("The YOLA_SRC environment variable exists. Following it")
     else:
         if 'YOLA_SRC' not in os.environ:
-            input_ = input('Where do you keep your Yola GIT checkouts? '
-                           '[Default: ~/src/]: ')
+            input_ = eval(input('Where do you keep your Yola GIT checkouts? '
+                           '[Default: ~/src/]: '))
             input_ = input_.strip()
             if not input_:
                 input_ = '~/src'

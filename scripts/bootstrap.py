@@ -21,8 +21,8 @@ try:  # python 3
     from urllib.request import Request, urlopen
     from urllib.parse import urlparse
 except ImportError:  # python 2
-    from urllib2 import Request, urlopen
-    from urlparse import urlparse
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlparse
 
 if six.PY2:
     import imp
