@@ -109,7 +109,7 @@ def main():
                 repository, options.app, ve_id, options.target)
             downloaded = True
         except KeyError:
-            log.warn('No existing virtualenv, building...')
+            log.warning('No existing virtualenv, building...')
         if downloaded:
             options.upload = False
             yodeploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')

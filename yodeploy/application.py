@@ -138,7 +138,7 @@ class Application(object):
         log.debug('Unpacking %s/%s', self.app, version)
 
         if self.live_version == version:
-            log.warn('%s/%s is the currently live version'
+            log.warning('%s/%s is the currently live version'
                      % (self.app, version))
             return
         unpack_dir = os.path.join(self.appdir, 'versions', 'unpack')
