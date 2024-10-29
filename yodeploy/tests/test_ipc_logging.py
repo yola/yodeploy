@@ -60,6 +60,8 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         LoggingSocketRequestHandler(b, None, None, oneshot=True)
         handler.flush()
         logger.removeHandler(handler)
+        print("Handler flushed, log record removed")
+        print("Buffer value:", buffer_.getvalue())
         self.assertTrue(buffer_.getvalue())
 
     def test_filtered(self):
