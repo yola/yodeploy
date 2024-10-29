@@ -58,11 +58,11 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
 
         # implicitly calls handle() (lovely API, eh?)
         LoggingSocketRequestHandler(b, None, None, oneshot=True)
-        handler.flush()
-        logger.removeHandler(handler)
-        print("Handler flushed, log record removed")
-        print("Buffer value:", buffer_.getvalue())
-        self.assertTrue(buffer_.getvalue())
+        size = struct.unpack('>L', b.recv(4))[0]
+        received = pickle.loads(b.recv(size))
+        b.close()
+        self.assertIsInstance(received, dict)
+        self.assertEqual(received['msg'], 'Testing 123')
 
     def test_filtered(self):
         # A dummy handler to eventually receive our message
