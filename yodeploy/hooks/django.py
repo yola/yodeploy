@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from yodeploy.hooks.apache import ApacheHostedApp, ApacheMultiSiteApp
 from yodeploy.hooks.configurator import ConfiguratedApp

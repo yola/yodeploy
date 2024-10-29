@@ -9,7 +9,7 @@ import shutil
 import sysconfig
 import tarfile
 
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 import virtualenv
 
 log = logging.getLogger(__name__)

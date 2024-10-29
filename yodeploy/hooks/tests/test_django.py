@@ -1,7 +1,7 @@
 import unittest
 
 from mock import PropertyMock, call, patch
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from yodeploy.hooks.django import ApacheHostedDjangoApp, DjangoApp
 
