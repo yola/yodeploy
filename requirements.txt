@@ -5,7 +5,7 @@ Werkzeug==3.0.0
 boto3 == 1.35.43
 gunicorn == 19.9.0
 requests == 2.26.0
-virtualenv == 16.7.9
+virtualenv == 20.15.1
 yoconfigurator == 0.5.2
 
 # Development dependencies:
