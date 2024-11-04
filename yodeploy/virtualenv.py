@@ -76,7 +76,7 @@ def create_ve(
 
     # The venv module makes a lot of our reclocateability problems go away, so
     # we only use the virtualenv library on Python 2.
-    if python_version.startswith('3.'):
+    """     if python_version.startswith('3.'):
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_install(ve_dir, pypi, '-U', 'pip')
@@ -86,7 +86,11 @@ def create_ve(
         subprocess.check_call((
             sys.executable, virtualenv.__file__.rstrip('c'),
             '-p', 'python%s' % python_version,
-            '--no-site-packages', ve_dir))
+            '--no-site-packages', ve_dir)) """
+
+    subprocess.check_call((
+        sys.executable, '-m', 'venv', ve_dir))
+    pip_install(ve_dir, pypi, '-U', 'pip')
 
     pip_install(ve_dir, pypi, '-U', 'setuptools')
     pip_install(ve_dir, pypi, 'wheel')
