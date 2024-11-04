@@ -78,12 +78,10 @@ class Builder(object):
             'description': description,
             'context': context,
         }
-        req = Request(
-            url=url,
-            data=json.dumps(data),
-            headers={
-                'Authorization': 'token %s' % settings.oauth_token,
-            })
+        req = Request(url, data=bytes(json.dumps(data), 'utf-8'),
+                      headers={
+                          'Authorization': 'token %s' %
+                          settings.oauth_token, })
         try:
             urlopen(req)
         except URLError as e:
