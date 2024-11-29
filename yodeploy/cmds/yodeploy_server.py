@@ -31,6 +31,8 @@ class YodeployApplication(BaseApplication):
                                  % config.server.port)
         parser.add_argument('--debug', '-d', action='store_true',
                             help='Increase verbosity')
+        parser.add_argument('--timeout', '-t', type=int, default=90,
+                            help='Timeout in seconds (default: 90)')
 
         opts = parser.parse_args()
 
@@ -42,6 +44,7 @@ class YodeployApplication(BaseApplication):
         self.cfg.set('certfile', config.server.ssl.cert_chain)
         self.cfg.set('keyfile', config.server.ssl.key)
         self.cfg.set('workers', config.server.workers)
+        self.cfg.set('timeout', opts.timeout)
 
     def load(self):
         return self.application
