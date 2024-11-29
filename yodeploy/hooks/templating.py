@@ -1,10 +1,9 @@
 import logging
 import os
 
-import tempita
+from jinja2 import Template
 
 from yodeploy.hooks.base import DeployHook
-
 
 log = logging.getLogger(__name__)
 
@@ -19,11 +18,14 @@ class TemplatedApp(DeployHook):
     def template(self, template_name, destination, perm=0o644):
         log.debug('Parsing template: %s -> %s', template_name, destination)
         fn = self.template_filename(template_name)
-        tmpl = tempita.Template.from_filename(fn, encoding='utf-8')
-
-        output = tmpl.substitute(conf=self.config,
-                                 aconf=self.config.get(self.app, {}),
-                                 cconf=self.config.get('common', {}))
+        with open(fn, 'rb') as f:
+            template_code = f.read().decode('utf-8')
+        tmpl = Template(template_code)
+        output = tmpl.render(
+            conf=self.config,
+            aconf=self.config.get(self.app, {}),
+            cconf=self.config.get('common', {})
+        )
         with open(destination, 'w') as f:
             f.write(output)
 

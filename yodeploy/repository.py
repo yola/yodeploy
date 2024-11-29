@@ -6,7 +6,8 @@ import os
 import re
 import shutil
 
-import boto
+import boto3
+from botocore.exceptions import ClientError
 
 from yodeploy.util import ignoring
 
@@ -180,11 +181,14 @@ class S3RepositoryStore(object):
     """Store artifacts on S3"""
 
     def __init__(self, bucket, access_key, secret_key, reduced_redundancy,
-                 encrypted):
-        s3 = boto.connect_s3(
-            access_key, secret_key,
-            calling_format='boto.s3.connection.OrdinaryCallingFormat')
-        self.bucket = s3.get_bucket(bucket)
+                 encrypted, region_name='us-east-1'):
+        s3 = boto3.resource(
+            's3',
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region_name,
+        )
+        self.bucket = s3.Bucket(bucket)
         self.reduced_redundancy = reduced_redundancy
         self.encrypted = encrypted
 
@@ -193,50 +197,56 @@ class S3RepositoryStore(object):
 
         If metadata is True, metadata will be returned as well, in a tuple.
         """
-        k = self.bucket.get_key(path)
-        if k is None:
-            raise KeyError('No such object: %s' % path)
-        k.open()
-        f = RepositoryFile(k.resp)
+        s3_object = self.bucket.Object(path)
+        try:
+            response = s3_object.get()
+        except ClientError as e:
+            if e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+                raise KeyError('No such object: {}'.format(path))
+            raise
+        f = RepositoryFile(response['Body'])
         if metadata:
-            return f, k.metadata
+            return f, response['Metadata']
         return f
 
     def get_metadata(self, path):
         """Retrieve a file's metadata."""
-        k = self.bucket.get_key(path)
-        if k is None:
-            raise KeyError('No such object: %s' % path)
-        return k.metadata
+        try:
+            return self.bucket.Object(path).metadata
+        except ClientError as e:
+            if e.response.get('Error', {}).get('Code') == '404':
+                raise KeyError('No such object: {}'.format(path))
+            raise
 
     def put(self, path, data, metadata=None):
         """Store a File object, stream, unicode string, or byte string.
 
         Optionally attach metadata to it.
         """
-        # Coerce strings to in-memory Byte streams.
+        # Coerce strings to bytes
         if isinstance(data, string_types):
-            data = BytesIO(data.encode())
+            data = data.encode()
 
-        # Coerce python 3 explicit byte strings
-        if isinstance(data, bytes):
-            data = BytesIO(data)
-
-        k = self.bucket.new_key(path)
+        options = {}
         if metadata:
-            k.update_metadata(metadata)
-        k.set_contents_from_file(
-            data,
-            reduced_redundancy=self.reduced_redundancy,
-            encrypt_key=self.encrypted)
+            options['Metadata'] = {k: str(v) for k, v in metadata.items()}
+        if self.reduced_redundancy:
+            options['StorageClass'] = 'REDUCED_REDUNDANCY'
+        if self.encrypted:
+            options['ServerSideEncryption'] = 'AES256'
+
+        self.bucket.put_object(
+            Key=path,
+            Body=data,
+            **options
+        )
 
     def delete(self, path, metadata=False):
         """Delete a file.
 
         If metadata is True, this file has metadata that should be removed too
         """
-        k = self.bucket.get_key(path)
-        k.delete()
+        self.bucket.Object(path).delete()
 
     def list(self, path=None, files=False, dirs=True):
         """List the contents of path.
@@ -249,15 +259,15 @@ class S3RepositoryStore(object):
         if path and path[-1] != '/':
             path += '/'
 
-        accepted_classes = []
-        if files:
-            accepted_classes.append(boto.s3.key.Key)
-        if dirs:
-            accepted_classes.append(boto.s3.prefix.Prefix)
-
-        for k in self.bucket.list(prefix=path, delimiter='/'):
-            if any(isinstance(k, class_) for class_ in accepted_classes):
-                yield k.name.rstrip('/').rsplit('/', 1)[-1]
+        paginator = self.bucket.meta.client.get_paginator('list_objects_v2')
+        for page in paginator.paginate(
+                Bucket=self.bucket.name, Prefix=path, Delimiter='/'):
+            if files:
+                for content in page.get('Contents', []):
+                    yield content['Key'].rsplit('/', 1)[-1]
+            if dirs:
+                for prefix in page.get('CommonPrefixes', []):
+                    yield prefix['Prefix'].rstrip('/').rsplit('/', 1)[-1]
 
 
 class Repository(object):

@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+1.0.0
+-----
+* Replaced `Tempita` by `Jinja2` for templating.
+
+0.10.7
+-----
+* Fixed error while reading missing `sqlite` configuration.
+
+0.10.6
+-----
+* Added support for tomcat9
+
 0.10.5
 -----
 

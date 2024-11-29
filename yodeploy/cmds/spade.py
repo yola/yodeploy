@@ -95,7 +95,7 @@ def configure_logging(verbose):
 
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
-    logging.getLogger('boto').setLevel(logging.WARNING)
+    logging.getLogger('boto3').setLevel(logging.WARNING)
 
     log = logging.getLogger(os.path.basename(__file__).rsplit('.', 1)[0])
 
