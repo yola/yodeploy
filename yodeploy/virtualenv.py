@@ -89,10 +89,6 @@ def create_ve(
             '--system-site-packages', ve_dir
             ))
 
-    """subprocess.check_call((
-        sys.executable, '-m', 'venv', ve_dir))
-    pip_install(ve_dir, pypi, '-U', 'pip')"""
-
     pip_install(ve_dir, pypi, '-U', 'setuptools')
     pip_install(ve_dir, pypi, 'wheel')
 
@@ -176,7 +172,6 @@ def relocateable_ve(ve_dir, python_version):
 
     # Python 3 venv virtualenvs don't have these problems
     if python_version == '2.7':
-        virtualenv.make_environment_relocatable(ve_dir)
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir)
 
