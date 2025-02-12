@@ -84,9 +84,10 @@ def create_ve(
         virtualenv.create_environment(ve_dir, site_packages=False)
     else:
         subprocess.check_call((
-            sys.executable, virtualenv.__file__.rstrip('c'),
+            sys.executable, '-m', 'virtualenv', 
             '-p', 'python%s' % python_version,
-            '--no-site-packages', ve_dir))
+            '--no-site-packages', ve_dir
+            ))
 
     """subprocess.check_call((
         sys.executable, '-m', 'venv', ve_dir))
