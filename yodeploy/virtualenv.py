@@ -162,7 +162,7 @@ def relocateable_ve(ve_dir, python_version):
             'import sys; sys.path.append("%(ve_path)s"); '
             'sys.path.append("%(my_path)s"); '
             'from yodeploy import virtualenv; '
-            'virtualenv.relocate("%(ve_dir)s", "%(python_version)s")'
+            'virtualenv.relocateable_ve("%(ve_dir)s", "%(python_version)s")'
             % {
                 've_path': os.path.dirname(virtualenv.__file__),
                 'my_path': os.path.join(os.path.dirname(__file__), '..'),
@@ -176,7 +176,7 @@ def relocateable_ve(ve_dir, python_version):
 
     # Python 3 venv virtualenvs don't have these problems
     if python_version == '2.7':
-        virtualenv.relocate(ve_dir)
+        virtualenv.make_environment_relocatable(ve_dir)
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir)
 
