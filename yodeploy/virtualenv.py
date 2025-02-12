@@ -86,7 +86,7 @@ def create_ve(
         subprocess.check_call((
             sys.executable, '-m', 'virtualenv', 
             '-p', 'python%s' % python_version,
-            '--no-site-packages', ve_dir
+            '--system-site-packages', ve_dir
             ))
 
     """subprocess.check_call((
