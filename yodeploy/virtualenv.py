@@ -250,7 +250,7 @@ def remove_fragile_symlinks(ve_dir):
     if getattr(sys, 'real_prefix', sys.prefix) == sys.prefix:
         return
     ve_prefix = sys.prefix
-    home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(ve_dir)
+    lib_dir = os.path.join(ve_dir, 'lib')
     for fn in os.listdir(lib_dir):
         path = os.path.join(lib_dir, fn)
         if not os.path.islink(path):
