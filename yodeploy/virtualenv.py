@@ -171,6 +171,7 @@ def relocateable_ve(ve_dir, python_version):
 
     # Python 3 venv virtualenvs don't have these problems
     if python_version == '2.7':
+        virtualenv.create_environment(ve_dir, relocatable=True)
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir)
 
