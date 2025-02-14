@@ -78,10 +78,13 @@ class Builder(object):
             'description': description,
             'context': context,
         }
-        req = Request(url, data=bytes(json.dumps(data), 'utf-8'),
-                      headers={
-                          'Authorization': 'token %s' %
-                          settings.oauth_token, })
+        req = Request(
+            url,
+            data=bytes(json.dumps(data), 'utf-8'),
+            headers={
+                'Authorization': 'token %s' % settings.oauth_token, 
+            }
+        )
         try:
             urlopen(req)
         except URLError as e:
@@ -166,7 +169,7 @@ class Builder(object):
             if os.path.isfile(report_path):
                 test_tree = ElementTree.parse(report_path)
                 test_suite = test_tree.find('testsuite') or test_tree.getroot()
-                for (k, v) in list(test_suite.attrib.items()):
+                for (k, v) in test_suite.attrib.items():
                     if k in results:
                         results[k] += int(v)
 

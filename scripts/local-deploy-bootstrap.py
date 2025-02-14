@@ -57,7 +57,7 @@ def confirm(message):
     """Display a Y/n question prompt, and return a boolean"""
     while True:
         print()
-        input_ = eval(input('%s [Y/n] ' % message))
+        input_ = input('%s [Y/n] ' % message)
         input_ = input_.strip().lower()
         if input_ in ('y', 'yes', ''):
             return True
@@ -136,8 +136,8 @@ def check_environment():
         log.info("The YOLA_SRC environment variable exists. Following it")
     else:
         if 'YOLA_SRC' not in os.environ:
-            input_ = eval(input('Where do you keep your Yola GIT checkouts? '
-                           '[Default: ~/src/]: '))
+            input_ = input('Where do you keep your Yola GIT checkouts? '
+                           '[Default: ~/src/]: ')
             input_ = input_.strip()
             if not input_:
                 input_ = '~/src'

@@ -29,7 +29,7 @@ class TmpDirTestCase(unittest.TestCase):
         os.chdir(self.tmppath('create_tar_workdir'))
         roots = set()
         try:
-            for pathname, data in list(contents.items()):
+            for pathname, data in contents.items():
                 if '/' in pathname:
                     if not os.path.exists(os.path.dirname(pathname)):
                         os.makedirs(os.path.dirname(pathname))

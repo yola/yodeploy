@@ -229,7 +229,7 @@ class S3RepositoryStore(object):
 
         options = {}
         if metadata:
-            options['Metadata'] = {k: str(v) for k, v in list(metadata.items())}
+            options['Metadata'] = {k: str(v) for k, v in metadata.items()}
         if self.reduced_redundancy:
             options['StorageClass'] = 'REDUCED_REDUNDANCY'
         if self.encrypted:

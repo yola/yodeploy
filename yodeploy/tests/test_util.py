@@ -79,14 +79,17 @@ class TestExtractTar(TmpDirTestCase, HelperScriptConsumer):
             'PYTHONPATH': yodeploy_location(),
         }
 
-        subprocess.check_call((
-            'fakeroot',
-            'python',
-            self.get_helper_path('permission_squash_checker.py'),
-            self.tmppath('test.tar.gz'),
-            self.tmppath('extracted'),
-            self.tmppath('extracted/bar')
-        ), env=env)
+        try:
+            subprocess.check_call((
+                'fakeroot',
+                'python',
+                self.get_helper_path('permission_squash_checker.py'),
+                self.tmppath('test.tar.gz'),
+                self.tmppath('extracted'),
+                self.tmppath('extracted/bar')
+            ), env=env, timeout=10)  # Ensure it doesn’t hang indefinitely
+        except subprocess.TimeoutExpired:
+            self.fail("Subprocess execution timed out")
 
 
 class TestDelete_Dir_Content(TmpDirTestCase):
