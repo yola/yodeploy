@@ -80,12 +80,12 @@ def create_ve(
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_install(ve_dir, pypi, '-U', 'pip')
     elif python_version == sysconfig.get_python_version():
-        virtualenv.create_environment(ve_dir, site_packages=False)
+        virtualenv.create_environment(ve_dir, relocatable=True, site_packages=False)
     else:
         subprocess.check_call((
             sys.executable, '-m', 'virtualenv', 
             '-p', 'python%s' % python_version,
-            '--system-site-packages', ve_dir
+            '--system-site-packages', '--relocatable', ve_dir
             ))
 
     pip_install(ve_dir, pypi, '-U', 'setuptools')
@@ -98,7 +98,7 @@ def create_ve(
         log.info('Verifying requirements were met')
         check_requirements(ve_dir)
 
-    relocateable_ve(ve_dir, python_version)
+    # relocateable_ve(ve_dir, python_version)
 
     ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
