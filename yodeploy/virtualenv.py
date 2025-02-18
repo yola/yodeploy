@@ -98,7 +98,7 @@ def create_ve(
         log.info('Verifying requirements were met')
         check_requirements(ve_dir)
 
-    # relocateable_ve(ve_dir, python_version)
+    relocateable_ve(ve_dir, python_version)
 
     ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
     with open(os.path.join(ve_dir, '.hash'), 'w') as f:
