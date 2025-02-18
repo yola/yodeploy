@@ -125,6 +125,10 @@ class Builder(object):
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
 
+        if self.build_virtualenvs and getattr(self, 'force', False):
+            build_deploy_virtualenv.append('--force')
+            build_app_virtualenv.append('--force')
+
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
             check_call(build_deploy_virtualenv, cwd='deploy',
@@ -248,9 +252,9 @@ def parse_args(default_app):
     parser.add_argument('--no-virtualenvs', action='store_false',
                         dest='build_virtualenvs',
                         help='Skip building deploy virtualenvs')
-    parser.add_argument('--force_rebuild', action='--force',
+    parser.add_argument('--force', action='store_true',
                         dest='build_virtualenvs',
-                        help='Skip building deploy virtualenvs')
+                        help='Force rebuild of deploy virtualenvs')
     parser.add_argument('--prepare-only', action='store_true',
                         help="Only prepare (e.g. build virtualenvs) don't "
                              "build")
