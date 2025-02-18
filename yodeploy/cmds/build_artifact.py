@@ -114,7 +114,7 @@ class Builder(object):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy', '--force',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
