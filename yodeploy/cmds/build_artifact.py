@@ -114,11 +114,11 @@ class Builder(object):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy', '--force',
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
-        build_app_virtualenv = [python, build_ve, '-a', self.app, '--force',
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file]
         if self.upload_virtualenvs:
@@ -246,6 +246,9 @@ def parse_args(default_app):
     parser.add_argument('--target', default='master',
                         help='The target to upload to')
     parser.add_argument('--no-virtualenvs', action='store_false',
+                        dest='build_virtualenvs',
+                        help='Skip building deploy virtualenvs')
+    parser.add_argument('--force_rebuild', action='--force',
                         dest='build_virtualenvs',
                         help='Skip building deploy virtualenvs')
     parser.add_argument('--prepare-only', action='store_true',
