@@ -287,7 +287,7 @@ def make_environment_relocatable(home_dir):
     home_dir, lib_dir, inc_dir, bin_dir = path_locations(home_dir)
     activate_this = os.path.join(bin_dir, "activate_this.py")
     if not os.path.exists(activate_this):
-        log.fatal(
+        log.critical(
             "The environment doesn't have a file %s -- please re-run virtualenv " "on this environment to update it",
             activate_this,
         )
@@ -313,12 +313,12 @@ def fixup_pth_and_egg_link(home_dir, sys_path=None):
             filename = os.path.join(a_path, filename)
             if filename.endswith(".pth"):
                 if not os.access(filename, os.W_OK):
-                    log.warn("Cannot write .pth file %s, skipping", filename)
+                    log.warning("Cannot write .pth file %s, skipping", filename)
                 else:
                     fixup_pth_file(filename)
             if filename.endswith(".egg-link"):
                 if not os.access(filename, os.W_OK):
-                    log.warn("Cannot write .egg-link file %s, skipping", filename)
+                    log.warning("Cannot write .egg-link file %s, skipping", filename)
                 else:
                     fixup_egg_link(filename)
 
@@ -346,7 +346,7 @@ def fixup_scripts(_, bin_dir):
                 # of a script, so just ignore it.
                 continue
         if not lines:
-            log.warn("Script %s is an empty file", filename)
+            log.warning("Script %s is an empty file", filename)
             continue
 
         old_shebang = lines[0].strip()
@@ -358,13 +358,13 @@ def fixup_scripts(_, bin_dir):
             elif lines[0].strip() == new_shebang:
                 log.info("Script %s has already been made relative", filename)
             else:
-                log.warn(
+                log.warning(
                     "Script %s cannot be made relative (it's not a normal script that starts with %s)",
                     filename,
                     shebang,
                 )
             continue
-        log.notify("Making script %s relative", filename)
+        log.warning("Making script %s relative", filename)
         script = relative_script([new_shebang] + lines[1:])
         with open(filename, "wb") as f:
             f.write("\n".join(script).encode("utf-8"))
@@ -377,7 +377,7 @@ def fixup_egg_link(filename):
         log.debug("Link in %s already relative", filename)
         return
     new_link = make_relative_path(filename, link)
-    log.notify("Rewriting link {} in {} as {}".format(link, filename, new_link))
+    log.warning("Rewriting link {} in {} as {}".format(link, filename, new_link))
     with open(filename, "w") as f:
         f.write(new_link)
 
@@ -434,7 +434,7 @@ def fixup_pth_file(filename):
     if lines == prev_lines:
         log.info("No changes to .pth file %s", filename)
         return
-    log.notify("Making paths in .pth file %s relative", filename)
+    log.warning("Making paths in .pth file %s relative", filename)
     with open(filename, "w") as f:
         f.write("\n".join(lines) + "\n")
 
