@@ -45,7 +45,6 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         a.send(data)
         
         LoggingSocketRequestHandler(b, None, None, oneshot=True)
-        handler.handle()
         handler.flush()
         logger.removeHandler(handler)
         self.assertTrue(buffer_.getvalue())
