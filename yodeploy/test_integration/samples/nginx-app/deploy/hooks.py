@@ -1,7 +1,7 @@
 import getpass
 import os
 
-from unittest.mock from unittest.mock import Mock
+from unittest.mock import Mock
 
 
 from yodeploy.hooks.nginx import NginxHostedApp
