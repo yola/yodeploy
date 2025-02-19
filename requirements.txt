@@ -10,8 +10,6 @@ yoconfigurator == 0.5.2
 packaging == 24.2
 
 # Development dependencies:
-mock == 3.0.5
-spec == 1.4.1
-pytest == 8.1.1
+pytest == 8.3.4
 pytest-isort == 4.0.0
-pytest-spec == 3.2.0
+pytest-spec == 4.0.0
