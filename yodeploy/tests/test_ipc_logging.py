@@ -30,13 +30,14 @@ class TestExistingSocketHandler(unittest.TestCase):
         self.assertIsInstance(received, dict)
         self.assertEqual(received['msg'], 'Testing 123')
 
+
 class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
         logger = logging.getLogger('test')
         buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
-        
+
         a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
         r = logging.LogRecord('test', logging.INFO, __file__, 42,
                               'Testing 123', [], None, 'test_handle')
@@ -44,44 +45,71 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         a.send(struct.pack('>L', len(data)))
         a.send(data)
 
-        class DummyServer:
-            pass
-
-        handler_instance = LoggingSocketRequestHandler(b, None, DummyServer(), oneshot=True)
-        handler_instance.handle()
-
+        # implicitly calls handle() (lovely API, eh?)
+        LoggingSocketRequestHandler(b, None, None, oneshot=True)
         handler.flush()
         logger.removeHandler(handler)
         self.assertTrue(buffer_.getvalue())
 
+    def test_filtered(self):
+        # A dummy handler to eventually receive our message
+        logger = logging.getLogger('test')
+        logger.setLevel(logging.WARN)
+        buffer_ = StringIO()
+        handler = logging.StreamHandler(buffer_)
+        logger.addHandler(handler)
+
+        a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        # This assumes a bit of buffering...
+        r = logging.LogRecord('test', logging.INFO, __file__, 42,
+                              'Testing 123', [], None, 'test_handle')
+        data = pickle.dumps(r.__dict__)
+        a.send(struct.pack('>L', len(data)))
+        a.send(data)
+
+        # implicitly calls handle() (lovely API, eh?)
+        LoggingSocketRequestHandler(b, None, None, oneshot=True)
+        handler.flush()
+        logger.removeHandler(handler)
+        logger.setLevel(logging.NOTSET)
+        self.assertFalse(buffer_.getvalue())
+
 
 class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
     def setUp(self):
-        super().setUp()
+        super(TestThreadedLogStreamServer, self).setUp()
         self.tlss = ThreadedLogStreamServer()
         self.addCleanup(self.tlss.shutdown)
 
     def test_integration(self):
         logger = logging.getLogger('test')
-        logger.propagate = False  # Fix typo from `propegate`
+        logger.propagate = False
         buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
-        p = subprocess.Popen((
+        p = subprocess.Popen(
+            [
                 sys.executable,
                 self.get_helper_path('tlss_user.py'),
-                str(self.tlss.remote_socket.fileno())  # Ensure correct FD
-            ), env={
+                str(self.tlss.remote_socket.fileno()),
+            ],
+            env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': yodeploy_location(),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False,
-            universal_newlines=True)
+            },
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=False,
+            universal_newlines=True,
+        )
         out, err = p.communicate()
 
-        self.assertEqual(p.wait(), 0, f'Subprocess outputted: {out}{err}')
+        self.assertEqual(
+            p.wait(), 0, 'Subprocess outputted: %s%s' % (out, err))
 
         handler.flush()
         logger.removeHandler(handler)
-        logger.propagate = True  # Restore propagate setting
+        logger.propagate = True
         self.assertTrue(buffer_.getvalue())
