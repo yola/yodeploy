@@ -10,9 +10,9 @@ import socketserver
 class ExistingSocketHandler(logging.handlers.SocketHandler):
     """Logging handler that writes messages to a pre-created socket."""
 
-    def __init__(self, sock):
-        logging.handlers.SocketHandler.__init__(self, None, None)
-        self.sock = sock
+    def __init__(self, request, client_address, server, oneshot=False):
+        self._oneshot = oneshot
+        super().__init__(request, client_address, server)
 
 
 class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
