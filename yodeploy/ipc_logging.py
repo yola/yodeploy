@@ -10,20 +10,18 @@ import socketserver
 class ExistingSocketHandler(logging.handlers.SocketHandler):
     """Logging handler that writes messages to a pre-created socket."""
 
-    def __init__(self, request, client_address, server, oneshot=False):
-        self._oneshot = oneshot
-        super().__init__(request, client_address, server)
+    def __init__(self, sock):
+        logging.handlers.SocketHandler.__init__(self, None, None)
+        self.sock = sock
 
 
 class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
     """SocketServer handler that unpickles log messages and forwards them to the logger."""
 
-    _oneshot = False
-
-    def setup(self):
-        """Override setup to allow oneshot to be set dynamically."""
-        if hasattr(self.server, "_oneshot"):
-            self._oneshot = self.server._oneshot
+    def __init__(self, request, client_address, server, oneshot=False):
+        self._oneshot = oneshot
+        socketserver.BaseRequestHandler.__init__(self, request, client_address,
+                                                 server)
 
     def handle(self):
         buf = b''
