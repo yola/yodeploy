@@ -14,8 +14,11 @@ class ExistingSocketHandler(logging.handlers.SocketHandler):
         self.sock = sock
 
 class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
-    _oneshot = False
-    
+    def __init__(self, request, client_address, server, oneshot=False):
+        self._oneshot = oneshot
+        socketserver.BaseRequestHandler.__init__(self, request, client_address,
+                                                 server)
+
     def handle(self):
         buf = b''
         header_size = struct.calcsize('>L')
