@@ -1,4 +1,5 @@
-import mock
+from unittest.mock import Mock
+
 import os
 import threading
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from yodeploy.cmds.build_artifact import GitHelper
 from unittest import TestCase
-from mock import patch
+from unittest.mock import patch
 
 
 class TestGitHelper(TestCase):
