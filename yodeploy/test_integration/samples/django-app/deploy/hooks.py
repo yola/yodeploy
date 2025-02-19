@@ -1,7 +1,6 @@
 import getpass
 from unittest.mock import Mock
 
-
 from os.path import join
 
 from yodeploy.hooks.django import ApacheHostedDjangoApp

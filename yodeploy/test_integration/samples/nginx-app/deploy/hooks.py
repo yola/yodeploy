@@ -3,7 +3,6 @@ import os
 
 from unittest.mock import Mock
 
-
 from yodeploy.hooks.nginx import NginxHostedApp
 from yodeploy.test_integration.helpers import tests_dir
 

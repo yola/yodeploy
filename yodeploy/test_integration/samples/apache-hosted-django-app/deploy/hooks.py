@@ -3,7 +3,6 @@ import os
 
 from unittest.mock import Mock
 
-
 from yodeploy.hooks.django import ApacheHostedDjangoApp
 from yodeploy.test_integration.helpers import tests_dir
 

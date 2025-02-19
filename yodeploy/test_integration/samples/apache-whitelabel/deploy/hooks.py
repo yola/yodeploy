@@ -1,6 +1,5 @@
 from unittest.mock import Mock
 
-
 from os.path import join
 
 from yodeploy.hooks.apache import ApacheMultiSiteApp
