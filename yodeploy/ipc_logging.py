@@ -46,6 +46,7 @@ class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
             record = logging.makeLogRecord(record)
             logger = logging.getLogger(record.name)
             if logger.isEnabledFor(record.levelno):
+                print(f"Logging record: {record}")
                 logger.handle(record)
 
             buf = buf[size:]

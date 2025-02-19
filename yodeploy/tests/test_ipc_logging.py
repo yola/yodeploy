@@ -34,8 +34,12 @@ class TestExistingSocketHandler(unittest.TestCase):
 class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
         logger = logging.getLogger('test')
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+
         buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
+        handler.setLevel(logging.INFO)
         logger.addHandler(handler)
 
         a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -49,7 +53,8 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         LoggingSocketRequestHandler(b, None, None, oneshot=True)
         handler.flush()
         logger.removeHandler(handler)
-        self.assertTrue(buffer_.getvalue())
+
+        assert buffer_.getvalue(), "Expected log output but got empty buffer"
 
     def test_filtered(self):
         # A dummy handler to eventually receive our message
