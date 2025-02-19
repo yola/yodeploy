@@ -5,6 +5,7 @@ import socket
 import struct
 import subprocess
 import sys
+import unittest
 from io import StringIO
 
 from yodeploy.ipc_logging import (
