@@ -84,8 +84,7 @@ def create_ve(
     else:
         subprocess.check_call((
             sys.executable, '-m', 'virtualenv',
-            '-p', 'python%s' % python_version,
-            '--system-site-packages', ve_dir
+            '-p', 'python%s' % python_version, ve_dir
         ))
 
     pip_install(ve_dir, pypi, '-U', 'setuptools')
