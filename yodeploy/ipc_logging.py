@@ -54,7 +54,7 @@ class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
 
 class ThreadedLogStreamServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
     """Server that will listen for log messages sent via a socket."""
-    
+
     def __init__(self):
         self.socket, self.remote_socket = socket.socketpair(
             socket.AF_UNIX, socket.SOCK_STREAM)
