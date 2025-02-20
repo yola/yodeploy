@@ -10,12 +10,9 @@ import subprocess
 import sys
 from xml.etree import ElementTree
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
-except ImportError:
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
+
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -116,8 +113,8 @@ class Builder(object):
                                                     'build_virtualenv'))
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
-                                   '--config', self.deploy_settings_file]
-                                   # '--compat=%i' % self.compat]
+                                   '--config', self.deploy_settings_file,
+                                   '--compat=%i' % self.compat]
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file]

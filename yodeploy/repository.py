@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 STORES = {}
 
 try:
-    string_types = (str,)  # python 2
+    string_types = (basestring,)  # python 2
 except NameError:
     string_types = (str,)  # python 3
 
