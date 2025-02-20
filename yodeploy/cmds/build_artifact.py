@@ -113,11 +113,11 @@ class Builder(object):
                                                     'build_virtualenv'))
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
-                                   '--config', self.deploy_settings_file,
-                                   '--compat=%i' % self.compat]
+                                   '--config', self.deploy_settings_file]
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
-                                '--config', self.deploy_settings_file]
+                                '--config', self.deploy_settings_file,
+                                '--compat=%i' % self.compat]
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
