@@ -112,9 +112,9 @@ class Builder(object):
     def prepare(self):
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        deploy_python = shutil.which('python3')
-        if not deploy_python:
-            abort('python3 not found in PATH')
+        deploy_python = os.path.abspath(sys.executable)
+        if sys.version_info.major != 3:
+            abort('build_artifact must run with Python 3 for deploy VE')
         # Deploy VE
         build_deploy_virtualenv = [deploy_python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
