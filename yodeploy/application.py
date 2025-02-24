@@ -66,7 +66,9 @@ class Application(object):
         """
         deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        python_version = virtualenv.get_python_version(self.compat)
+        python_version = virtualenv.get_python_version(
+            self.compat, is_deploy=True
+        )
         platform = self.settings.artifacts.platform
         ve_id = virtualenv.get_id(deploy_req_fn, python_version, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',

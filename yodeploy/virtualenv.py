@@ -21,19 +21,33 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def get_python_version(compat):
-    """Return the version of Python that an app will use.
+def get_python_version(compat, is_deploy=False, app_dir=None):
+    """Return Python version for VE based on context.
 
-    Based on the compat level.
+    Args:
+        compat: Compat level from deploy/compat or CLI (for metadata/legacy).
+        is_deploy: True if building deploy VE, forces Python 3.
+        app_dir: Directory to check for app-specific compat file (optional).
     """
-    if compat < 5:
-        return '2.7'
-    if sys.version_info.major == 3:
-        return sysconfig.get_python_version()
-    return subprocess.check_output((
-        'python3', '-c',
-        'import sysconfig; print(sysconfig.get_python_version())'
-    )).strip()
+    # Check app-specific compat file for Python 2 (only for app VE)
+    if not is_deploy and app_dir:
+        compat_file = os.path.join(app_dir, 'compat')
+        if os.path.exists(compat_file):
+            with open(compat_file, 'r') as f:
+                if f.read().strip() == 'compat 4':
+                    return '2.7'
+
+    # Default to system Python 3 for deploy VE or app VE without compat 4
+    python3 = shutil.which('python3')
+    if not python3:
+        error_msg = ('python3 not found in PATH for deploy VE'
+                     if is_deploy else 'python3 not found in PATH')
+        log.error(error_msg)
+        sys.exit(1)
+    return subprocess.check_output(
+        [python3, '-c',
+         'import sys; print(".".join(map(str, sys.version_info[:2])))']
+    ).decode().strip()
 
 
 def get_id(filename, python_version, platform):

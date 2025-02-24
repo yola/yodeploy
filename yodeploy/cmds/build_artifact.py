@@ -16,11 +16,13 @@ from urllib.error import URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+from yodeploy import virtualenv # noqa
 from yoconfigurator.base import write_config  # noqa
 from yoconfigurator.filter import filter_config  # noqa
 from yoconfigurator.smush import config_sources, smush_config  # noqa
 import yodeploy.config  # noqa
 import yodeploy.repository  # noqa
+
 from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
@@ -79,7 +81,7 @@ class Builder(object):
             url,
             data=bytes(json.dumps(data), 'utf-8'),
             headers={
-                'Authorization': 'token %s' % settings.oauth_token, 
+                'Authorization': 'token %s' % settings.oauth_token,
             }
         )
         try:
@@ -108,17 +110,25 @@ class Builder(object):
             write_config(public_config, '.', 'configuration_public.json')
 
     def prepare(self):
-        python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
+        deploy_python = shutil.which('python3')
+        if not deploy_python:
+            abort('python3 not found in PATH')
+        # Deploy VE
+        build_deploy_virtualenv = [deploy_python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
-                                   '--compat=5']
-        build_app_virtualenv = [python, build_ve, '-a', self.app,
+                                   '--compat=%i' % self.compat]
+        # App VE
+        app_python = (shutil.which('python3')
+                      if self.get_app_python_version().startswith('3')
+                      else shutil.which('python2'))
+        if not app_python:
+            abort('Required Python executable not found in PATH')
+        build_app_virtualenv = [app_python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
-                                '--config', self.deploy_settings_file,
-                                '--compat=%i' % self.compat]
+                                '--config', self.deploy_settings_file]
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
@@ -133,6 +143,12 @@ class Builder(object):
             print_banner('Build app virtualenv')
             check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
+
+    def get_app_python_version(self):
+        """Get Python version for app VE."""
+        return virtualenv.get_python_version(
+            self.compat, is_deploy=False, app_dir=os.getcwd()
+        )
 
     def build_env(self):
         """Return environment variables to be exported for the build"""

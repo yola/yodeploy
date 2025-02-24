@@ -83,7 +83,12 @@ def main():
         except IOError:
             options.compat = yodeploy.util.infer_compat_version()
 
-    python_version = virtualenv.get_python_version(options.compat)
+    python_version = virtualenv.get_python_version(
+        options.compat,
+        is_deploy=(options.app == 'deploy'),
+        app_dir=os.getcwd() if options.app != 'deploy' else None
+    )
+
     platform = deploy_settings.artifacts.platform
     ve_id = virtualenv.get_id(options.requirement, python_version, platform)
     if options.hash:
