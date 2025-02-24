@@ -120,11 +120,6 @@ class Builder(object):
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
         # App VE
-        app_python = self.get_app_python_version()
-        app_python = (shutil.which('python3') if self.get_app_python_version().startswith('3')
-                      else shutil.which('python2'))
-        if not app_python:
-            abort('Required Python executable not found in PATH')
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file,
@@ -143,12 +138,6 @@ class Builder(object):
             print_banner('Build app virtualenv')
             check_call(build_app_virtualenv, abort='build-virtualenv failed')
         self.configure()
-
-    def get_app_python_version(self):
-        """Get Python version for app VE."""
-        return virtualenv.get_python_version(
-            self.compat, is_deploy=False, app_dir=os.getcwd()
-        )
 
     def build_env(self):
         """Return environment variables to be exported for the build"""
