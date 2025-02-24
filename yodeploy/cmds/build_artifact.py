@@ -16,7 +16,6 @@ from urllib.error import URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from yodeploy import virtualenv # noqa
 from yoconfigurator.base import write_config  # noqa
 from yoconfigurator.filter import filter_config  # noqa
 from yoconfigurator.smush import config_sources, smush_config  # noqa
@@ -112,21 +111,24 @@ class Builder(object):
     def prepare(self):
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        deploy_python = os.path.abspath(sys.executable)
+        python = os.path.abspath(sys.executable)
         if sys.version_info.major != 3:
             abort('build_artifact must run with Python 3 for deploy VE')
         # Deploy VE
-        build_deploy_virtualenv = [deploy_python, build_ve, '-a', 'deploy',
+        build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
         # App VE
         app_python = self.get_app_python_version()
+        app_python = (shutil.which('python3') if self.get_app_python_version().startswith('3')
+                      else shutil.which('python2'))
         if not app_python:
             abort('Required Python executable not found in PATH')
-        build_app_virtualenv = [app_python, build_ve, '-a', self.app,
+        build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
-                                '--config', self.deploy_settings_file]
+                                '--config', self.deploy_settings_file,
+                                '--compat=%i' % self.compat]
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
