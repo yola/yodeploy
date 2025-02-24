@@ -121,7 +121,7 @@ class Builder(object):
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
         # App VE
-        app_version = self.get_app_python_version()
+        app_python = self.get_app_python_version()
         if not app_python:
             abort('Required Python executable not found in PATH')
         build_app_virtualenv = [app_python, build_ve, '-a', self.app,
