@@ -91,7 +91,7 @@ def main():
         ).decode().strip()
     else:
         python_version = virtualenv.get_python_version(
-            options.compat, is_deploy=False, app_dir=os.getcwd()
+            options.compat, is_deploy=False
         )
 
     platform = deploy_settings.artifacts.platform
