@@ -96,13 +96,17 @@ def create_ve(
         subprocess.check_call((
             'python%s' % python_version, '-m', 'venv', ve_dir))
         pip_install(ve_dir, pypi, '-U', 'pip')
-    elif python_version == sysconfig.get_python_version():
-        virtualenv.create_environment(ve_dir, site_packages=False)
     else:
-        subprocess.check_call((
-            sys.executable, '-m', 'virtualenv',
-            '-p', 'python%s' % python_version, ve_dir
-        ))
+        python2_path = shutil.which('python%s' % python_version)
+        if not python2_path:
+            log.error('Python %s not found in PATH', python_version)
+            sys.exit(1)
+        log.debug('Creating Python 2.7 VE with cli_run: %s', ve_dir)
+        subprocess.check_call([
+            sys.executable, '-m', 'virtualenv', ve_dir,
+            '--python', python2_path,
+            '--no-download'])
+        pip_install(ve_dir, pypi, '-U', 'pip')
 
     pip_install(ve_dir, pypi, '-U', 'setuptools')
     pip_install(ve_dir, pypi, 'wheel')
@@ -165,36 +169,27 @@ def check_requirements(ve_dir):
 
 
 def relocateable_ve(ve_dir, python_version):
-    # We can only call into the virtualenv module for operating on a
-    # Python 2 virtualenv, in Python 2.
-    if sys.version_info.major == 3 and python_version == '2.7':
-        cmd = [
-            os.path.join(ve_dir, 'bin', 'python'), '-c',
-            'import sys; sys.path.append("%(ve_path)s"); '
-            'sys.path.append("%(my_path)s"); '
-            'from yodeploy import virtualenv; '
-            'virtualenv.relocateable_ve("%(ve_dir)s", "%(python_version)s")'
-            % {
-                've_path': os.path.dirname(virtualenv.__file__),
-                'my_path': os.path.join(os.path.dirname(__file__), '..'),
-                've_dir': ve_dir,
-                'python_version': python_version,
-            }]
-        subprocess.check_call(cmd)
-        return
-
     log.debug('Making virtualenv relocatable')
 
-    # Python 3 venv virtualenvs don't have these problems
+    # Python 3 venv is inherently relocatable
+    if python_version.startswith('3.'):
+        return
+
+    # For Python 2, reset app data to ensure relocatability
     if python_version == '2.7':
-        virtualenv.make_environment_relocatable(ve_dir)
+        subprocess.check_call([
+            sys.executable, '-m', 'virtualenv', ve_dir, '--reset-app-data'])
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir)
 
     # Make activate relocatable, using approach taken in
     # https://github.com/pypa/virtualenv/pull/236
     activate = []
-    with open(os.path.join(ve_dir, 'bin', 'activate')) as f:
+    activate_path = os.path.join(ve_dir, 'bin', 'activate')
+    if not os.path.exists(activate_path):
+        log.error('activate script missing in %s', ve_dir)
+        return
+    with open(activate_path) as f:
         for line in f:
             line = line.strip()
             if line == 'deactivate () {':
@@ -203,7 +198,6 @@ def relocateable_ve(ve_dir, python_version):
                 activate += [
                     '# attempt to determine VIRTUAL_ENV in relocatable way',
                     'if [ ! -z "${BASH_SOURCE:-}" ]; then',
-                    '    # bash',
                     '    ACTIVATE_PATH="${BASH_SOURCE}"',
                     'elif [ ! -z "${DASH_SOURCE:-}" ]; then',
                     '    # dash',
@@ -236,7 +230,7 @@ def relocateable_ve(ve_dir, python_version):
                     'unset ACTIVATE_PATH_FALLBACK',
                 ]
             activate.append(line)
-    with open(os.path.join(ve_dir, 'bin', 'activate'), 'w') as f:
+    with open(activate_path, 'w') as f:
         f.write('\n'.join(activate))
 
 
