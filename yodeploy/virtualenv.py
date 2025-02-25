@@ -90,51 +90,55 @@ def create_ve(
     ve_dir = os.path.join(app_dir, 'virtualenv')
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
-    # The venv module makes a lot of our reclocateability problems go away, so
-    # we only use the virtualenv library on Python 2.
-    if python_version.startswith('3.'):
-        subprocess.check_call((
-            'python%s' % python_version, '-m', 'venv', ve_dir))
-        pip_install(ve_dir, pypi, '-U', 'pip')
-    else:
-        python2_path = shutil.which('python%s' % python_version)
-        if not python2_path:
-            log.error('Python %s not found in PATH', python_version)
-            sys.exit(1)
-        log.debug('Creating Python 2.7 VE with cli_run: %s', ve_dir)
-        subprocess.check_call([
-            sys.executable, '-m', 'virtualenv', ve_dir,
-            '--python', python2_path,
-            '--no-download'])
-        pip_install(ve_dir, pypi, '-U', 'pip')
+    python_path = shutil.which('python%s' % python_version)
+    if not python_path:
+        log.error('Python %s not found in PATH', python_version)
+        sys.exit(1)
+    log.debug('Using Python path: %s', python_path)
 
-    pip_install(ve_dir, pypi, '-U', 'setuptools')
-    pip_install(ve_dir, pypi, 'wheel')
-
-    log.info('Installing requirements')
-    pip_install(ve_dir, pypi, '-r', req_file)
-
-    if verify_req_install:
-        log.info('Verifying requirements were met')
-        check_requirements(ve_dir)
-
-    relocateable_ve(ve_dir, python_version)
-
-    ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
-    with open(os.path.join(ve_dir, '.hash'), 'w') as f:
-        f.write(ve_id)
-        f.write('\n')
-
-    log.info('Building virtualenv tarball')
-    cwd = os.getcwd()
-    os.chdir(app_dir)
-    t = tarfile.open('virtualenv.tar.gz', 'w:gz')
     try:
-        t.add('virtualenv')
-    finally:
-        t.close()
-        os.chdir(cwd)
+        if python_version.startswith('3.'):
+            log.debug('Creating Python 3 VE with venv: %s', ve_dir)
+            subprocess.check_call([python_path, '-m', 'venv', ve_dir])
+        else:
+            log.debug('Creating Python 2.7 VE with virtualenv: %s', ve_dir)
+            subprocess.check_call([
+                python_path, '-m', 'virtualenv', ve_dir,
+                '--no-download'])
+        log.debug('VE created, contents: %s', os.listdir(ve_dir))
 
+        pip_install(ve_dir, pypi, '-U', 'pip')
+        pip_install(ve_dir, pypi, '-U', 'setuptools')
+        pip_install(ve_dir, pypi, 'wheel')
+
+        log.info('Installing requirements')
+        pip_install(ve_dir, pypi, '-r', req_file)
+
+        if verify_req_install:
+            log.info('Verifying requirements were met')
+            check_requirements(ve_dir)
+
+        relocateable_ve(ve_dir, python_version)
+
+        ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
+        with open(os.path.join(ve_dir, '.hash'), 'w') as f:
+            f.write(ve_id)
+            f.write('\n')
+
+        log.info('Building virtualenv tarball')
+        cwd = os.getcwd()
+        os.chdir(app_dir)
+        t = tarfile.open('virtualenv.tar.gz', 'w:gz')
+        try:
+            t.add('virtualenv')
+        finally:
+            t.close()
+            os.chdir(cwd)
+    except subprocess.CalledProcessError as e:
+        log.error('Failed to create VE: %s', e)
+        log.error('Stdout: %s', e.stdout.decode())
+        log.error('Stderr: %s', e.stderr.decode())
+        sys.exit(1)
 
 def pip_install(ve_dir, pypi, *arguments):
     sub_log = logging.getLogger(__name__ + '.pip')
