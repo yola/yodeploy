@@ -28,7 +28,7 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs):
+                 build_virtualenvs, upload_virtualenvs, force_rebuild):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -42,6 +42,7 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
+        self.force_rebuild = force_rebuild
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -114,16 +115,31 @@ class Builder(object):
         python = os.path.abspath(sys.executable)
         if sys.version_info.major != 3:
             abort('build_artifact must run with Python 3 for deploy VE')
-        # Deploy VE
+
+        deploy_ve_dir = os.path.join('deploy', 'virtualenv')
+        deploy_ve_tar = os.path.join('deploy', 'virtualenv.tar.gz')
+        if self.force_rebuild:
+            if os.path.exists(deploy_ve_dir):
+                shutil.rmtree(deploy_ve_dir)
+            if os.path.exists(deploy_ve_tar):
+                os.unlink(deploy_ve_tar)
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
-        # App VE
+
+        app_ve_dir = 'virtualenv'
+        app_ve_tar = 'virtualenv.tar.gz'
+        if self.force_rebuild:
+            if os.path.exists(app_ve_dir):
+                shutil.rmtree(app_ve_dir)
+            if os.path.exists(app_ve_tar):
+                os.unlink(app_ve_tar)
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file
-                                ]
+                               ]
+
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
@@ -132,11 +148,15 @@ class Builder(object):
             print_banner('Build deploy virtualenv')
             check_call(build_deploy_virtualenv, cwd='deploy',
                        abort='build-virtualenv failed')
-            shutil.rmtree('deploy/virtualenv')
-            os.unlink('deploy/virtualenv.tar.gz')
-        if os.path.exists('requirements.txt'):
-            print_banner('Build app virtualenv')
-            check_call(build_app_virtualenv, abort='build-virtualenv failed')
+            if os.path.exists(deploy_ve_dir):
+                shutil.rmtree(deploy_ve_dir)
+            if os.path.exists(deploy_ve_tar):
+                os.unlink(deploy_ve_tar)
+
+            if os.path.exists('requirements.txt'):
+                print_banner('Build app virtualenv')
+                check_call(build_app_virtualenv, abort='build-virtualenv failed')
+
         self.configure()
 
     def build_env(self):
@@ -257,6 +277,8 @@ def parse_args(default_app):
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
+    parser.add_argument('--force-rebuild', action='store_true',
+                        help='Force rebuilding of deploy and app virtualenvs')
     opts = parser.parse_args()
 
     if opts.config is None:
