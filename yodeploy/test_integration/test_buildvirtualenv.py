@@ -37,4 +37,8 @@ class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
 
     def test_fails_to_build(self):
         with self.assertRaises(Exception):
+            build_sample('requirements-downgrade')
+
+    def test_fails_to_build_with_force_rebuild(self):
+        with self.assertRaises(Exception):
             build_sample('requirements-downgrade', force_rebuild=True)
