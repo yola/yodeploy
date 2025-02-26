@@ -28,7 +28,7 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs, force_rebuild):
+                 build_virtualenvs, upload_virtualenvs, force_rebuild=False):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
