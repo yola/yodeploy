@@ -63,7 +63,7 @@ def create_ve(
         app_dir, python_version, platform, pypi=None,
         req_file='requirements.txt', verify_req_install=True):
     log.info('Building virtualenv')
-    ve_dir = os.path.join(app_dir, 'virtualenv')
+    ve_dir = os.path.abspath(os.path.join(app_dir, 'virtualenv'))  # Ensure absolute path
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
     if os.path.exists(ve_dir):
@@ -86,6 +86,11 @@ def create_ve(
                 '--python', python_path,
                 '--no-download'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        python_bin = os.path.join(ve_dir, 'bin', 'python')
+        if not os.path.exists(python_bin):
+            log.error('Virtualenv created but bin/python missing at %s', python_bin)
+            log.debug('VE contents: %s', os.listdir(ve_dir))
+            raise FileNotFoundError(f"bin/python not found in {ve_dir}")
         log.debug('VE created, contents: %s', os.listdir(ve_dir))
 
         pip_install(ve_dir, pypi, '-U', 'pip')
