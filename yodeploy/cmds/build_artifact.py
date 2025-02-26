@@ -144,7 +144,7 @@ class Builder(object):
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
 
-        if self.build_virtualenvs:
+        if self.build_virtualenvs or self.force_rebuild:
             print_banner('Build deploy virtualenv')
             check_call(build_deploy_virtualenv, cwd='deploy',
                        abort='build-virtualenv failed')

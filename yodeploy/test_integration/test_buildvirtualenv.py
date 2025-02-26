@@ -21,6 +21,14 @@ class TestAppWithEmptyRequirements(unittest.TestCase):
         has_venv = os.path.exists(venv_path)
         self.assertTrue(has_venv)
 
+    def test_force_rebuild_creates_virtualenv(self):
+        build_sample('requirements-empty')
+        initial_mtime = os.path.getmtime(venv_path('requirements-empty'))
+        build_sample('requirements-empty', force_rebuild=True)
+        new_mtime = os.path.getmtime(venv_path('requirements-empty'))
+        self.assertTrue(os.path.exists(venv_path('requirements-empty')))
+        self.assertGreater(new_mtime, initial_mtime, "VE was not rebuilt with --force-rebuild")
+
 
 class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
 
@@ -29,4 +37,4 @@ class TestAppWithRequirementsThatDowngrade(unittest.TestCase):
 
     def test_fails_to_build(self):
         with self.assertRaises(Exception):
-            build_sample('requirements-downgrade')
+            build_sample('requirements-downgrade', force_rebuild=True)
