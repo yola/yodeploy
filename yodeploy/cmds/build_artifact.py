@@ -501,7 +501,8 @@ def main():
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs)
+                           upload_virtualenvs=upload_virtualenvs,
+                           force_rebuild=opts.force_rebuild)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
