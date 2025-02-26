@@ -116,13 +116,6 @@ class Builder(object):
         if sys.version_info.major != 3:
             abort('build_artifact must run with Python 3 for deploy VE')
 
-        deploy_ve_dir = os.path.join('deploy', 'virtualenv')
-        deploy_ve_tar = os.path.join('deploy', 'virtualenv.tar.gz')
-        if self.force_rebuild:
-            if os.path.exists(deploy_ve_dir):
-                shutil.rmtree(deploy_ve_dir)
-            if os.path.exists(deploy_ve_tar):
-                os.unlink(deploy_ve_tar)
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
@@ -138,24 +131,22 @@ class Builder(object):
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file
-                               ]
+                                ]
 
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
 
-        if self.build_virtualenvs or self.force_rebuild:
+        if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
             check_call(build_deploy_virtualenv, cwd='deploy',
                        abort='build-virtualenv failed')
-            if os.path.exists(deploy_ve_dir):
-                shutil.rmtree(deploy_ve_dir)
-            if os.path.exists(deploy_ve_tar):
-                os.unlink(deploy_ve_tar)
+            shutil.rmtree('deploy/virtualenv')
+            os.unlink('deploy/virtualenv.tar.gz')
 
-            if os.path.exists('requirements.txt'):
-                print_banner('Build app virtualenv')
-                check_call(build_app_virtualenv, abort='build-virtualenv failed')
+        if os.path.exists('requirements.txt'):
+            print_banner('Build app virtualenv')
+            check_call(build_app_virtualenv, abort='build-virtualenv failed')
 
         self.configure()
 
