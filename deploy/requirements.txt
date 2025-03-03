@@ -1,1 +1,1 @@
-yodeploy == 2.0.0.dev5
+yodeploy == 2.0.0.dev10

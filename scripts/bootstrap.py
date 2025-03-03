@@ -11,7 +11,6 @@ import importlib.util
 import logging
 import optparse
 import os
-import six
 import shutil
 import subprocess
 import sys
