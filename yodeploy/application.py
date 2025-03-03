@@ -193,20 +193,22 @@ class Application(object):
         any live verisons.
         """
         with self.lock:
+            live = self.live_version
+            all_versions = self.deployed_versions
+            # Exclude live version from pruning candidates
+            if live:
+                non_live_versions = [v for v in all_versions if v != live]
+            else:
+                non_live_versions = all_versions
+            # Sort by mtime, newest first, and take max_versions
+            recent = sorted(
+                non_live_versions, key=lambda v: os.stat(
+                    os.path.join(self.appdir, 'versions', v)
+                ).st_mtime, reverse=True)[:max_versions]
+            to_keep = set(recent)
+            if live:
+                to_keep.add(live)
             old_versions = set(self.deployed_versions[:-max_versions])
-            if self.live_version:
-                old_versions.discard(self.live_version)
-
-                # We bootstrap environments that have their own Jenkins, from
-                # the production repository. So there is likely to be 1 (and
-                # only 1) version higher than the local builds, but older.
-                mtime = lambda version: os.stat(
-                    os.path.join(self.appdir, 'versions', version)).st_mtime
-                last_version = self.deployed_versions[-1]
-                if (self.live_version != last_version and
-                        mtime(self.live_version) > mtime(last_version)):
-                    old_versions.add(last_version)
-
             for version in old_versions:
                 shutil.rmtree(os.path.join(self.appdir, 'versions', version))
 
