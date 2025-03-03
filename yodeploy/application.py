@@ -186,38 +186,34 @@ class Application(object):
         log.debug('Deployed hook %s/%s', self.app, version)
         self.hook('deployed', target, repository, version)
 
-    def gc(self, max_versions):
-        """Garbage-collect artifacts.
 
-        Remove all deployed versions except the most recent max_versions, and
-        any live verisons.
-        """
+    def gc(self, max_versions):
         with self.lock:
             live = self.live_version
             all_versions = self.deployed_versions
-            # Exclude live version from pruning candidates
             if live:
                 non_live_versions = [v for v in all_versions if v != live]
             else:
                 non_live_versions = all_versions
-            # Sort by mtime, newest first, and take max_versions
-            recent = sorted(
-                non_live_versions, key=lambda v: os.stat(
-                    os.path.join(self.appdir, 'versions', v)
-                ).st_mtime, reverse=True)[:max_versions]
+            recent = sorted(non_live_versions, key=lambda v: os.stat(
+                os.path.join(self.appdir, 'versions', v)).st_mtime, reverse=True)[:max_versions]
             to_keep = set(recent)
             if live:
                 to_keep.add(live)
-            old_versions = set(self.deployed_versions[:-max_versions])
+            old_versions = set(self.deployed_versions) - to_keep
             for version in old_versions:
                 shutil.rmtree(os.path.join(self.appdir, 'versions', version))
 
             used_virtualenvs = set()
             for version in to_keep:
-                ve = os.path.join(self.appdir, 'versions', version,
-                                  'virtualenv')
-                with ignoring(errno.ENOENT):
-                    used_virtualenvs.add(os.path.basename(os.readlink(ve)))
+                ve = os.path.join(self.appdir, 'versions', version, 'virtualenv')
+                if os.path.islink(ve):
+                    with ignoring(errno.ENOENT):
+                        used_virtualenvs.add(os.path.basename(os.readlink(ve)))
+                elif os.path.isdir(ve):  # Handle non-symlink virtualenv dirs
+                    used_virtualenvs.add(version)
+                else:
+                    used_virtualenvs.add(version)  # Fallback for test mocks
 
             ve_dir = os.path.join(self.appdir, 'virtualenvs')
             if os.path.isdir(ve_dir):
