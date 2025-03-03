@@ -89,7 +89,7 @@ def create_ve(
             subprocess.check_call([
                 sys.executable, '-m', 'virtualenv', ve_dir,
                 '--python', python_path,
-                '--no-download'],
+                '--no-download', '--copies'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         python_bin = os.path.join(ve_dir, 'bin', 'python')
         if not os.path.exists(python_bin):
@@ -230,6 +230,12 @@ def fix_local_symlinks(ve_dir):
 
 
 def remove_fragile_symlinks(ve_dir, python_version):
+    """Remove symlinks to parent virtualenv.
+    
+    When we create a virtualenv with a Python from another virtualenv, we don't
+    want to leave symlinks pointing back to the virtualenv we used.  In a
+    production environment, it probably won't be there.
+    """
     if getattr(sys, 'real_prefix', sys.prefix) == sys.prefix:
         return
     ve_prefix = sys.prefix
