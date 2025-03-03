@@ -20,11 +20,16 @@ def get_python_version(compat, is_deploy=False):
     python3 = shutil.which('python3')
     if not python3:
         log.error(
-            'python3 not found in PATH%s', 'for deploy VE' if is_deploy else ''
+            'python3 not found in PATH%s' % (
+                'for deploy VE' if is_deploy else ''
+            )
         )
         sys.exit(1)
     python3_version = subprocess.check_output(
-        [python3, '-c', 'import sys; print(".".join(map(str, sys.version_info[:2])))']
+        [
+            python3,
+            '-c', 'import sys; print(".".join(map(str, sys.version_info[:2])))'
+        ]
     ).decode().strip()
     if is_deploy or compat != 4:
         return python3_version
@@ -63,7 +68,7 @@ def create_ve(
         app_dir, python_version, platform, pypi=None,
         req_file='requirements.txt', verify_req_install=True):
     log.info('Building virtualenv')
-    ve_dir = os.path.abspath(os.path.join(app_dir, 'virtualenv'))  # Ensure absolute path
+    ve_dir = os.path.abspath(os.path.join(app_dir, 'virtualenv'))
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
 
     if os.path.exists(ve_dir):
@@ -88,7 +93,7 @@ def create_ve(
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         python_bin = os.path.join(ve_dir, 'bin', 'python')
         if not os.path.exists(python_bin):
-            log.error('Virtualenv created but bin/python missing at %s', python_bin)
+            log.error('VE created but bin/python missing at %s', python_bin)
             log.debug('VE contents: %s', os.listdir(ve_dir))
             raise FileNotFoundError(f"bin/python not found in {ve_dir}")
         log.debug('VE created, contents: %s', os.listdir(ve_dir))
@@ -102,7 +107,10 @@ def create_ve(
             log.info('Verifying requirements were met')
             check_requirements(ve_dir)
         relocateable_ve(ve_dir, python_version)
-        ve_id = get_id(os.path.join(app_dir, req_file), python_version, platform)
+        ve_id = get_id(
+            os.path.join(app_dir, req_file),
+            python_version, platform
+        )
         with open(os.path.join(ve_dir, '.hash'), 'w') as f:
             f.write(ve_id)
             f.write('\n')

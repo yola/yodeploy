@@ -28,7 +28,7 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs, force_rebuild=False):
+                 build_virtualenvs, upload_virtualenvs):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -42,7 +42,6 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
-        self.force_rebuild = force_rebuild
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -120,19 +119,10 @@ class Builder(object):
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
-
-        app_ve_dir = 'virtualenv'
-        app_ve_tar = 'virtualenv.tar.gz'
-        if self.force_rebuild:
-            if os.path.exists(app_ve_dir):
-                shutil.rmtree(app_ve_dir)
-            if os.path.exists(app_ve_tar):
-                os.unlink(app_ve_tar)
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
                                 '--config', self.deploy_settings_file
                                 ]
-
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
@@ -268,8 +258,6 @@ def parse_args(default_app):
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
-    parser.add_argument('--force-rebuild', action='store_true',
-                        help='Force rebuilding of deploy and app virtualenvs')
     opts = parser.parse_args()
 
     if opts.config is None:
@@ -492,8 +480,7 @@ def main():
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs,
-                           force_rebuild=opts.force_rebuild)
+                           upload_virtualenvs=upload_virtualenvs,)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:

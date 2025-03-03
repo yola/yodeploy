@@ -43,6 +43,8 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         logger.addHandler(handler)
 
         a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        # This assumes a bit of buffering...
         r = logging.LogRecord('test', logging.INFO, __file__, 42,
                               'Testing 123', [], None, 'test_handle')
         data = pickle.dumps(r.__dict__)

@@ -64,7 +64,7 @@ def patch_deploy_venv(patch_with=None):
     return original_fun
 
 
-def build_sample(app_name, version='1', force_rebuild=False):
+def build_sample(app_name, version='1'):
     """Clear all prev builds and call build_artifact in the sample app."""
     clear(app_name)
     script_path = os.path.join(bin_dir, 'build_artifact.py')
@@ -75,16 +75,18 @@ def build_sample(app_name, version='1', force_rebuild=False):
         'GIT_BRANCH': 'master',
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
-    cmd = [sys.executable, script_path, '--no-virtualenvs', '--config', deployconf_fn]
-    if force_rebuild:
-        cmd.append('--force-rebuild')
+    cmd = [
+        sys.executable, script_path,
+        '--no-virtualenvs', '--config',
+        deployconf_fn
+    ]
     p = subprocess.Popen(
         cmd,
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env,
-        universal_newlines=True)
+        stderr=subprocess.PIPE, env=env)
     out, err = p.communicate()
+
     if p.wait() != 0:
         raise Exception(out + err)
 
