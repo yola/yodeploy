@@ -213,7 +213,7 @@ class Application(object):
                 shutil.rmtree(os.path.join(self.appdir, 'versions', version))
 
             used_virtualenvs = set()
-            for version in self.deployed_versions:
+            for version in to_keep:
                 ve = os.path.join(self.appdir, 'versions', version,
                                   'virtualenv')
                 with ignoring(errno.ENOENT):
