@@ -51,16 +51,15 @@ class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
 
             except IOError as e:
                 if e.errno == errno.EBADF:
-                    break
+                    return
                 raise
-
             record = pickle.loads(buf[header_size:size])
             record = logging.makeLogRecord(record)
             logger = logging.getLogger(record.name)
             if logger.isEnabledFor(record.levelno):
                 logger.handle(record)
-
             buf = buf[size:]
+
             if self._oneshot:
                 break
 

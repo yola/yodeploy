@@ -109,9 +109,9 @@ class Builder(object):
             write_config(public_config, '.', 'configuration_public.json')
 
     def prepare(self):
+        python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
-        python = os.path.abspath(sys.executable)
         if sys.version_info.major != 3:
             abort('build_artifact must run with Python 3 for deploy VE')
 
@@ -480,7 +480,7 @@ def main():
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs,)
+                           upload_virtualenvs=upload_virtualenvs)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
