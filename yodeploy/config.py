@@ -1,30 +1,22 @@
 # This should be self-contained, local-bootstrap imports it
 
-import six
+import importlib.util
 import sys
 import os
-
-if six.PY2:
-    import imp
-else:
-    import importlib.util
 
 
 SYSTEM_DEPLOY_SETTINGS = ['/etc/yola/deploy.conf.py']
 
 
 def load_settings(fn):
-    '''Load deploy_settings from the specified filename'''
     fake_mod = '_deploy_settings'
-    description = ('.py', 'r', imp.PY_SOURCE) if six.PY2 else ('.py', 'r', importlib.util.MAGIC_NUMBER)
-    with open(fn) as f:
-        if six.PY2:
-            m = imp.load_module(fake_mod, f, fn, description)
-        else:
-            spec = importlib.util.spec_from_file_location(fake_mod, fn)
-            m = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(m)
-    return m.deploy_settings
+    spec = importlib.util.spec_from_file_location(fake_mod, fn)
+    if spec is None:
+        raise ImportError('Could not load module from %s' % fn)
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.deploy_settings
 
 
 def find_deploy_config(exit_if_missing=True):

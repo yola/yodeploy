@@ -66,7 +66,8 @@ def upload_ve(repository, app, virtualenv_id, target='master',
 
 def create_ve(
         app_dir, python_version, platform, pypi=None,
-        req_file='requirements.txt', verify_req_install=True):
+        req_file='requirements.txt',
+        verify_req_install=True):
     log.info('Building virtualenv')
     ve_dir = os.path.abspath(os.path.join(app_dir, 'virtualenv'))
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
@@ -167,6 +168,7 @@ def check_requirements(ve_dir):
 
 def relocateable_ve(ve_dir, python_version):
     log.debug('Making virtualenv relocatable')
+    # Python 3 venv virtualenvs don't have these problems
     if python_version.startswith('3.'):
         return
     if python_version == '2.7':
