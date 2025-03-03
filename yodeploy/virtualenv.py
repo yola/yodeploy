@@ -89,7 +89,7 @@ def create_ve(
             subprocess.check_call([
                 sys.executable, '-m', 'virtualenv', ve_dir,
                 '--python', python_path,
-                '--no-download', '--copies'],
+                '--no-download'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         python_bin = os.path.join(ve_dir, 'bin', 'python')
         if not os.path.exists(python_bin):

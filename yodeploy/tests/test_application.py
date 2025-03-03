@@ -19,10 +19,22 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'fixtures/')
 class ApplicationTestCase(TmpDirTestCase):
     def setUp(self):
         super(ApplicationTestCase, self).setUp()
-        shutil.copy(os.path.join(FIXTURES_DIR, 'config.py'), self.tmppath('config.py'))
+
+        shutil.copy(
+            os.path.join(FIXTURES_DIR, 'config.py'), self.tmppath('config.py'))
+
         store = LocalRepositoryStore(self.mkdir('artifacts'))
         self.repo = Repository(store)
         self.app = Application('test', self.tmppath('config.py'))
+
+        self.test_ve_tar_path = self._data_path('deploy-ve/virtualenv.tar.gz')
+        self.test_req_path = self._data_path('deploy-ve/requirements.txt')
+        self.test_ve_path = self._data_path('deploy-ve')
+
+        if not os.path.exists(self.test_ve_tar_path):
+            self._create_test_ve()
+        self._deploy_ve_id = virtualenv.get_id(
+            self.test_req_path, sysconfig.get_python_version(), 'test')
 
     def _data_path(self, fragment):
         version_suffix = 'py%s' % platform.python_version()
@@ -68,17 +80,14 @@ class ApplicationTestCase(TmpDirTestCase):
 class ApplicationTest(ApplicationTestCase):
     def setUp(self):
         super(ApplicationTest, self).setUp()
-        sample_app = os.path.join(FIXTURES_DIR, 'simple_sample_app')
-        shutil.copytree(sample_app, self.tmppath('srv', 'test', 'versions', 'foo'))
-        shutil.copytree(sample_app, self.tmppath('srv', 'test', 'versions', 'bar'))
 
-        self.test_ve_tar_path = self._data_path('deploy-ve/virtualenv.tar.gz')
-        self.test_req_path = self._data_path('deploy-ve/requirements.txt')
-        self.test_ve_path = self._data_path('deploy-ve')
-        if not os.path.exists(self.test_ve_tar_path):
-            self._create_test_ve()
-        self._deploy_ve_id = virtualenv.get_id(
-            self.test_req_path, sysconfig.get_python_version(), 'test')
+        sample_app = os.path.join(FIXTURES_DIR, 'simple_sample_app')
+
+        # Simulate multiple installed versions of the sample app fixture.
+        shutil.copytree(
+            sample_app, self.tmppath('srv', 'test', 'versions', 'foo'))
+        shutil.copytree(
+            sample_app, self.tmppath('srv', 'test', 'versions', 'bar'))
 
     def test_attributes(self):
         self.assertEqual(self.app.app, 'test')
