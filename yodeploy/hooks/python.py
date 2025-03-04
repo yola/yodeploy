@@ -21,7 +21,10 @@ class PythonApp(DeployHook):
 
     def deploy_ve(self):
         log = logging.getLogger(__name__)
-        compat = self.compat if hasattr(self, 'compat') else None
+        metadata = self.repository.get_metadata(
+            self.app, self.version, self.target
+        )
+        compat = int(metadata.get('deploy_compat', 5))
         python_version = virtualenv.get_python_version(
             compat=compat, is_deploy=False
         )
