@@ -16,7 +16,7 @@ def sha224sum(filename):
     return m.hexdigest()
 
 
-def get_python_version(compat, is_deploy=False):
+def get_python_version(compat=None, is_deploy=False):
     python3 = shutil.which('python3')
     if not python3:
         log.error(
@@ -31,9 +31,11 @@ def get_python_version(compat, is_deploy=False):
             '-c', 'import sys; print(".".join(map(str, sys.version_info[:2])))'
         ]
     ).decode().strip()
-    if is_deploy or compat != 4:
+    if is_deploy:
         return python3_version
-    return '2.7'
+    if compat == 4:
+        return '2.7'
+    return python3_version
 
 
 def get_id(filename, python_version, platform):
