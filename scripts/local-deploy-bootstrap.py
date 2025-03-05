@@ -8,7 +8,7 @@
 #    - Installs scripts to ~/bin
 #  deployconfigs
 #    - Configures yodeploy.conf.py
-from __future__ import print_function
+
 import contextlib
 import errno
 import logging
@@ -29,7 +29,7 @@ try:  # python 3
 except ImportError:  # python 2
     from urllib2 import (
         build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
-    from urlparse import urljoin, urlparse, urlunparse
+    from urllib.parse import urljoin, urlparse, urlunparse
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
