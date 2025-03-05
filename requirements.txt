@@ -2,6 +2,7 @@ Flask == 3.0.3
 Flask-HTTPAuth == 4.8.0
 Jinja2 == 3.1.4
 boto3 == 1.35.43
+distro == 1.9.0
 gunicorn == 23.0.0
 requests == 2.32.3
 virtualenv == 20.15.1

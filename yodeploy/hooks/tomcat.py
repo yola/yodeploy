@@ -1,11 +1,12 @@
 import logging
 import os
-import platform
 import pwd
 import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
+import distro
 
 from yodeploy.hooks.configurator import ConfiguratedApp
 
@@ -68,8 +69,8 @@ class TomcatServlet(ConfiguratedApp):
         # appended. So:
         # 10   -> 0000000010
         # 10.1 -> 0000000010.0000000001
-        version = '%10s%s%10s' % self.version.partition('.')
-        version = version.rstrip().replace(' ', '0')
+        version = f'{self.version:10}'.partition('.')
+        version = f'{version[0]:0>10}{version[1]}{version[2]:0>10}'.rstrip()
 
         deployed = self._deployed_versions()
 
@@ -88,11 +89,11 @@ class TomcatServlet(ConfiguratedApp):
                 redeploy = 0
             else:
                 redeploy = int(latest.rsplit('.', 1)[1]) + 1
-            version = '%s.%010i' % (version, redeploy)
+            version = f'{version}.{redeploy:010d}'
 
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
-        ubuntu_version = platform.linux_distribution()[1]
+        ubuntu_version = distro.version()
         tomcat = 'tomcat9' if ubuntu_version >= '20.04' else 'tomcat8'
         uid = pwd.getpwnam(tomcat).pw_uid
 
@@ -101,21 +102,26 @@ class TomcatServlet(ConfiguratedApp):
         # Build a hard linkfarm in the tomcat-contexts directory.
         # Copy the configuration XML files, so that tomcat sees that they are
         # inside appBase and can delete them.
-        self._linkfarm(self.deploy_path(self.app), dest, uid,
-                       (self.deploy_path(self.app, 'META-INF'),
-                        self.deploy_path(self.app, 'WEB-INF')))
+        self._linkfarm(
+            self.deploy_path(self.app),
+            dest,
+            uid,
+            (self.deploy_path(self.app, 'META-INF'),
+             self.deploy_path(self.app, 'WEB-INF'))
+        )
 
         # Put configuration.json somewhere where yodeploy-java can find it.
-        os.symlink(self.deploy_path('configuration.json'),
-                   os.path.join(dest, 'configuration.json'))
+        config_src = Path(self.deploy_path('configuration.json'))
+        config_dst = dest / 'configuration.json'
+        config_dst.unlink(missing_ok=True)
+        config_dst.symlink_to(config_src)
 
         # Drop down the XML files last, to trigger the Tomcat deploy
         for metadir in ('META-INF', 'WEB-INF'):
-            for name in os.listdir(self.deploy_path(self.app, metadir)):
-                if not name.endswith('.xml'):
-                    continue
-                src = self.deploy_path(self.app, metadir, name)
-                dst = os.path.join(dest, metadir, name)
+            src_path = Path(self.deploy_path(self.app, metadir))
+            dst_path = dest / metadir
+            for src in src_path.glob('*.xml'):
+                dst = dst_path / src.name
                 shutil.copyfile(src, dst)
                 os.chown(dst, uid, -1)
 
@@ -142,15 +148,16 @@ class TomcatServlet(ConfiguratedApp):
                 if '##' in name]
 
     def _linkfarm(self, srcdir, dstdir, uid, metadirs):
-        names = os.listdir(srcdir)
-        os.mkdir(dstdir)
-        os.chown(dstdir, uid, -1)
-        for name in names:
-            if srcdir in metadirs and name.endswith('.xml'):
+        src_path = Path(srcdir)
+        dst_path = Path(dstdir)
+        dst_path.mkdir()
+        os.chown(dst_path, uid, -1)
+
+        for src in src_path.iterdir():
+            if srcdir in metadirs and src.suffix == '.xml':
                 continue
-            src = os.path.join(srcdir, name)
-            dst = os.path.join(dstdir, name)
-            if os.path.isdir(src):
+            dst = dst_path / src.name
+            if src.is_dir():
                 self._linkfarm(src, dst, uid, metadirs)
             else:
                 os.link(src, dst)
