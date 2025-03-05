@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import argparse
 import copy
 import json
@@ -10,11 +10,9 @@ import subprocess
 import sys
 from xml.etree import ElementTree
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
-except ImportError:
-    from urllib2 import Request, urlopen, URLError
+
+from urllib.request import Request, urlopen
+from urllib.error import URLError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -23,6 +21,7 @@ from yoconfigurator.filter import filter_config  # noqa
 from yoconfigurator.smush import config_sources, smush_config  # noqa
 import yodeploy.config  # noqa
 import yodeploy.repository  # noqa
+
 from yodeploy.unicode_stdout import ensure_unicode_compatible
 
 
@@ -78,11 +77,12 @@ class Builder(object):
             'context': context,
         }
         req = Request(
-            url=url,
-            data=json.dumps(data),
+            url,
+            data=bytes(json.dumps(data), 'utf-8'),
             headers={
                 'Authorization': 'token %s' % settings.oauth_token,
-            })
+            }
+        )
         try:
             urlopen(req)
         except URLError as e:
@@ -112,13 +112,17 @@ class Builder(object):
         python = os.path.abspath(sys.executable)
         build_ve = os.path.abspath(__file__.replace('build_artifact',
                                                     'build_virtualenv'))
+        if sys.version_info.major != 3:
+            abort('build_artifact must run with Python 3 for deploy VE')
+
         build_deploy_virtualenv = [python, build_ve, '-a', 'deploy',
                                    '--target', self.target, '--download',
                                    '--config', self.deploy_settings_file,
                                    '--compat=%i' % self.compat]
         build_app_virtualenv = [python, build_ve, '-a', self.app,
                                 '--target', self.target, '--download',
-                                '--config', self.deploy_settings_file]
+                                '--config', self.deploy_settings_file
+                                ]
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
@@ -129,9 +133,11 @@ class Builder(object):
                        abort='build-virtualenv failed')
             shutil.rmtree('deploy/virtualenv')
             os.unlink('deploy/virtualenv.tar.gz')
+
         if os.path.exists('requirements.txt'):
             print_banner('Build app virtualenv')
             check_call(build_app_virtualenv, abort='build-virtualenv failed')
+
         self.configure()
 
     def build_env(self):
@@ -302,36 +308,36 @@ def print_box(lines, border='light'):
     '''Print lines (a list of unicode strings) inside a pretty box.'''
     styles = {
         'ascii': {
-            'ul': u'+',
-            'ur': u'+',
-            'dl': u'+',
-            'dr': u'+',
-            'h': u'-',
-            'v': u'|',
+            'ul': '+',
+            'ur': '+',
+            'dl': '+',
+            'dr': '+',
+            'h': '-',
+            'v': '|',
         },
         'light': {
-            'ul': u'\N{BOX DRAWINGS LIGHT UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS LIGHT UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS LIGHT DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS LIGHT HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS LIGHT VERTICAL}',
+            'ul': '\N{BOX DRAWINGS LIGHT UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS LIGHT UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS LIGHT DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS LIGHT DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS LIGHT HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS LIGHT VERTICAL}',
         },
         'heavy': {
-            'ul': u'\N{BOX DRAWINGS HEAVY UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS HEAVY UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS HEAVY DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS HEAVY DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS HEAVY HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS HEAVY VERTICAL}',
+            'ul': '\N{BOX DRAWINGS HEAVY UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS HEAVY UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS HEAVY DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS HEAVY DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS HEAVY HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS HEAVY VERTICAL}',
         },
         'double': {
-            'ul': u'\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
-            'ur': u'\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
-            'dl': u'\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
-            'dr': u'\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
-            'h': u'\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
-            'v': u'\N{BOX DRAWINGS DOUBLE VERTICAL}',
+            'ul': '\N{BOX DRAWINGS DOUBLE UP AND LEFT}',
+            'ur': '\N{BOX DRAWINGS DOUBLE UP AND RIGHT}',
+            'dl': '\N{BOX DRAWINGS DOUBLE DOWN AND LEFT}',
+            'dr': '\N{BOX DRAWINGS DOUBLE DOWN AND RIGHT}',
+            'h': '\N{BOX DRAWINGS DOUBLE HORIZONTAL}',
+            'v': '\N{BOX DRAWINGS DOUBLE VERTICAL}',
         },
     }
     borders = styles[border]
@@ -353,7 +359,7 @@ def print_banner(message, width=79, position='left', **kwargs):
     width -= 2
 
     if position == 'left':
-        message = u' ' + message.ljust(width - 1)
+        message = ' ' + message.ljust(width - 1)
     elif position in ('center', 'centre'):
         message = message.center(width)
     elif position == 'right':

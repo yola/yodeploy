@@ -66,7 +66,7 @@ class Application(object):
         """
         deploy_req_fn = os.path.join(self.appdir, 'versions', app_version,
                                      'deploy', 'requirements.txt')
-        python_version = virtualenv.get_python_version(self.compat)
+        python_version = virtualenv.get_python_version(is_deploy=True)
         platform = self.settings.artifacts.platform
         ve_id = virtualenv.get_id(deploy_req_fn, python_version, platform)
         ves_dir = os.path.join(self.settings.paths.apps, 'deploy',
@@ -104,7 +104,7 @@ class Application(object):
                '--app', self.app,
                '--hook', hook,
                '--log-fd', str(tlss.remote_socket.fileno()),
-        ]
+               ]
         if target:
             cmd += ['--target', target]
         cmd += [self.appdir, version]
@@ -138,8 +138,8 @@ class Application(object):
         log.debug('Unpacking %s/%s', self.app, version)
 
         if self.live_version == version:
-            log.warn('%s/%s is the currently live version'
-                     % (self.app, version))
+            log.warning('%s/%s is the currently live version'
+                        % (self.app, version))
             return
         unpack_dir = os.path.join(self.appdir, 'versions', 'unpack')
         if not os.path.isdir(unpack_dir):

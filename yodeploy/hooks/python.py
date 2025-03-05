@@ -1,6 +1,5 @@
 import logging
 import os
-import sysconfig
 
 from yodeploy import virtualenv
 from yodeploy.hooks.base import DeployHook
@@ -22,8 +21,15 @@ class PythonApp(DeployHook):
 
     def deploy_ve(self):
         log = logging.getLogger(__name__)
+        metadata = self.repository.get_metadata(
+            self.app, self.version, self.target
+        )
+        compat = int(metadata.get('deploy_compat', 5))
+        python_version = virtualenv.get_python_version(
+            compat=compat, is_deploy=False
+        )
         ve_id = virtualenv.get_id(self.deploy_path('requirements.txt'),
-                                  sysconfig.get_python_version(),
+                                  python_version,
                                   self.settings.artifacts.platform)
         ve_working = os.path.join(self.root, 'virtualenvs', 'unpack')
         ve_dir = os.path.join(self.root, 'virtualenvs', ve_id)
