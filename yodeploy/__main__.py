@@ -1,5 +1,5 @@
 import argparse
-import imp
+import importlib.util
 import logging
 import socket
 import os
@@ -64,17 +64,17 @@ def setup_logging(log_fd, verbose):
         logging.basicConfig()
 
 
-def call_hook(app, target, appdir, version, deploy_settings, repository,
-              hook):
-    '''Load and fire a hook'''
+def call_hook(app, target, appdir, version, deploy_settings, repository, hook):
     fake_mod = '_deploy_hooks'
     fn = os.path.join(appdir, 'versions', version, 'deploy', 'hooks.py')
-    description = ('.py', 'r', imp.PY_SOURCE)
-
-    with open(fn, 'rb') as f:
-        m = imp.load_module(fake_mod, f, fn, description)
-    hooks = m.hooks(app, target, appdir, version, deploy_settings,
-                    repository)
+    spec = importlib.util.spec_from_file_location(fake_mod, fn)
+    if spec is None:
+        raise ImportError('Could not load module from %s' % fn)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    hooks = module.hooks(
+        app, target, appdir, version, deploy_settings, repository
+    )
     getattr(hooks, hook)()
 
 
