@@ -7,10 +7,9 @@ import sys
 import requests
 from requests.exceptions import RequestException
 
-try:
-    from urllib.parse import urlparse, urlunparse  # python 3
-except ImportError:
-    from urlparse import urlparse, urlunparse  # python 2
+
+from urllib.parse import urlparse, urlunparse
+
 
 import yodeploy.application
 import yodeploy.config

@@ -10,19 +10,14 @@ file descriptor as an argument.
 Note about Python > 3.4: File descriptors are no longer inheritable by default.
 TLSS instances explicitly mark their file descriptors for the sockets they open
 as inheritable so that subprocess may access them.
-
 """
-import errno
-import logging
-import logging.handlers
-import pickle
 import socket
 import struct
-
-try:
-    import socketserver  # python 3
-except:
-    import SocketServer as socketserver  # python 2
+import pickle
+import logging
+import logging.handlers
+import errno
+import socketserver
 
 
 class ExistingSocketHandler(logging.handlers.SocketHandler):
@@ -34,7 +29,8 @@ class ExistingSocketHandler(logging.handlers.SocketHandler):
 
 
 class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
-    """SocketServer handler that un-pickles SocketHandler log messages."""
+    """SocketServer handler that unpickles
+       log messages and forwards them to the logger."""
 
     def __init__(self, request, client_address, server, oneshot=False):
         self._oneshot = oneshot
@@ -49,14 +45,17 @@ class LoggingSocketRequestHandler(socketserver.BaseRequestHandler):
                 if len(buf) < header_size:
                     buf += self.request.recv(header_size - len(buf))
                     continue
+
                 size = struct.unpack('>L', buf[:header_size])[0] + header_size
                 if len(buf) < size:
                     buf += self.request.recv(size - len(buf))
                     continue
+
             except IOError as e:
                 if e.errno == errno.EBADF:
-                    break
-            record = pickle.loads(buf[header_size:])
+                    return
+                raise
+            record = pickle.loads(buf[header_size:size])
             record = logging.makeLogRecord(record)
             logger = logging.getLogger(record.name)
             if logger.isEnabledFor(record.levelno):
@@ -75,13 +74,7 @@ class ThreadedLogStreamServer(socketserver.ThreadingMixIn,
         self.socket, self.remote_socket = socket.socketpair(
             socket.AF_UNIX, socket.SOCK_STREAM)
 
-        try:
-            self.remote_socket.set_inheritable(True)
-        except AttributeError:
-            # file descriptors are all inheritable in python < 3.4, so this
-            # method does not exist in prior versions.
-            pass
-
+        self.remote_socket.set_inheritable(True)
         self.RequestHandlerClass = LoggingSocketRequestHandler
         self.process_request(self.socket, None)
 

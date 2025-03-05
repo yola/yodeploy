@@ -1,2 +1,5 @@
 [tools]
 linters = flake8
+
+[tool_flake8]
+python = 3

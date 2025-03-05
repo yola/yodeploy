@@ -1,5 +1,6 @@
 import os
-import mock
+from unittest.mock import Mock
+
 import sys
 
 from os.path import join
@@ -14,7 +15,8 @@ sys.stderr = open(os.devnull, 'w')
 class Hooks(ApacheMultiSiteApp):
 
     # these overrides are only needed for testsing
-    apache = mock.Mock()
+    apache = Mock()
+
     vhost_path = join(tests_dir, 'filesys', 'etc', 'apache2', 'sites-enabled')
     includes_path = join(tests_dir, 'filesys', 'etc', 'apache2', 'yola.d')
 
