@@ -91,7 +91,7 @@ class TomcatServlet(ConfiguratedApp):
                 redeploy = int(latest.rsplit('.', 1)[1]) + 1
             version = f'{version}.{redeploy:010d}'
 
-        dest = os.path.join(contexts, 'ROOT##%s' % version)
+        dest = Path(os.path.join(contexts, 'ROOT##%s' % version))
 
         ubuntu_version = distro.version()
         tomcat = 'tomcat9' if ubuntu_version >= '20.04' else 'tomcat8'
