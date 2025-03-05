@@ -76,4 +76,4 @@ source.
 Testing
 -------
 
-Run `nosetests`
+Run `python -m pytest`
