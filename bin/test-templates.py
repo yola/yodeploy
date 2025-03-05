@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 
-import tempita
+from jinja2 import Template
 from yoconfigurator.smush import (config_sources, local_config_sources,
                                   smush_config)
 
@@ -27,11 +27,12 @@ def build_config(app, env, cluster, local, deployconfigs):
 
 
 def template(filename, app, config):
-    tmpl = tempita.Template.from_filename(filename)
+    with open(filename, 'r') as f:
+        tmpl = Template(f.read())
 
-    tmpl.substitute(conf=config,
-                    aconf=config.get(app, {}),
-                    cconf=config.get('common', {}))
+    return tmpl.render(conf=config,
+                       aconf=config.get(app, {}),
+                       cconf=config.get('common', {}))
 
 
 def test_templates(app, env, cluster, local, configs_dir):
