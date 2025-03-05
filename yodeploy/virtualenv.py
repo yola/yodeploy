@@ -39,6 +39,7 @@ def get_python_version(compat=None, is_deploy=False):
 
 
 def get_id(filename, python_version, platform):
+    """Calculate the ID of a virtualenv for the given requirements.txt"""
     req_hash = sha224sum(filename)
     return '%s-%s-%s' % (python_version, platform, req_hash)
 
@@ -73,7 +74,8 @@ def create_ve(
     log.info('Building virtualenv')
     ve_dir = os.path.abspath(os.path.join(app_dir, 'virtualenv'))
     req_file = os.path.join(os.path.abspath(app_dir), req_file)
-
+    # Ensure a clean slate by removing any existing VE directory
+    # to avoid conflicts or stale files from previous builds.
     if os.path.exists(ve_dir):
         shutil.rmtree(ve_dir)
 
@@ -157,6 +159,7 @@ def pip_install(ve_dir, pypi, *arguments):
 
 
 def check_requirements(ve_dir):
+    """Run pip check"""
     p = subprocess.Popen(
         [os.path.join(ve_dir, 'bin', 'python'), '-m', 'pip', 'check'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -223,6 +226,11 @@ def relocateable_ve(ve_dir, python_version):
 
 
 def fix_local_symlinks(ve_dir):
+    """Make symlinks in the local dir relative.
+
+    The symlinks in the local dir should just point (relatively) at the
+    equivalent directories outside the local tree, for relocateability.
+    """
     local = os.path.join(ve_dir, 'local')
     if not os.path.exists(local):
         return
@@ -235,7 +243,7 @@ def fix_local_symlinks(ve_dir):
 
 def remove_fragile_symlinks(ve_dir, python_version):
     """Remove symlinks to parent virtualenv.
-    
+
     When we create a virtualenv with a Python from another virtualenv, we don't
     want to leave symlinks pointing back to the virtualenv we used.  In a
     production environment, it probably won't be there.

@@ -22,6 +22,7 @@ class TestExistingSocketHandler(unittest.TestCase):
         sh = ExistingSocketHandler(a)
         r = logging.LogRecord('test', logging.INFO, __file__, 42,
                               'Testing 123', [], None, 'test_handle')
+        # This assumes a bit of buffering...
         sh.handle(r)
         sh.close()
         size = struct.unpack('>L', b.recv(4))[0]
@@ -33,6 +34,7 @@ class TestExistingSocketHandler(unittest.TestCase):
 
 class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
+        # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
         logger.setLevel(logging.INFO)
         logger.propagate = False
