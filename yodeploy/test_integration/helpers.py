@@ -76,8 +76,10 @@ def build_sample(app_name, version='1'):
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
     cmd = [
-        sys.executable, script_path,
-        '--no-virtualenvs', '--config',
+        sys.executable, 
+        script_path,
+        '--no-virtualenvs', 
+        '--config',
         deployconf_fn
     ]
     p = subprocess.Popen(

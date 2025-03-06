@@ -85,10 +85,11 @@ def main():
             options.compat = yodeploy.util.infer_compat_version()
 
     if options.app == 'deploy':
-        python_version = subprocess.check_output(
-            [sys.executable, '-c',
-             'import sys; print(".".join(map(str, sys.version_info[:2])))']
-        ).decode().strip()
+        python_version = subprocess.check_output([
+            sys.executable, 
+            '-c', 
+            'import sys; print(".".join(map(str, sys.version_info[:2])))'
+        ]).decode().strip()
     else:
         python_version = virtualenv.get_python_version(
             options.compat, is_deploy=False

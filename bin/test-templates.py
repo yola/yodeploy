@@ -30,9 +30,11 @@ def template(filename, app, config):
     with open(filename, 'r') as f:
         tmpl = Template(f.read())
 
-    return tmpl.render(conf=config,
-                       aconf=config.get(app, {}),
-                       cconf=config.get('common', {}))
+    return tmpl.render(
+        conf=config,
+        aconf=config.get(app, {}),
+        cconf=config.get('common', {})
+    )
 
 
 def test_templates(app, env, cluster, local, configs_dir):

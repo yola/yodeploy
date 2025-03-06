@@ -111,7 +111,7 @@ class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             close_fds=False,
-            universal_newlines=True,
+            universal_newlines=True
         )
         out, err = p.communicate()
 
