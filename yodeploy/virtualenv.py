@@ -91,16 +91,24 @@ def create_ve(
             subprocess.check_call([python_path, '-m', 'venv', ve_dir])
         else:
             log.debug('Creating Python 2.7 VE with virtualenv: %s', ve_dir)
-            subprocess.check_call([
-                sys.executable, '-m', 'virtualenv', ve_dir,
-                '--python', python_path,
-                '--no-download'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    '-m',
+                    'virtualenv',
+                    ve_dir,
+                    '--python',
+                    python_path,
+                    '--no-download'
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
         python_bin = os.path.join(ve_dir, 'bin', 'python')
         if not os.path.exists(python_bin):
             log.error('VE created but bin/python missing at %s', python_bin)
             log.debug('VE contents: %s', os.listdir(ve_dir))
-            raise FileNotFoundError(f"bin/python not found in {ve_dir}")
+            raise FileNotFoundError(f'bin/python not found in {ve_dir}')
         log.debug('VE created, contents: %s', os.listdir(ve_dir))
 
         pip_install(ve_dir, pypi, '-U', 'pip')
