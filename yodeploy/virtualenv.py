@@ -21,7 +21,7 @@ def get_python_version(compat=None, is_deploy=False):
     if not python3:
         log.error(
             'python3 not found in PATH%s' % (
-                'for deploy VE' if is_deploy else ''
+                ' for deploy VE' if is_deploy else ''
             )
         )
         sys.exit(1)

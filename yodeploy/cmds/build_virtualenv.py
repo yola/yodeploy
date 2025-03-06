@@ -86,7 +86,7 @@ def main():
 
     if options.app == 'deploy':
         python_version = subprocess.check_output([
-            sys.executable, 
+            sys.executable,
             '-c',
             'import sys; print(".".join(map(str, sys.version_info[:2])))'
         ]).decode().strip()
