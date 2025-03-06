@@ -22,14 +22,10 @@ import subprocess
 import sys
 import tarfile
 
-try:  # python 3
-    from urllib.request import (
-        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
-    from urllib.parse import urljoin, urlparse, urlunparse
-except ImportError:  # python 2
-    from urllib2 import (
-        build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
-    from urllib.parse import urljoin, urlparse, urlunparse
+from urllib.request import (
+    build_opener, HTTPBasicAuthHandler, HTTPPasswordMgrWithDefaultRealm)
+from urllib.parse import urljoin, urlparse, urlunparse
+
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 

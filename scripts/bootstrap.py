@@ -76,13 +76,14 @@ def load_settings(fn):
     fake_mod = '_deploy_settings'
     spec = importlib.util.spec_from_file_location(fake_mod, fn)
     if spec is None:
-        raise ImportError('Could not load module from %s' % fn)
+        raise ImportError('Could not load module from {}'.format(fn))
 
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.deploy_settings
 
 # stolen from yodeploy.virtualenv
+
 
 def sha224sum(filename):
     m = hashlib.sha224()

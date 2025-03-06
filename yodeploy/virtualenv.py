@@ -162,7 +162,9 @@ def check_requirements(ve_dir):
     """Run pip check"""
     p = subprocess.Popen(
         [os.path.join(ve_dir, 'bin', 'python'), '-m', 'pip', 'check'],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
     out, err = p.communicate()
     if p.returncode == 0:
         log.info(out.decode().strip())
