@@ -1,4 +1,5 @@
-import mock
+from unittest.mock import patch
+
 import os
 import threading
 
@@ -88,7 +89,7 @@ class LockFileTest(TmpDirTestCase):
             return r
 
         def acquire():
-            with mock.patch('os.open', new=slow_open):
+            with patch('os.open', new=slow_open):
                 lf2.try_acquire()
 
         t = threading.Thread(target=acquire)

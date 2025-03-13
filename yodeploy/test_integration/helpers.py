@@ -75,10 +75,15 @@ def build_sample(app_name, version='1'):
         'GIT_BRANCH': 'master',
         'YOLA_SRC': os.path.join(tests_dir, 'samples')
     }
-
+    cmd = [
+        sys.executable,
+        script_path,
+        '--no-virtualenvs',
+        '--config',
+        deployconf_fn
+    ]
     p = subprocess.Popen(
-        (sys.executable, script_path, '--no-virtualenvs',
-            '--config', deployconf_fn),
+        cmd,
         cwd=app_dir,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, env=env)

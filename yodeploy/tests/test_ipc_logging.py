@@ -6,20 +6,13 @@ import struct
 import subprocess
 import sys
 import unittest
-
-# StringIO.StringIO does not require unicode strings in Python 2.7, but
-# io.StringIO does. In Python 2, using io.StringIO would not be
-# representative of actual usage in our tests because python 2 uses byte
-# strings by default. In Python 3, io.StringIO is appropriate because it uses
-# unicode strings by default.
-try:
-    from StringIO import StringIO  # python 2.7, allows byte strings
-except ImportError:
-    from io import StringIO  # python 3, requires unicode
+from io import StringIO
 
 from yodeploy.ipc_logging import (
-    ExistingSocketHandler, LoggingSocketRequestHandler,
-    ThreadedLogStreamServer)
+    LoggingSocketRequestHandler,
+    ThreadedLogStreamServer,
+    ExistingSocketHandler
+)
 from yodeploy.tests import HelperScriptConsumer, yodeploy_location
 
 
@@ -43,8 +36,12 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
     def test_handle(self):
         # A dummy handler to eventually receive our message
         logger = logging.getLogger('test')
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+
         buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
+        handler.setLevel(logging.INFO)
         logger.addHandler(handler)
 
         a, b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -60,7 +57,8 @@ class TestLoggingSocketRequestHandler(unittest.TestCase):
         LoggingSocketRequestHandler(b, None, None, oneshot=True)
         handler.flush()
         logger.removeHandler(handler)
-        self.assertTrue(buffer_.getvalue())
+
+        assert buffer_.getvalue(), "Expected log output but got empty buffer"
 
     def test_filtered(self):
         # A dummy handler to eventually receive our message
@@ -95,20 +93,26 @@ class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
 
     def test_integration(self):
         logger = logging.getLogger('test')
-        logger.propegate = False
+        logger.propagate = False
         buffer_ = StringIO()
         handler = logging.StreamHandler(buffer_)
         logger.addHandler(handler)
 
-        p = subprocess.Popen((
+        p = subprocess.Popen(
+            [
                 sys.executable,
                 self.get_helper_path('tlss_user.py'),
-                str(self.tlss.remote_socket.fileno())
-            ), env={
+                str(self.tlss.remote_socket.fileno()),
+            ],
+            env={
                 'PATH': os.environ['PATH'],
                 'PYTHONPATH': yodeploy_location(),
-            }, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False,
-            universal_newlines=True)
+            },
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=False,
+            universal_newlines=True
+        )
         out, err = p.communicate()
 
         self.assertEqual(
@@ -116,5 +120,5 @@ class TestThreadedLogStreamServer(unittest.TestCase, HelperScriptConsumer):
 
         handler.flush()
         logger.removeHandler(handler)
-        logger.propegate = True
+        logger.propagate = True
         self.assertTrue(buffer_.getvalue())

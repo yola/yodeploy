@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from yodeploy.cmds.build_artifact import GitHelper
 from unittest import TestCase
-from mock import patch
+from unittest.mock import patch
 
 
 class TestGitHelper(TestCase):
@@ -21,5 +21,5 @@ class TestGitHelper(TestCase):
         self.assertEqual(git_call, ('git', 'show'))
 
     def test_removes_special_chars_from_the_commit_message(self):
-        self.check_output.return_value = u'frosty the ☃'.encode('utf-8')
+        self.check_output.return_value = 'frosty the ☃'.encode('utf-8')
         self.assertEqual(self.git.commit_msg, 'frosty the ?')

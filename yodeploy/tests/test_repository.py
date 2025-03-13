@@ -98,11 +98,11 @@ class TestLocalRepositoryStore(TmpDirTestCase):
         self.assertTMPPContents('bar', 'repo', 'foo')
 
     def test_can_put_in_memory_unicode_stream(self):
-        self.store.put('foo', StringIO(u'bar'))
+        self.store.put('foo', StringIO('bar'))
         self.assertTMPPContents('bar', 'repo', 'foo')
 
     def test_can_put_unicode_string(self):
-        self.store.put('foo', u'unicode bar')
+        self.store.put('foo', 'unicode bar')
         self.assertTMPPContents('unicode bar', 'repo', 'foo')
 
     def test_can_put_byte_string(self):
@@ -111,7 +111,7 @@ class TestLocalRepositoryStore(TmpDirTestCase):
 
     def test_can_put_unicode_mode_fp(self):
         with open(self.tmppath('test'), 'w+') as f:
-            f.write(u'some unicode string')
+            f.write('some unicode string')
             f.seek(0)
             self.store.put('foo', f)
 

@@ -1,11 +1,11 @@
 import logging
 import os
-import platform
 import pwd
 import shutil
 import subprocess
 import sys
 import time
+import distro
 
 from yodeploy.hooks.configurator import ConfiguratedApp
 
@@ -92,7 +92,7 @@ class TomcatServlet(ConfiguratedApp):
 
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
-        ubuntu_version = platform.linux_distribution()[1]
+        ubuntu_version = distro.version()
         tomcat = 'tomcat9' if ubuntu_version >= '20.04' else 'tomcat8'
         uid = pwd.getpwnam(tomcat).pw_uid
 

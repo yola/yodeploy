@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from mock import patch
+from unittest.mock import patch
 
 from yodeploy.hooks.nginx import NginxHostedApp
 

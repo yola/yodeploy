@@ -1,7 +1,7 @@
 import getpass
 import os
 
-import mock
+from unittest.mock import Mock
 
 from yodeploy.hooks.django import ApacheHostedDjangoApp
 from yodeploy.test_integration.helpers import tests_dir
@@ -9,7 +9,8 @@ from yodeploy.test_integration.helpers import tests_dir
 
 class Hooks(ApacheHostedDjangoApp):
     # these overrides are only needed for testing
-    apache = mock.Mock()
+    apache = Mock()
+
     vhost_path = os.path.join(
         tests_dir, 'filesys', 'etc', 'apache2', 'sites-enabled'
     )
