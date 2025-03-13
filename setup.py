@@ -27,6 +27,5 @@ setup(
     version=yodeploy.__version__,
     packages=find_packages(),
     scripts=['bin/test-templates.py'],
-    test_suite='nose.collector',
     install_requires=parse_requirements(),
 )

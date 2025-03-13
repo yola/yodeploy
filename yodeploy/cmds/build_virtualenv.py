@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import argparse
 import logging
 import os
 import shutil
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -83,7 +84,17 @@ def main():
         except IOError:
             options.compat = yodeploy.util.infer_compat_version()
 
-    python_version = virtualenv.get_python_version(options.compat)
+    if options.app == 'deploy':
+        python_version = subprocess.check_output([
+            sys.executable,
+            '-c',
+            'import sys; print(".".join(map(str, sys.version_info[:2])))'
+        ]).decode().strip()
+    else:
+        python_version = virtualenv.get_python_version(
+            options.compat, is_deploy=False
+        )
+
     platform = deploy_settings.artifacts.platform
     ve_id = virtualenv.get_id(options.requirement, python_version, platform)
     if options.hash:
@@ -109,7 +120,7 @@ def main():
                 repository, options.app, ve_id, options.target)
             downloaded = True
         except KeyError:
-            log.warn('No existing virtualenv, building...')
+            log.warning('No existing virtualenv, building...')
         if downloaded:
             options.upload = False
             yodeploy.util.extract_tar('virtualenv.tar.gz', 'virtualenv')

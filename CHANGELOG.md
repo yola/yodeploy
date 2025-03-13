@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2.0.0
+-----
+* Migrate to Python3
+* Switch to Pytest for tests
+
 1.0.0
 -----
 * Replaced `Tempita` by `Jinja2` for templating.
