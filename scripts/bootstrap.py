@@ -202,10 +202,15 @@ def hook(hook_name, version, target, dve_id):
 
     with open(app_path('versions', version, 'deploy', 'compat')) as f:
         compat = int(f.read())
-    if compat == 3:
-        module = 'yola.deploy.__main__'
-    elif compat == 4:
+    log.debug('Compat version: %s', compat)
+
+    if compat in (4, 5):
         module = 'yodeploy.__main__'
+    else:
+        log.error('Unsupported compat version: %s', compat)
+        raise ValueError(
+            f"Unsupported compat version: {compat}. Expected 4 or 5."
+        )
 
     subprocess.check_call((deploy_python,
                            '-m', module,
