@@ -209,7 +209,7 @@ def hook(hook_name, version, target, dve_id):
     else:
         log.error('Unsupported compat version: %s', compat)
         raise ValueError(
-            f"Unsupported compat version: {compat}. Expected 4 or 5."
+            f'Unsupported compat version: {compat}. Expected 4 or 5.'
         )
 
     subprocess.check_call((deploy_python,
