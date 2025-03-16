@@ -1,0 +1,17 @@
+name: Run test on PRs
+
+on:
+  push
+
+jobs:
+  tests:
+   runs-on: ubuntu-20.04
+
+   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Test yodeploy via script
+      run: |
+         chmod +x ./scripts/test.sh
+         ./scripts/test.sh
+      shell: bash
