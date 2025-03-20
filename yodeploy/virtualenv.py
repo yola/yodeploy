@@ -183,12 +183,11 @@ def check_requirements(ve_dir):
 
 def relocateable_ve(ve_dir, python_version):
     log.debug('Making virtualenv relocatable')
-    # Python 3 venv virtualenvs don't have these problems
-    if python_version.startswith('3.'):
-        return
+    # Python 3 venv virtualenvs don't have symlinks problems
     if python_version == '2.7':
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir, python_version)
+
     activate_path = os.path.join(ve_dir, 'bin', 'activate')
     if not os.path.exists(activate_path):
         log.error('activate script missing in %s', ve_dir)
