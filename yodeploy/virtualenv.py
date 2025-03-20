@@ -186,19 +186,28 @@ def relocateable_ve(ve_dir, python_version):
     # Python 3 venv virtualenvs don't have these problems
     if python_version.startswith('3.'):
         return
+
     if python_version == '2.7':
         fix_local_symlinks(ve_dir)
         remove_fragile_symlinks(ve_dir, python_version)
+
+    # Update activate script to handle path resolution better
     activate_path = os.path.join(ve_dir, 'bin', 'activate')
     if not os.path.exists(activate_path):
         log.error('activate script missing in %s', ve_dir)
         return
+
     activate = []
     with open(activate_path) as f:
         for line in f:
             line = line.strip()
             if line == 'deactivate () {':
-                activate += ['ACTIVATE_PATH_FALLBACK="$_"', '']
+                activate += [
+                    'ACTIVATE_PATH_FALLBACK="$_"',
+                    'ACTIVATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE:-$0}")" '
+                    '&& pwd)"',
+                    ''
+                ]
             if line.startswith('VIRTUAL_ENV='):
                 activate += [
                     '# attempt to determine VIRTUAL_ENV in relocatable way',
@@ -208,31 +217,46 @@ def relocateable_ve(ve_dir, python_version):
                     '    ACTIVATE_PATH="${DASH_SOURCE}"',
                     'elif [ ! -z "${ZSH_VERSION:-}" ]; then',
                     '    ACTIVATE_PATH="$0"',
-                    'elif [ ! -z "${KSH_VERSION:-}" ] '
-                         '|| [ ! -z "${.sh.version:}" ]; then',
-                    '    ACTIVATE_PATH="$(history -r -l -n | head -1 | sed -e '
-                        '\'s/^[\\t ]*\\(\\.\\|source\\) *//;s/\\\\ / /g\')"',
+                    'elif [ ! -z "${KSH_VERSION:-}" ] || '
+                    '[ ! -z "${.sh.version:}" ]; then',
+                    '    ACTIVATE_PATH="$(history -r -l -n | head -1 | '
+                    'sed -e \'s/^[\\t ]*\\(\\.\\|source\\) *//;s/\\\\ / /g\')"',
                     'elif [ "$(basename "$ACTIVATE_PATH_FALLBACK")" == '
-                           '"activate.sh" ]; then',
+                    '"activate.sh" ]; then',
                     '    ACTIVATE_PATH="${ACTIVATE_PATH_FALLBACK}"',
                     'else',
-                    '    ACTIVATE_PATH=""',
+                    '    ACTIVATE_PATH="${ACTIVATE_SCRIPT_DIR}/activate"',
                     'fi',
                     '',
-                    '# default to non-relocatable path',
-                ]
-            if line == 'export VIRTUAL_ENV':
-                activate += [
+                    '# Set VIRTUAL_ENV relative to the activate script location',
                     'if [ ! -z "${ACTIVATE_PATH:-}" ]; then',
-                    '    VIRTUAL_ENV="$(cd '
-                        '"$(dirname "${ACTIVATE_PATH}")/.."; pwd)"',
+                    '    VIRTUAL_ENV="$(cd "$(dirname "${ACTIVATE_PATH}")/.." '
+                    '&& pwd)"',
+                    'else',
+                    '    VIRTUAL_ENV="$(cd "${ACTIVATE_SCRIPT_DIR}/.." && pwd)"',
                     'fi',
+                    '',
                     'unset ACTIVATE_PATH',
                     'unset ACTIVATE_PATH_FALLBACK',
+                    'unset ACTIVATE_SCRIPT_DIR',
                 ]
+            if line == 'export VIRTUAL_ENV':
+                continue  # Skip the original export line as we handle it above
             activate.append(line)
+
     with open(activate_path, 'w') as f:
         f.write('\n'.join(activate))
+
+    # Also update activate.csh and activate.fish if they exist
+    for activate_script in ['activate.csh', 'activate.fish']:
+        script_path = os.path.join(ve_dir, 'bin', activate_script)
+        if os.path.exists(script_path):
+            with open(script_path) as f:
+                content = f.read()
+            # Replace hardcoded paths with relative paths
+            content = content.replace(ve_dir, '${VIRTUAL_ENV}')
+            with open(script_path, 'w') as f:
+                f.write(content)
 
 
 def fix_local_symlinks(ve_dir):
