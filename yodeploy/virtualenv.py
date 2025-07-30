@@ -113,9 +113,10 @@ def create_ve(
 
         pip_install(ve_dir, pypi, '-U', 'pip')
         if python_version.startswith('3.1'):
-            pip_install(ve_dir, None, '-U', 'setuptools')
-        else:
             pip_install(ve_dir, pypi, '-U', 'setuptools')
+        else:
+            # Hardcode max setuptools version for older Pythons
+            pip_install(ve_dir, pypi, '-U', 'setuptools<=73.0.1')
         pip_install(ve_dir, pypi, 'wheel')
         log.info('Installing requirements')
         pip_install(ve_dir, pypi, '-r', req_file)
