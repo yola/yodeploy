@@ -112,7 +112,10 @@ def create_ve(
         log.debug('VE created, contents: %s', os.listdir(ve_dir))
 
         pip_install(ve_dir, pypi, '-U', 'pip')
-        pip_install(ve_dir, pypi, '-U', 'setuptools')
+        if python_version.startswith('3.1'):
+            pip_install(ve_dir, None, '-U', 'setuptools')
+        else:
+            pip_install(ve_dir, pypi, '-U', 'setuptools')
         pip_install(ve_dir, pypi, 'wheel')
         log.info('Installing requirements')
         pip_install(ve_dir, pypi, '-r', req_file)

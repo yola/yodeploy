@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2.1.0
+-----
+* Fetch `setuptools` from pypi for Python 1.10 and newer.
+
+
 2.0.0
 -----
 * Migrate to Python3
