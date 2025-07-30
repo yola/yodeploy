@@ -113,7 +113,7 @@ def create_ve(
 
         pip_install(ve_dir, pypi, '-U', 'pip')
         if python_version.startswith('3.1'):
-            pip_install(ve_dir, None, '-U', 'setuptools')
+            pip_install(ve_dir, None, '--no-cache-dir', -U', 'setuptools')
         else:
             pip_install(ve_dir, pypi, '-U', 'setuptools')
         pip_install(ve_dir, pypi, 'wheel')
