@@ -28,7 +28,8 @@ from yodeploy.unicode_stdout import ensure_unicode_compatible
 class Builder(object):
     def __init__(self, app, target, version, commit, commit_msg, branch, tag,
                  deploy_settings, deploy_settings_file, repository,
-                 build_virtualenvs, upload_virtualenvs):
+                 build_virtualenvs, upload_virtualenvs,
+                 force_virtualenvs=False):
         print_banner('%s %s' % (app, version), border='double')
         self.app = app
         self.target = target
@@ -42,6 +43,7 @@ class Builder(object):
         self.repository = repository
         self.build_virtualenvs = build_virtualenvs
         self.upload_virtualenvs = upload_virtualenvs
+        self.force_virtualenvs = force_virtualenvs
 
     def set_commit_status(self, status, description):
         """Report test status to GitHub"""
@@ -126,6 +128,9 @@ class Builder(object):
         if self.upload_virtualenvs:
             build_deploy_virtualenv.append('--upload')
             build_app_virtualenv.append('--upload')
+        if self.force_virtualenvs:
+            build_deploy_virtualenv.append('--force')
+            build_app_virtualenv.append('--force')
 
         if self.build_virtualenvs:
             print_banner('Build deploy virtualenv')
@@ -255,6 +260,8 @@ def parse_args(default_app):
     parser.add_argument('--prepare-only', action='store_true',
                         help="Only prepare (e.g. build virtualenvs) don't "
                              "build")
+    parser.add_argument('--force-virtualenv', action='store_true',
+                        help='Force rebuild of virtualenvs')
     parser.add_argument('-c', '--config', metavar='FILE',
                         default=yodeploy.config.find_deploy_config(False),
                         help='Location of the Deploy configuration file.')
@@ -480,7 +487,8 @@ def main():
                            deploy_settings_file=opts.config,
                            repository=repository,
                            build_virtualenvs=opts.build_virtualenvs,
-                           upload_virtualenvs=upload_virtualenvs)
+                           upload_virtualenvs=upload_virtualenvs,
+                           force_virtualenvs=opts.force_virtualenv)
     builder.prepare()
     if not opts.prepare_only:
         if not opts.test_only:
