@@ -231,7 +231,8 @@ def relocateable_ve(ve_dir, python_version):
                     '    ACTIVATE_PATH=""',
                     'fi',
                     'if [ ! -z "${ACTIVATE_PATH:-}" ]; then',
-                    '    VIRTUAL_ENV="$(cd "$(dirname "${ACTIVATE_PATH}")/.."; pwd)"',
+                    '    VIRTUAL_ENV="$(cd "$(dirname'
+                    ' "${ACTIVATE_PATH}")/.."; pwd)"',
                     'fi',
                     'unset ACTIVATE_PATH',
                     'unset ACTIVATE_PATH_FALLBACK',
