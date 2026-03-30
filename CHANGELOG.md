@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-2.0.1
+2.1.0
 -----
 * Support Tomcat 10
 * Add an option to force rebuilt of virtualenvs in build-artifact
