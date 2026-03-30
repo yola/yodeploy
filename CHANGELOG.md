@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+2.0.1
+-----
+* Support Tomcat 10
+* Add an option to force rebuilt of virtualenvs in build-artifact
+
 2.0.0
 -----
 * Migrate to Python3

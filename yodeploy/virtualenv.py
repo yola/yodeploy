@@ -33,8 +33,17 @@ def get_python_version(compat=None, is_deploy=False):
     ).decode().strip()
     if is_deploy:
         return python3_version
+
     if compat == 4:
-        return '2.7'
+        python27 = shutil.which('python2.7') or shutil.which('python2')
+        if python27:
+            return '2.7'
+        log.warning(
+            'Compat level 4 requested but python2.7/python2 not found '
+            'in PATH; falling back to Python %s', python3_version,
+        )
+        return python3_version
+
     return python3_version
 
 
@@ -105,7 +114,7 @@ def create_ve(
                 stderr=subprocess.PIPE
             )
         python_bin = os.path.join(ve_dir, 'bin', 'python')
-        if not os.path.exists(python_bin):
+        if not os.access(python_bin, os.X_OK):
             log.error('VE created but bin/python missing at %s', python_bin)
             log.debug('VE contents: %s', os.listdir(ve_dir))
             raise FileNotFoundError(f'bin/python not found in {ve_dir}')
@@ -125,8 +134,7 @@ def create_ve(
             check_requirements(ve_dir)
         relocateable_ve(ve_dir, python_version)
         ve_id = get_id(
-            os.path.join(app_dir, req_file),
-            python_version, platform
+            req_file, python_version, platform
         )
         with open(os.path.join(ve_dir, '.hash'), 'w') as f:
             f.write(ve_id)
@@ -186,7 +194,8 @@ def check_requirements(ve_dir):
 
 
 def relocateable_ve(ve_dir, python_version):
-    log.debug('Making virtualenv relocatable')
+    log.debug('Making virtualenv relocatable: ve_dir=%s python_version=%s',
+              ve_dir, python_version)
     # Python 3 venv virtualenvs don't have symlinks problems
     if python_version == '2.7':
         fix_local_symlinks(ve_dir)
@@ -202,9 +211,10 @@ def relocateable_ve(ve_dir, python_version):
             line = line.strip()
             if line == 'deactivate () {':
                 activate += ['ACTIVATE_PATH_FALLBACK="$_"', '']
-            if line.startswith('VIRTUAL_ENV='):
+            if 'VIRTUAL_ENV=' in line and 'export VIRTUAL_ENV' not in line:
+                continue
+            if 'export VIRTUAL_ENV' in line and 'cygpath' not in line:
                 activate += [
-                    '# attempt to determine VIRTUAL_ENV in relocatable way',
                     'if [ ! -z "${BASH_SOURCE:-}" ]; then',
                     '    ACTIVATE_PATH="${BASH_SOURCE}"',
                     'elif [ ! -z "${DASH_SOURCE:-}" ]; then',
@@ -215,27 +225,22 @@ def relocateable_ve(ve_dir, python_version):
                          '|| [ ! -z "${.sh.version:}" ]; then',
                     '    ACTIVATE_PATH="$(history -r -l -n | head -1 | sed -e '
                         '\'s/^[\\t ]*\\(\\.\\|source\\) *//;s/\\\\ / /g\')"',
-                    'elif [ "$(basename "$ACTIVATE_PATH_FALLBACK")" == '
-                           '"activate.sh" ]; then',
+                    'elif [ ! -z "${ACTIVATE_PATH_FALLBACK:-}" ]; then',
                     '    ACTIVATE_PATH="${ACTIVATE_PATH_FALLBACK}"',
                     'else',
                     '    ACTIVATE_PATH=""',
                     'fi',
-                    '',
-                    '# default to non-relocatable path',
-                ]
-            if line == 'export VIRTUAL_ENV':
-                activate += [
                     'if [ ! -z "${ACTIVATE_PATH:-}" ]; then',
-                    '    VIRTUAL_ENV="$(cd '
-                        '"$(dirname "${ACTIVATE_PATH}")/.."; pwd)"',
+                    '    VIRTUAL_ENV="$(cd "$(dirname'
+                    ' "${ACTIVATE_PATH}")/.."; pwd)"',
                     'fi',
                     'unset ACTIVATE_PATH',
                     'unset ACTIVATE_PATH_FALLBACK',
                 ]
+                continue
             activate.append(line)
     with open(activate_path, 'w') as f:
-        f.write('\n'.join(activate))
+        f.write('\n'.join(activate) + '\n')
 
 
 def fix_local_symlinks(ve_dir):
