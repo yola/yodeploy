@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+2.1.1
+-----
+* Increase timeout while installing new Tomcat version
+
 2.1.0
 -----
 * Support Tomcat 10
