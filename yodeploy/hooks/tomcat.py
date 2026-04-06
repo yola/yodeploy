@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class TomcatServlet(ConfiguratedApp):
     migrate_on_deploy = False
     vhost_path = '/etc/apache2/sites-enabled'
-    parallel_deploy_timeout = 60
+    parallel_deploy_timeout = 300
     database_migration_class = 'com.yola.yodeploy.flywaydb.Migrator'
 
     def prepare(self):
