@@ -6,7 +6,6 @@ import subprocess
 import sys
 import time
 import distro
-from pathlib import Path
 
 from yodeploy.hooks.configurator import ConfiguratedApp
 
@@ -94,8 +93,7 @@ class TomcatServlet(ConfiguratedApp):
         dest = os.path.join(contexts, 'ROOT##%s' % version)
 
         ubuntu_version = distro.version()
-        tomcat_dir = next(Path('/etc').glob('tomcat*'), None)
-        tomcat = tomcat_dir.name
+        tomcat = 'tomcat9' if ubuntu_version >= '20.04' else 'tomcat8'
         uid = pwd.getpwnam(tomcat).pw_uid
 
         os.chown(contexts, uid, -1)
