@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+2.1.1
+-----
+* Support installed Tomcat version
+
 2.1.0
 -----
 * Support Tomcat 10
