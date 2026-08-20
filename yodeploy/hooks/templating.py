@@ -16,7 +16,7 @@ class TemplatedApp(DeployHook):
         return os.path.exists(self.template_filename(template_name))
 
     def template(self, template_name, destination, perm=0o644):
-        log.debug('Parsing template: %s -> %s', template_name, destination)
+        log.debug(msg='Parsing template: %s -> %s', template_name, destination)
         fn = self.template_filename(template_name)
         with open(fn, 'rb') as f:
             template_code = f.read().decode('utf-8')

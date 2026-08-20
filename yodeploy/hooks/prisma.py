@@ -9,18 +9,18 @@ from yodeploy.hooks.configurator import ConfiguratedApp
 log = logging.getLogger(__name__)
 
 
-class PrismaHook(ConfiguratedApp):
-    prisma_migrate_on_deploy = False
+class PrismaApp(ConfiguratedApp):
+    migrate_on_deploy = False
 
     def prepare(self):
-        super(PrismaHook, self).prepare()
+        super(PrismaApp, self).prepare()
         self.prisma_prepare()
 
     def prisma_prepare(self):
-        log.debug('Running PrismaHook prepare hook')
+        log.info('Running PrismaApp prepare hook')
         if self.config is None:
             raise Exception("Config hasn't been loaded yet")
-        if self.prisma_migrate_on_deploy:
+        if self.migrate_on_deploy:
             self.migrate()
 
     def migrate(self):
