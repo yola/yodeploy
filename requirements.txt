@@ -5,7 +5,7 @@ boto3 == 1.37.38
 distro == 1.9.0
 gunicorn == 23.0.0
 requests == 2.34.2
-virtualenv == 21.14.11
+virtualenv == 21.14.13
 yoconfigurator == 0.5.2
 packaging == 26.3
 
